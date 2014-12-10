@@ -1,0 +1,7 @@
+{
+    "name": "ut-sql",
+    "version": "1.0.0",
+    "dependencies": {
+        "ut-bus": "~5.0.0"
+    }
+}
