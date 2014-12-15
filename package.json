@@ -1,7 +1,11 @@
 {
-    "name": "ut-sql",
+    "name": "ut-port-sql",
     "version": "1.0.0",
-    "dependencies": {
+    "main": "./index",
+    "dependencies":{
         "ut-bus": "~5.0.0"
+    },
+    "scripts": {
+        "test": "mocha ./test/test.js"
     }
 }

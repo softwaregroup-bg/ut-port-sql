@@ -1,17 +1,10 @@
 var SQL = require('../');
-var mocha = require('mocha');
-var expect = require('chai').expect;
-var assert = require('chai').assert;
+//var mocha = require('mocha');
+//var expect = require('chai').expect;
+//var assert = require('chai').assert;
 
-var sql = new SQL({
-    user: 'switch',
-    password: 'switch',
-    server: '192.168.133.40',
-    database: 'G_MFSP3_2',
-    validator: require('ut-validate').get('joi').validateSql
-    //logger: require('ut-log/ut-log-winston')
-});
 
+return false;
 describe('Query Positive', function() {
     it('Running a successful query', function() {
         // test validation

@@ -11,25 +11,25 @@ var when = require('when');
 /**
  * @class SQL
  * @description Constructor method initiating the database connection
- * @param {Object} params Configuration paramters to connect to SQL database
+ * @param {Object} config Configuration paramters to connect to SQL database
  * $returns {Object} The current instance
  */
-function SQL(params) {
+function SQL(config, validator, logger) {
     /**
      * @function val
      * @description Empty validation method
      */
-    this.val = params.validator || null;
+    this.val = validator;
     /**
      * @function log
      * @description Empty logger method
      */
-    this.log = params.logger || null;
+    this.log = logger;
     /**
      * @param {Object} connection
      * @description SQL connection
      */
-    this.connection = new sql.Connection(params, function(err) {
+    this.connection = new sql.Connection(config, function(err) {
         if (err) throw err;
     });
 
@@ -38,33 +38,33 @@ function SQL(params) {
 /**
  * @function exec
  * @description Handles SQL query execution
- * @param {Object} params
+ * @param {Object} data
  * @returns {Promise} Returns a promise to be handled after being executed
  */
-SQL.prototype.exec = function(params) {
+SQL.prototype.exec = function(data) {
 
-    if (this.val !== null) {
-        this.val(params);
+    if (typeof this.val === 'function') {
+        this.val(data);
     }
 
     var request = new sql.Request(this.connection);
 
     return when.promise(function (resolve, reject) {
-        request.query(params._sql.sql, function (err, recordset) {
+        request.query(data._sql.sql, function (err, recordset) {
             if (err) {
                 reject({
                     _error: {
                         message: err.message,
-                        query: params._sql.sql
+                        query: data._sql.sql
                     }
                 });
             } else {
-                switch (params._sql.process) {
+                switch (data._sql.process) {
                     case 'return':
                         var response = {}
-                        Object.keys(params).forEach(function(value) {
+                        Object.keys(data).forEach(function(value) {
                             if (value !== '_sql') {
-                                response[value] = params[value];
+                                response[value] = data[value];
                             }
                         });
                         if (recordset.length) {
