@@ -6,7 +6,7 @@
      * @requires mssql
      * @requires when
      */
-    var sql = require('mssql');
+    var mssql = require('mssql');
     var when = require('when');
 
     /**
@@ -14,6 +14,8 @@
      * @tutorial sql
      * @description Constructor method initiating the database connection
      * @param {Object} config Configuration paramters to connect to SQL database
+     * @param {Function} validator
+     * @param {Function} logger
      * $returns {Object} The current instance
      */
 
@@ -32,7 +34,7 @@
          * @param {Object} connection
          * @description SQL connection
          */
-        this.connection = new sql.Connection(config, function(err) {
+        this.connection = new mssql.Connection(config, function(err) {
             if (err) throw err;
         });
 
@@ -50,7 +52,7 @@
             this.val(data);
         }
 
-        var request = new sql.Request(this.connection);
+        var request = new mssql.Request(this.connection);
 
         return when.promise(function (resolve, reject) {
             request.query(data._sql.sql, function (err, recordset) {
@@ -64,7 +66,7 @@
                 } else {
                     switch (data._sql.process) {
                         case 'return':
-                            var response = {}
+                            var response = {};
                             Object.keys(data).forEach(function(value) {
                                 if (value !== '_sql') {
                                     response[value] = data[value];
@@ -85,4 +87,4 @@
 
     return SQL;
 
-});})(typeof define === 'function' && define.amd ?  define : function(factory){ module.exports = factory(require); });
+});})(typeof define === 'function' && define.amd ?  define : function(factory) { module.exports = factory(require); });
