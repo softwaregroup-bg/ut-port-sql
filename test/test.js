@@ -1,71 +1,68 @@
-//var mocha = require('mocha');
-//var expect = require('chai').expect;
-//var assert = require('chai').assert;
+require('repl').start({useGlobal: true});
+
 var wire = require('wire');
 
 m = wire({
-    winston : {
+    bunyan: {
         create: {
             module: 'ut-log',
             args: {
-                type: 'winston',
-                name: 'winston_test',
-                dependencies: [],
-                transports: {
-                    'file': {
-                        filename: './winstonTest.log',
-                        level: 'trace'
-                    },
-                    'console': {
-                        colorize: 'true',
-                        level: 'trace'
+                type: 'bunyan',
+                name: 'bunyan_test',
+                streams: [
+                    {
+                        level: 'trace',
+                        stream: 'process.stdout'
                     }
-                }
+                ]
             }
         }
     },
     sql: {
-        create: {
-            module: 'ut-port-sql',
-            args: [
-                {
+        create: 'ut-port-sql',
+        init: 'init',
+        properties: {
+            config: {
+                id: 'sql',
+                logLevel: 'trace',
+                db: {
                     user: 'switch',
                     password: 'switch',
                     server: '192.168.133.40',
-                    database: 'G_MFSP3_2'
-                },
-                require('ut-validate').get('joi').validateSql,
-                {$ref: 'winston'}
-            ]
+                    database: 'utswitch_bakcellgpp'
+                }
+            },
+            logFactory: {$ref: 'bunyan'}
         }
     }
-}, {require : require});
+}, {require: require}).then(function contextLoaded(context) {
+    try {
+        /*
+        Localhost
+        var local = require(require('path').resolve(process.cwd() + '/local.json'));
+        var mssql = require('node-sqlserver-unofficial');
+        mssql.query(local.conn, 'select * from Account', function (err, results) {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log(results)
+            }
+        });
+        */
 
-m.then(function(c) {
-    var sql = c.sql;
-    console.log(sql.val({
-        _sql: {
-            process: 'return',
-            sql: 'select * from Account'
-        },
-        what: 'v1',
-        ever: 'v2'
-    }));
+        context.sql.start();
+        context.sql.exec({
+            _sql: {
+                process: 'json',
+                sql: 'select * from Banks'
+            },
+            a: 1, b: 2, c: 'martin', d: 3.14, e: "function() {console.log('sql port rockz!!!')}"
+        }, function(err, result) {
+            if (err)
+                throw err;
+        });
 
-    sql.exec({
-        _sql: {
-            process: 'return',
-            sql: 'select * from Account'
-        },
-        what: 'v1',
-        ever: 'v2'
-    }).then(function(msg) {
-        console.log(msg);
-    }).catch(function(err) {
-        console.log(msg);
-    });
-
-}).otherwise(function(error){
-    err = error;
-    console.log(err)
-});
+    } catch (e) {
+        console.log(e);
+    }
+}).done();
