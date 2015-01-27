@@ -2,11 +2,11 @@
  * @module SQL Port
  * @author UT Route Team
  * @description Microsoft SQL Server Port Module
- * @requires ut-bus/port
- * @requires mssql
- * @requires async
  * @requires net
+ * @requires mssql
+ * @requires ut-bus/port
  * @requires util
+ * @requires path
  * @requires fs
  */
 (function(define) {define(function(require) {
@@ -17,15 +17,6 @@
     var path = require('path');
     var fs = require('fs');
 
-    /**
-     * @class SqlPort
-     * @tutorial SqlPort
-     * @description Constructor method initiating the database connection
-     * @param {Object} config Configuration paramters to connect to SQL database
-     * @param {Function} validator
-     * @param {Function} logger
-     * $returns {Object} The current instance
-     */
     function SqlPort() {
         Port.call(this);
 
@@ -61,14 +52,16 @@
     util.inherits(SqlPort, Port);
 
     /**
-     *
+     * @function init
+     * @description Extends the default Port.init() method
      */
     SqlPort.prototype.init = function init() {
         Port.prototype.init.apply(this, arguments);
     };
 
     /**
-     *
+     * @function start
+     * @description Extends the default Port.start() method and initializes the sql connection
      */
     SqlPort.prototype.start = function start() {
         Port.prototype.start.apply(this, arguments);
@@ -90,7 +83,7 @@
      * @function exec
      * @description Handles SQL query execution
      * @param {Object} message
-     * @returns {Promise} Returns a promise to be handled after being executed
+     * @param {Function} callback It's invoked after query execution
      */
     SqlPort.prototype.exec = function(message, callback) {
 
@@ -166,14 +159,17 @@
     };
 
     /**
-     *
+     * @function stopRetryInterval
+     * @description Stops retrying to connect to the sql database
      */
     SqlPort.prototype.stopRetryInterval = function() {
         clearInterval(this.retryInterval);
     };
 
     /**
-     *
+     * @function schemaUpdate
+     * @description Executes schemaUpdate for a specific implementation
+     * @param {string} implementation The implementation for the schemaUpdate
      */
     SqlPort.prototype.schemaUpdate = function(implementation) {
         if (!this.connection)
