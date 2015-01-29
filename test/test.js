@@ -40,13 +40,13 @@ m = wire({
     console.log(context.sql.exec({
         _sql: {
             process: 'json',
-            sql: 'select * from Banks'
+            sql: 'select * from Banks;select * from BankCommison'
         },
         a: 1, b: 2, c: 'martin', d: 3.14, e: "function() {console.log('sql port rockz!!!')}"
     }, function(err, result) {
         if (err)
             throw err;
 
-        console.log(result)
+        console.log(result);
     }));
 }).done();

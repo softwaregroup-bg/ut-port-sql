@@ -137,7 +137,6 @@
                             break;
                         case 'xls':
                             // TODO set XSL format string
-                            respons.dataSet = result;
                             break;
                         case 'csv':
                             // TODO set CSV format string
