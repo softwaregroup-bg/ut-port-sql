@@ -77,6 +77,7 @@
                 }.bind(this), 10000);
             }
         }.bind(this));
+        this.pipeExec(this.exec.bind(this));
     };
 
     /**
