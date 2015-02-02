@@ -92,7 +92,6 @@
             message.$$.mtid = 'error';
             message.$$.errorCode = '123';
             message.$$.errorMessage = 'No connection to SQL server';
-            message.query = message._sql.sql;
             callback(message);
         }
 
@@ -100,9 +99,9 @@
             this.val(message);
         }
 
-        var start = +new Date();
+        //var start = +new Date();
         var request = new mssql.Request(this.connection);
-        request.query(message._sql.sql, function(err, result) {
+        request.query(message.query, function(err, result) {
             //var end = +new Date();
             //var execTime = end - start;
             //console.log('\nQuery executed for ' + execTime.toString() + ' ms...\n');
@@ -111,18 +110,18 @@
                 message.$$.mtid = 'error';
                 message.$$.errorCode = '123';
                 message.$$.errorMessage = err.message;
-                message.query = message._sql.sql;
                 callback(message);
             } else {
-                var response = {};
-                Object.keys(message).forEach(function(value) {
-                    if (value !== '_sql') {
-                        response[value] = message[value];
+                var response = {
+                    $$: {
+                        mtid: 'response'
                     }
+                };
+                Object.keys(message).forEach(function(value) {
+                    response[value] = message[value];
                 });
-                response.$$.mtid = 'response';
                 if (result.length) {
-                    switch (message._sql.process) {
+                    switch (message.process) {
                         case 'return':
                             Object.keys(result[0]).forEach(function(value) {
                                 response = _mergeResultAndResponse(response, value, result[0][value]);

@@ -39,13 +39,11 @@ m = wire({
     context.sql.start();
     console.log(context.sql.exec({
         $$: {
-            mtid: '',
-            opcode: ''
+            mtid: 'request',
+            opcode: 'account.banks'
         },
-        _sql: {
-            process: 'return',
-            sql: 'select * from Banks;select * from BankCommison'
-        },
+        process: 'json',
+        query: 'select * from Banks;select * from BankCommison',
         a: 1, b: 2, c: 'martin', d: 3.14, e: "function() {console.log('sql port rockz!!!')}"
     }, function(err, result) {
         if (err)
