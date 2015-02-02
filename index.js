@@ -112,14 +112,11 @@
                 message.$$.errorMessage = err.message;
                 callback(message);
             } else {
-                var response = {
-                    $$: {
-                        mtid: 'response'
-                    }
-                };
+                var response = {};
                 Object.keys(message).forEach(function(value) {
                     response[value] = message[value];
                 });
+                response.$$.mtid = 'response';
                 if (result.length) {
                     switch (message.process) {
                         case 'return':
