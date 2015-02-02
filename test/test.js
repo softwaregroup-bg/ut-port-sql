@@ -38,8 +38,12 @@ m = wire({
 }, {require: require}).then(function contextLoaded(context) {
     context.sql.start();
     console.log(context.sql.exec({
+        $$: {
+            mtid: '',
+            opcode: ''
+        },
         _sql: {
-            process: 'json',
+            process: 'return',
             sql: 'select * from Banks;select * from BankCommison'
         },
         a: 1, b: 2, c: 'martin', d: 3.14, e: "function() {console.log('sql port rockz!!!')}"

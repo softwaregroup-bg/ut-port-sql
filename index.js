@@ -89,12 +89,11 @@
     SqlPort.prototype.exec = function(message, callback) {
 
         if (!this.connection) {
-            callback({
-                _error: {
-                    message: 'No connection to SQL server',
-                    query: message._sql.sql
-                }
-            });
+            message.$$.mtid = 'error';
+            message.$$.errorCode = '123';
+            message.$$.errorMessage = 'No connection to SQL server';
+            message.query = message._sql.sql;
+            callback(message);
         }
 
         if (typeof this.val === 'function') {
@@ -103,18 +102,17 @@
 
         var start = +new Date();
         var request = new mssql.Request(this.connection);
-        request.query(message._sql.sql, function (err, result) {
-            var end = +new Date();
-            var execTime = end - start;
-            console.log('\nQuery executed for ' + execTime.toString() + ' ms...\n');
+        request.query(message._sql.sql, function(err, result) {
+            //var end = +new Date();
+            //var execTime = end - start;
+            //console.log('\nQuery executed for ' + execTime.toString() + ' ms...\n');
 
             if (err) {
-                callback({
-                    _error: {
-                        message: err.message,
-                        query: message._sql.sql
-                    }
-                });
+                message.$$.mtid = 'error';
+                message.$$.errorCode = '123';
+                message.$$.errorMessage = err.message;
+                message.query = message._sql.sql;
+                callback(message);
             } else {
                 var response = {};
                 Object.keys(message).forEach(function(value) {
@@ -122,13 +120,13 @@
                         response[value] = message[value];
                     }
                 });
+                response.$$.mtid = 'response';
                 if (result.length) {
                     switch (message._sql.process) {
                         case 'return':
-                            Object.keys(result[0]).forEach(function (value) {
-                                response[value] = result[0][value];
+                            Object.keys(result[0]).forEach(function(value) {
+                                response = _mergeResultAndResponse(response, value, result[0][value]);
                             });
-                            console.log(response);
                             break;
                         case 'returnConvert':
                             // TODO
@@ -254,6 +252,41 @@
             throw 'Empty schema folder...';
         }
     };
+
+    function _mergeResultAndResponse(response, fieldName, fieldValue) {
+        var names = fieldName.split('.');
+        if (names[0] == '$$' && (names.length == 1 || names[1] == 'callback')) {
+            response.$$.mtid = 'error';
+            response.$$.errorCode = '123';
+            response.$$.errorMessage = 'Returned invalid sql field $$ or callback!';
+        }
+        names.reverse();
+        var resp3 = {};
+        if (names.length == 1) {
+            response[fieldName] = fieldValue;
+        }else {
+            for (var i = 0; i < names.length; i++) {
+                var resp2 = {};
+                var currName = names[i];
+                if (i == 0) {
+                    resp3[names[0]] = fieldValue;
+                } else {
+                    resp2[currName] = resp3;
+                    if ((i + 1) < names.length) {
+                        resp3 = resp2;
+                    }
+                }
+                if ((i + 1) == names.length) {
+                    if (response[currName]) {
+                        response[currName][names[(i - 1)]] = resp3[names[(i - 1)]];
+                    } else {
+                        response[currName] = resp3;
+                    }
+                }
+            }
+        }
+        return response;
+    }
 
     return SqlPort;
 
