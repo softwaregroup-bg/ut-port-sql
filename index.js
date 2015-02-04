@@ -9,11 +9,17 @@
  * @requires fs
  */
 (function(define) {define(function(require) {
+    /* istanbul ignore next */
     var net = require('net');
+    /* istanbul ignore next */
     var mssql = require('mssql');
+    /* istanbul ignore next */
     var Port = require('ut-bus/port');
+    /* istanbul ignore next */
     var util = require('util');
+    /* istanbul ignore next */
     var path = require('path');
+    /* istanbul ignore next */
     var fs = require('fs');
 
     function SqlPort(config, validator, logger) {
