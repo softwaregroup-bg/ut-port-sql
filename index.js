@@ -4,7 +4,6 @@
  * @description Microsoft SQL Server Port Module
  * @requires net
  * @requires mssql
- * @requires ut-bus/port
  * @requires util
  * @requires path
  * @requires fs
@@ -17,24 +16,24 @@
     var path = require('path');
     var fs = require('fs');
 
-    function SqlPort() {
+    function SqlPort(config, validator, logger) {
         Port.call(this);
 
         /**
          * @param {Object} config
          * @description Contains all SQL configuration data
          */
-        this.config = null;
+        this.config = config ? config : {};
         /**
          * @function val
          * @description Empty validation method
          */
-        this.val = null;
+        this.val = validator ? validator : null;
         /**
          * @function log
          * @description Empty logger method
          */
-        this.log = null;
+        this.log = logger ? logger : {};
         /**
          * @param {Object} connection
          * @description SQL connection

@@ -15,8 +15,7 @@ define([
             console.log('\nFinished testing SQL protocol...\n');
         });
         bdd.it('SQL connection: should succeed immediately', function() {
-            var sql = new SQL();
-            sql.config = {
+            var sql = new SQL({
                 id: 'sql',
                 logLevel: 'trace',
                 db: {
@@ -25,13 +24,11 @@ define([
                     server: '192.168.133.40',
                     database: 'utswitch_bakcellgpp'
                 }
-            };
-            sql.log = {};
+            });
             sql.start();
         });
         bdd.it('SQL query(process=return): should succeed', function() {
-            var sql = new SQL();
-            sql.config = {
+            var sql = new SQL({
                 id: 'sql',
                 logLevel: 'trace',
                 db: {
@@ -40,8 +37,7 @@ define([
                     server: '192.168.133.40',
                     database: 'utswitch_bakcellgpp'
                 }
-            };
-            sql.log = {};
+            });
             sql.start();
             sql.exec({
                 $$: {
@@ -74,8 +70,7 @@ define([
             });
         });
         bdd.it('SQL query(process=json): should succeed', function() {
-            var sql = new SQL();
-            sql.config = {
+            var sql = new SQL({
                 id: 'sql',
                 logLevel: 'trace',
                 db: {
@@ -84,8 +79,7 @@ define([
                     server: '192.168.133.40',
                     database: 'utswitch_bakcellgpp'
                 }
-            };
-            sql.log = {};
+            });
             sql.start();
             sql.exec({
                 $$: {

@@ -4,9 +4,9 @@
     "main": "./index",
     "dependencies": {
         "mssql": "~1.3.0",
-        "wire": "~0.10.9",
         "ut-bus": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-bus.git#master",
-        "ut-log": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-log.git#master"
+        "ut-log": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-log.git#master",
+        "ut-validate": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-validate.git#master"
     },
     "devDependencies": {
         "intern": "~2.2.2"
