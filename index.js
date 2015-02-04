@@ -52,6 +52,7 @@
      * @function init
      * @description Extends the default Port.init() method
      */
+    /* istanbul ignore next */
     SqlPort.prototype.init = function init() {
         Port.prototype.init.apply(this, arguments);
     };
@@ -128,19 +129,24 @@
                         case 'json':
                             response.dataSet = result;
                             break;
-                        /* istanbul ignore next */case 'xls':
+                        case 'xls':
+                            /* istanbul ignore next */
                             // TODO set XSL format string
                             break;
-                        /* istanbul ignore next */case 'csv':
+                        case 'csv':
+                            /* istanbul ignore next */
                             // TODO set CSV format string
                             break;
-                        /* istanbul ignore next */case 'xml':
+                        case 'xml':
+                            /* istanbul ignore next */
                             // TODO set XML format string
                             break;
-                        /* istanbul ignore next */case 'queueRows':
+                        case 'queueRows':
+                            /* istanbul ignore next */
                             // TODO
                             break;
-                        /* istanbul ignore next */case 'processRows':
+                        case 'processRows':
+                            /* istanbul ignore next */
                             // TODO
                             break;
                     }
@@ -248,6 +254,7 @@
         }
     };
 
+    /* istanbul ignore next */
     function _mergeResultAndResponse(response, fieldName, fieldValue) {
         var names = fieldName.split('.');
         if (names[0] == '$$' && (names.length == 1 || names[1] == 'callback')) {
