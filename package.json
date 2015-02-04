@@ -7,5 +7,8 @@
         "wire": "~0.10.9",
         "ut-bus": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-bus.git#master",
         "ut-log": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-log.git#master"
+    },
+    "scripts": {
+        "test": "intern-client config=tests/intern"
     }
 }
