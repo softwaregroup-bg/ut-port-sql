@@ -8,11 +8,11 @@
  * @requires fs
  */
 (function(define) {define(function(require) {
-    var mssql = /* istanbul ignore next */require('mssql');
-    var Port = /* istanbul ignore next */require('ut-bus/port');
-    var util = /* istanbul ignore next */require('util');
-    var path = /* istanbul ignore next */require('path');
-    var fs = /* istanbul ignore next */require('fs');
+    var mssql = require('mssql');
+    var Port = require('ut-bus/port');
+    var util = require('util');
+    var path = require('path');
+    var fs = require('fs');
 
     function SqlPort(config, validator, logger) {
         Port.call(this);
@@ -64,6 +64,7 @@
         Port.prototype.start.apply(this, arguments);
 
         this.connection = new mssql.Connection(this.config.db, function(err) {
+            /* istanbul ignore if */
             if (err) {
                 this.retryInterval = setInterval(function() {
                     this.connection = new mssql.Connection(this.config.db, function(err) {
@@ -127,19 +128,19 @@
                         case 'json':
                             response.dataSet = result;
                             break;
-                        case 'xls':
+                        /* istanbul ignore next */case 'xls':
                             // TODO set XSL format string
                             break;
-                        case 'csv':
+                        /* istanbul ignore next */case 'csv':
                             // TODO set CSV format string
                             break;
-                        case 'xml':
+                        /* istanbul ignore next */case 'xml':
                             // TODO set XML format string
                             break;
-                        case 'queueRows':
+                        /* istanbul ignore next */case 'queueRows':
                             // TODO
                             break;
-                        case 'processRows':
+                        /* istanbul ignore next */case 'processRows':
                             // TODO
                             break;
                     }
@@ -162,6 +163,7 @@
      * @description Executes schemaUpdate for a specific implementation
      * @param {string} implementation The implementation for the schemaUpdate
      */
+    /* istanbul ignore next */
     SqlPort.prototype.schemaUpdate = function(implementation) {
         if (!this.connection)
             throw 'No SQL connection has been established...';
