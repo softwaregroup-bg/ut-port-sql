@@ -4,6 +4,7 @@
  */
 define({
 	suites: ['tests/test.sql.js'],
-	excludeInstrumentation: /^(?:test)\//,
+
+	excludeInstrumentation: /^(?:tests|node_modules)\//,
     reporters: ['console', 'cobertura', 'junit', 'lcovhtml']
 });
