@@ -2,19 +2,17 @@
  * @module SQL Port
  * @author UT Route Team
  * @description Microsoft SQL Server Port Module
- * @requires net
  * @requires mssql
  * @requires util
  * @requires path
  * @requires fs
  */
 (function(define) {define(function(require) {
-    /* istanbul ignore next */var net = require('net');
-    /* istanbul ignore next */var mssql = require('mssql');
-    /* istanbul ignore next */var Port = require('ut-bus/port');
-    /* istanbul ignore next */var util = require('util');
-    /* istanbul ignore next */var path = require('path');
-    /* istanbul ignore next */var fs = require('fs');
+    var mssql = /* istanbul ignore next */require('mssql');
+    var Port = /* istanbul ignore next */require('ut-bus/port');
+    var util = /* istanbul ignore next */require('util');
+    var path = /* istanbul ignore next */require('path');
+    var fs = /* istanbul ignore next */require('fs');
 
     function SqlPort(config, validator, logger) {
         Port.call(this);
