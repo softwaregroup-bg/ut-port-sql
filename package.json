@@ -2,11 +2,14 @@
     "name": "ut-port-sql",
     "version": "5.0.0",
     "main": "./index",
-    "dependencies":{
+    "dependencies": {
         "mssql": "~1.3.0",
         "wire": "~0.10.9",
         "ut-bus": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-bus.git#master",
         "ut-log": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-log.git#master"
+    },
+    "devDependencies": {
+        "intern": "~2.2.2"
     },
     "scripts": {
         "test": "intern-client config=tests/intern"
