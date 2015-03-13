@@ -149,6 +149,12 @@
                             /* istanbul ignore next */
                             // TODO
                             break;
+                        default:
+                            message.$$.mtid = 'error';
+                            message.$$.errorCode = '123';
+                            message.$$.errorMessage = 'message.process undefined';
+                            callback(message);
+                            break;
                     }
                 }
                 callback(null, response);
