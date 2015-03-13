@@ -89,7 +89,7 @@
 
         if (!this.connection) {
             message.$$.mtid = 'error';
-            message.$$.errorCode = '123';
+            message.$$.errorCode = '500';
             message.$$.errorMessage = 'No connection to SQL server';
             callback(message);
         }
@@ -107,7 +107,7 @@
 
             if (err) {
                 message.$$.mtid = 'error';
-                message.$$.errorCode = '123';
+                message.$$.errorCode = '500';
                 message.$$.errorMessage = err.message;
                 callback(message);
             } else {
@@ -117,45 +117,53 @@
                 });
                 response.$$.mtid = 'response';
                 if (result.length) {
-                    switch (message.process) {
-                        case 'return':
-                            Object.keys(result[0]).forEach(function(value) {
-                                response = _mergeResultAndResponse(response, value, result[0][value]);
-                            });
-                            break;
-                        case 'returnConvert':
-                            // TODO
-                            break;
-                        case 'json':
-                            response.dataSet = result;
-                            break;
-                        case 'xls':
-                            /* istanbul ignore next */
-                            // TODO set XSL format string
-                            break;
-                        case 'csv':
-                            /* istanbul ignore next */
-                            // TODO set CSV format string
-                            break;
-                        case 'xml':
-                            /* istanbul ignore next */
-                            // TODO set XML format string
-                            break;
-                        case 'queueRows':
-                            /* istanbul ignore next */
-                            // TODO
-                            break;
-                        case 'processRows':
-                            /* istanbul ignore next */
-                            // TODO
-                            break;
-                        default:
-                            message.$$.mtid = 'error';
-                            message.$$.errorCode = '123';
-                            message.$$.errorMessage = 'message.process undefined';
-                            callback(message);
-                            break;
+                    if (message.process) {
+                        switch (message.process) {
+                            case 'return':
+                                Object.keys(result[0]).forEach(function(value) {
+                                    response = _mergeResultAndResponse(response, value, result[0][value]);
+                                });
+                                break;
+                            case 'returnConvert':
+                                // TODO
+                                break;
+                            case 'json':
+                                response.dataSet = result;
+                                break;
+                            case 'xls':
+                                /* istanbul ignore next */
+                                // TODO set XSL format string
+                                break;
+                            case 'csv':
+                                /* istanbul ignore next */
+                                // TODO set CSV format string
+                                break;
+                            case 'xml':
+                                /* istanbul ignore next */
+                                // TODO set XML format string
+                                break;
+                            case 'queueRows':
+                                /* istanbul ignore next */
+                                // TODO
+                                break;
+                            case 'processRows':
+                                /* istanbul ignore next */
+                                // TODO
+                                break;
+                            default:
+                                message.$$.mtid = 'error';
+                                message.$$.errorCode = '500';
+                                message.$$.errorMessage = 'message.process unknown';
+                                callback(message);
+                                break;
+                        }
+                    } else {
+                        message.$$.mtid = 'error';
+                        message.$$.errorCode = '500';
+                        message.$$.errorMessage = 'message.process undefined';
+                        callback(message);
                     }
+
                 }
                 callback(null, response);
             }
