@@ -1,5 +1,5 @@
 # **SQL Port:** `ut-port-sql` #
-The purpose of this port is to work with SQL Server database. To be responsible for creating connections to the database and execute queries. 
+The purpose of this port is to work with SQL Server database. To be responsible for creating connections to the database and for query execution.
 
 ### **Technological dependencies** ###
 
@@ -32,7 +32,7 @@ The `start` method of this port, that is called from the `ut-bus`, initializes t
 
 Let's consider that we want to send `sql.CredentialsLogin` message to the SQL port's in-coming conversion. The message should look like this:
 
-	{
+	msg = {
 		$$: {
 			mtid: 'request',
 			opcode: 'sql.CredentialsLogin'
