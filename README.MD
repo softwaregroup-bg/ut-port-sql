@@ -6,7 +6,7 @@ The purpose of this port is to work with SQL Server database. To be responsible 
  - `mssql` - [Github Official Page](https://github.com/patriksimek/node-mssql)
  - `ut-bus/port` - TODO add link to documentation
 
-In the UT5 implementations the TCP port is initialized in the following manner:
+In the UT5 implementations the SQL port is initialized in the following manner:
 
 	module.exports = {
 	    id: 'sql',
@@ -27,6 +27,17 @@ In the UT5 implementations the TCP port is initialized in the following manner:
 	        return msg;
 	    }
 	};
+
+and it is started in the implementation `server.js` like this:
+
+    module.exports = {
+        ports: [
+            require('ports/sql')
+        ],
+        modules: [
+            template: require('ut-template')
+        ]
+    }
 
 The `start` method of this port, that is called from the `ut-bus`, initializes the SQL connection to the server and starts receiving requests once they come inside the in-going conversion. This port is synchronous and the requests are piped in a queue. 
 
@@ -52,10 +63,11 @@ Consider the following demo implementation of the SQL port, which uses `ut-templ
 	    },
 	    send: function(msg) {
 	        msg.process = 'json';
-	        var templatePath = require.resolve('./templates/utNet_' + msg.$$.opcode + '.sql');
-	        var template = marko.load(templatePath);
-	        msg.query = template.renderSync(msg);
-	        return msg;
+	        var template = this.bus.importMethod('template.load')('./templates/utNet_' + msg.$$.opcode + '.sql');
+            return template.render(msg).then(function(res) {
+                msg.query = res;
+                return msg;
+            });
 	    }
 	};
 
