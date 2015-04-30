@@ -9,10 +9,10 @@ define([
 
     bdd.describe('SQL', function() {
         bdd.before(function() {
-            console.log('Start SQL protocol testing...\n');
+            console.log('Started SQL port testing\n');
         });
         bdd.after(function() {
-            console.log('\nFinished testing SQL protocol...\n');
+            console.log('\nFinished SQL port testing\n');
         });
         bdd.it('SQL connection: should succeed immediately', function() {
             var sql = new SQL({
@@ -25,9 +25,12 @@ define([
                     database: 'utswitch_bakcellgpp'
                 }
             });
+            sql.init();
             sql.start();
+            sql.stop();
         });
         bdd.it('SQL query(process=return): should succeed', function() {
+            var deferred = this.async(10000);
             var sql = new SQL({
                 id: 'sql',
                 logLevel: 'trace',
@@ -38,6 +41,7 @@ define([
                     database: 'utswitch_bakcellgpp'
                 }
             });
+            sql.init();
             sql.start();
             sql.exec({
                 $$: {
@@ -47,7 +51,8 @@ define([
                 process: 'return',
                 query: 'select * from Banks',
                 a: 1, b: 2, c: 'martin', d: 3.14, e: "function() {console.log('sql port rockz!!!')}"
-            }, function(err, result) {
+            }, deferred.callback(function(err, result) {
+                sql.stop();
                 if (err)
                     throw err;
                 assert.deepEqual(Object.keys(result), [
@@ -67,9 +72,10 @@ define([
                     'Description',
                     'swiftcode'
                 ]);
-            });
+            }));
         });
         bdd.it('SQL query(process=json): should succeed', function() {
+            var deferred = this.async(10000);
             var sql = new SQL({
                 id: 'sql',
                 logLevel: 'trace',
@@ -80,6 +86,7 @@ define([
                     database: 'utswitch_bakcellgpp'
                 }
             });
+            sql.init();
             sql.start();
             sql.exec({
                 $$: {
@@ -89,11 +96,12 @@ define([
                 process: 'json',
                 query: 'select * from Banks',
                 a: 1, b: 2, c: 'martin', d: 3.14, e: "function() {console.log('sql port rockz!!!')}"
-            }, function(err, result) {
+            }, deferred.callback(function(err, result) {
+                sql.stop();
                 if (err)
                     throw err;
                 expect(typeof result.dataSet).to.be.equal('object');
-            });
+            }));
         });
     });
 });

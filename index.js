@@ -71,6 +71,12 @@ SqlPort.prototype.start = function start() {
     this.pipeExec(this.exec.bind(this));
 };
 
+SqlPort.prototype.stop = function stop() {
+    this.queue.push();
+    this.connection.close();
+    Port.prototype.stop.apply(this, arguments);
+};
+
 /* istanbul ignore next */
 function _mergeResultAndResponse(response, fieldName, fieldValue) {
     var names = fieldName.split('.');
