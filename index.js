@@ -54,7 +54,7 @@ SqlPort.prototype.init = function init() {
  */
 SqlPort.prototype.start = function start() {
     Port.prototype.start.apply(this, arguments);
-    this.bus.importMethods(this.config, this.config.imports);
+    this.bus && this.bus.importMethods(this.config, this.config.imports);
 
     this.connection = new mssql.Connection(this.config.db, function(err) {
         /* istanbul ignore if */
