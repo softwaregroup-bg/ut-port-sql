@@ -155,12 +155,13 @@ SqlPort.prototype.exec = function(message, callback) {
         //todo record execution time
 
         if (err) {
+            message.$$ = {};
             message.$$.mtid = 'error';
             message.$$.errorCode = '500';
             message.$$.errorMessage = err.message;
             callback(message);
         } else {
-            var response = {};
+            var response = {$$: {}};
             Object.keys(message).forEach(function(value) {
                 response[value] = message[value];
             });
@@ -318,20 +319,19 @@ SqlPort.prototype.schemaUpdate = function(implementation) {
 
 SqlPort.prototype.execTemplate = function(template, params) {
     var self = this;
-    return template.render(params)
-        .then(function(query) {
-            return when.promise(function(resolve, reject) {
-                self.exec({query:query, process: 'json'}, function(err, result) {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(result && result.dataSet);
-                    }
-
-                });
+    return template.render(params).then(function(query) {
+        return when.promise(function (resolve, reject) {
+            self.exec({query: query, process: 'json'}, function (err, result) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(result && result.dataSet);
+                }
             });
-        }
-    );
+        });
+    }).catch(function(error) {
+        return error;
+    })
 };
 
 SqlPort.prototype.execTemplateRow = function(template, params) {
