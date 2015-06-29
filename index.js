@@ -329,9 +329,7 @@ SqlPort.prototype.execTemplate = function(template, params) {
                 }
             });
         });
-    }).catch(function(error) {
-        return error;
-    })
+    });
 };
 
 SqlPort.prototype.execTemplateRow = function(template, params) {
