@@ -155,7 +155,7 @@ SqlPort.prototype.exec = function(message, callback) {
         //todo record execution time
 
         if (err) {
-            message.$$ = {};
+            message.$$ = message.$$ || {};
             message.$$.mtid = 'error';
             message.$$.errorCode = '500';
             message.$$.errorMessage = err.message;
