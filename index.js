@@ -166,7 +166,7 @@ SqlPort.prototype.exec = function(message, callback) {
                 response[value] = message[value];
             });
             response.$$.mtid = 'response';
-            if (result.length) {
+            if (result && result.length) {
                 if (message.process) {
                     switch (message.process) {
                         case 'return':
