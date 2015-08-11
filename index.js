@@ -333,8 +333,16 @@ SqlPort.prototype.execTemplate = function(template, params) {
 };
 
 SqlPort.prototype.execTemplateRow = function(template, params) {
-    return this.execTemplate(template, params).then(function(result) {
-        return result && result[0];
+    return this.execTemplate(template, params).then(function(data) {
+        var result = (data && data[0]) || {};
+        if (result._errorCode && result._errorCode != 0) { // 0 == '0'
+            throw({
+                code: result._errorCode,
+                message: result._errorMessage
+            });
+        } else {
+            return result;
+        }
     });
 };
 
