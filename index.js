@@ -335,7 +335,7 @@ SqlPort.prototype.execTemplate = function(template, params) {
 SqlPort.prototype.execTemplateRow = function(template, params) {
     return this.execTemplate(template, params).then(function(data) {
         var result = (data && data[0]) || {};
-        if (parseInt(result._errorCode) !== 0) {
+        if (result._errorCode && parseInt(result._errorCode) !== 0) {
             // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
             throw({
                 code: result._errorCode || -1,
