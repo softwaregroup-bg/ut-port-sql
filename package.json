@@ -1,22 +1,24 @@
 {
-    "name": "ut-port-sql",
-    "version": "5.0.0",
-    "main": "./index",
-    "dependencies": {
-        "mssql": "~1.3.0"
-    },
-    "devDependencies": {
-        "intern": "~2.2.2"
-    },
-    "scripts": {
-        "test": "intern-client config=tests/intern"
-    },
-    "publishConfig": {
-        "registry": "http://npm.softwaregroup-bg.com:5001"
-    },
-    "description": "UT port sql module",
-    "repository": {
-        "type": "git",
-        "url": "git@git.softwaregroup-bg.com:ut5/ut-port-sql.git"
-    }
+  "name": "ut-port-sql",
+  "version": "5.0.0",
+  "main": "./index",
+  "dependencies": {
+    "mssql": "~1.3.0",
+    "ut-bus": "^5.0.0",
+    "when": "~3.7.2"
+  },
+  "devDependencies": {
+    "intern": "~2.2.2"
+  },
+  "scripts": {
+    "test": "intern-client config=tests/intern"
+  },
+  "publishConfig": {
+    "registry": "http://npm.softwaregroup-bg.com:5001"
+  },
+  "description": "UT port sql module",
+  "repository": {
+    "type": "git",
+    "url": "git@git.softwaregroup-bg.com:ut5/ut-port-sql.git"
+  }
 }
