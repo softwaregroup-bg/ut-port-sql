@@ -101,8 +101,9 @@ SqlPort.prototype.exec = function(message) {
                             setPathProperty(message, value, result[0][value]);
                         });
                         resolve(message);
-                    } else if (message.process === 'json') { //todo
-                        reject(errors.notImplemented(message.process));
+                    } else if (message.process === 'json') {
+                        message.dataSet = result;
+                        resolve(message);
                     } else if (message.process === 'xls') { //todo
                         reject(errors.notImplemented(message.process));
                     } else if (message.process === 'xml') { //todo
