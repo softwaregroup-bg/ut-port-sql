@@ -205,15 +205,10 @@ SqlPort.prototype.schemaUpdate = function() {
 SqlPort.prototype.execTemplate = function(template, params) {
     var self = this;
     return template.render(params).then(function(query) {
-        return when.promise(function(resolve, reject) {
-            self.exec({query: query, process: 'json'}, function(err, result) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(result && result.dataSet);
-                }
-            });
-        });
+        return self.exec({query:query, process: 'json'})
+            .then(function(result) {
+                    return result && result.dataSet;
+                });
     });
 };
 
