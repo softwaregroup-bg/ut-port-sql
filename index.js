@@ -19,6 +19,11 @@ function SqlPort() {
 
 util.inherits(SqlPort, Port);
 
+SqlPort.prototype.init = function init() {
+    Port.prototype.init.apply(this, arguments);
+    this.latency = this.counter && this.counter('average', 'lt', 'Latency');
+};
+
 /**
  * @function start
  * @description Extends the default Port.start() method and initializes the sql connection
