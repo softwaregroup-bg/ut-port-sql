@@ -18,7 +18,7 @@
   "publishConfig": {
     "registry": "http://npm.softwaregroup-bg.com:5001"
   },
-  "description": "UT port sql module",
+  "description": "UT port sql module.",
   "repository": {
     "type": "git",
     "url": "git@git.softwaregroup-bg.com:ut5/ut-port-sql.git"
