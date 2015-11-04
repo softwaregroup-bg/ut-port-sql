@@ -73,7 +73,7 @@ function setPathProperty(object, fieldName, fieldValue) {
  */
 SqlPort.prototype.exec = function(message) {
     var $meta = (arguments.length && arguments[arguments.length - 1]);
-    var methodName = ($meta && $meta.opcode);
+    var methodName = ($meta && $meta.method);
     if (methodName) {
         var method = this.config[methodName];
         if (method instanceof Function) {
