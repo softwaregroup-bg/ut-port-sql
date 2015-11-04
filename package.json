@@ -1,15 +1,15 @@
 {
   "name": "ut-port-sql",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "main": "./index",
   "dependencies": {
     "mssql": "~1.3.0",
     "when": "~3.7.2"
   },
   "devDependencies": {
-     "intern": "~2.2.2"
+    "intern": "~2.2.2"
   },
-  "peerDependencies":{
+  "peerDependencies": {
     "ut-bus": "~5.2.0"
   },
   "scripts": {
