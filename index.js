@@ -13,7 +13,7 @@ function SqlPort() {
         type: 'sql'
     };
     this.connection = null;
-    this.retryInterval = null;
+    this.retryTimeout = null;
     return this;
 }
 
@@ -24,29 +24,28 @@ SqlPort.prototype.init = function init() {
     this.latency = this.counter && this.counter('average', 'lt', 'Latency');
 };
 
-/**
- * @function start
- * @description Extends the default Port.start() method and initializes the sql connection
- */
+SqlPort.prototype.connect = function connect() {
+    this.connection && this.connection.close();
+    this.connection = new mssql.Connection(this.config.db);
+    this.connection.connect()
+        .then(this.loadSchema.bind(this))
+        .then(this.updateSchema.bind(this))
+        .then(this.linkSP.bind(this))
+        .catch(function(err) {
+            this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
+            this.log.error && this.log.error(err);
+        }.bind(this));
+};
+
 SqlPort.prototype.start = function start() {
     Port.prototype.start.apply(this, Array.prototype.slice.call(arguments));
     this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
-
-    this.connection = new mssql.Connection(this.config.db, function(err) {
-        if (err) {
-            this.retryInterval = setInterval(function() {
-                this.connection = new mssql.Connection(this.config.db, function(err) {
-                    if (!err) {
-                        this.stopRetryInterval();
-                    }
-                }.bind(this));
-            }.bind(this), 10000);
-        }
-    }.bind(this));
+    this.connect();
     this.pipeExec(this.exec.bind(this), this.config.concurrency);
 };
 
 SqlPort.prototype.stop = function stop() {
+    clearTimeout(this.retryTimeout);
     this.queue.push();
     this.connection.close();
     Port.prototype.stop.apply(this, Array.prototype.slice.call(arguments));
@@ -66,6 +65,12 @@ function setPathProperty(object, fieldName, fieldValue) {
     object[fieldName] = fieldValue;
 }
 
+SqlPort.prototype.checkConnection = function() {
+    if (!this.connection) {
+        throw errors.noConnection();
+    }
+};
+
 /**
  * @function exec
  * @description Handles SQL query execution
@@ -81,16 +86,14 @@ SqlPort.prototype.exec = function(message) {
         }
     }
 
-    if (!this.connection) {
-        return when.reject(errors.noConnection());
-    }
+    this.checkConnection();
 
     if (this.config.validate instanceof Function) {
         this.config.validate(message);
     }
 
     //var start = +new Date();
-    var request = new mssql.Request(this.connection);
+    var request = this.getRequest();
     return when.promise(function(resolve, reject) {
         request.query(message.query, function(err, result) {
             //var end = +new Date();
@@ -128,92 +131,71 @@ SqlPort.prototype.exec = function(message) {
     });
 };
 
-/**
- * @function stopRetryInterval
- * @description Stops retrying to connect to the sql database
- */
-SqlPort.prototype.stopRetryInterval = function() {
-    clearInterval(this.retryInterval);
-};
+SqlPort.prototype.updateSchema = function(schema) {
+    this.checkConnection();
 
-/**
- * @function schemaUpdate
- * @description Executes schemaUpdate for a specific implementation
- */
-SqlPort.prototype.schemaUpdate = function() {
-    if (!this.connection) {
-        return when.reject(errors.noConnection());
+    function getAlterStatement(statement) {
+        return statement.trim().replace(/^CREATE /i, 'ALTER ');
     }
 
-    var schemaPath = this.config.schema;
-    var files = fs.readdirSync(schemaPath);
+    function getCreateStatement(statement) {
+        return statement.trim().replace(/^ALTER /i, 'CREATE ');
+    }
+
     var self = this;
-
-    //todo use execTemplate
-    var sql = '';
-    sql += 'SELECT [type]';
-    sql += '     , o.Name AS Name';
-    sql += '     , c.text AS SQLScript';
-    sql += ' FROM';
-    sql += '  dbo.syscomments c, dbo.sysobjects o';
-    sql += ' WHERE';
-    sql += '  o.id = c.id';
-    sql += '  AND xType IN (\'V\', \'P\', \'FN\',\'F\',\'IF\',\'SN\',\'TF\',\'TR\',\'U\')';
-    sql += '  --AND user_name(objectproperty(o.ID, \'OwnerId\')) = \'switch\'';
-    sql += '  AND objectproperty(o.ID, \'IsMSShipped\') = 0';
-    sql += ' ORDER BY';
-    sql += '  o.crdate';
-    sql += ', c.id';
-    sql += ', c.colid';
-
-    var request = new mssql.Request(this.connection);
-    request.query(sql, function(err, result) {
-        if (err) {
-            return when.reject(errors.sql(err));
-        }
-
-        if (result.length) {
-            var lookupSql = [];
-            for (var i = 0; i < result.length; i += 1) {
-                if (i === 0 || (result[i].Name !== result[i - 1].Name)) {
-                    lookupSql.push(result[i]);
-                } else {
-                    lookupSql[lookupSql.length - 1].SQLScript += result[i].SQLScript;
-                }
-            }
-            var queries = [];
-            files = files.sort();
-            files.forEach(function(file) {
-                var filename = file.replace('.sql', '').split('$').pop();
-                var fileBody = fs.readFileSync(schemaPath + '/' + file).toString();
-                lookupSql.forEach(function(lSql, id) {
-                    if (filename === lSql.Name) {
-                        if (fileBody.trim() !== lSql.SQLScript.trim()) {
-                            queries.push(fileBody);
+    var schemaPath = this.config.schema;
+    if (!schemaPath) {
+        return schema;
+    }
+    return when.promise(function(resolve, reject) {
+        fs.readdir(schemaPath, function(err, files) {
+            if (err) {
+                reject(err);
+            } else {
+                var queries = [];
+                files = files.sort();
+                files.forEach(function(file) {
+                    var objectName = file.toLowerCase().replace(/\.sql/, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                    var fileName = schemaPath + '/' + file;
+                    var fileContent = fs.readFileSync(fileName).toString();
+                    var createStatement = getCreateStatement(fileContent);
+                    if (!schema.source[objectName]) {
+                        queries.push({fileName: fileName, objectName: objectName, content: createStatement});
+                    } else {
+                        if (createStatement !== schema.source[objectName]) {
+                            queries.push({fileName: fileName, objectName: objectName, content: getAlterStatement(fileContent)});
                         }
-                    } else if (id === lookupSql.length - 1) {
-                        queries.push(fileBody);
                     }
                 });
-            });
-            queries.forEach(function(query) { //todo execute queries in sequence, not in parallel and return promise
-                request.query(query.toString(), function(err) {
-                    err && self.log && self.log.trace && self.log.error(err);
-                });
-            });
-        } else {
-            return when.reject(errors.sql(err));
-        }
+
+                var request = self.getRequest();
+                var currentFileName = '';
+                var updated = [];
+                when.reduce(queries, function(result, query) {
+                        updated.push(query.objectName);
+                        currentFileName = query.fileName;
+                        return request.batch(query.content);
+                    }, [])
+                    .then(function() {
+                        updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
+                        resolve(self.loadSchema());
+                    })
+                    .catch(function(error) {
+                        error.fileName = currentFileName;
+                        reject(error);
+                    });
+            }
+        });
     });
 };
 
 SqlPort.prototype.execTemplate = function(template, params) {
     var self = this;
     return template.render(params).then(function(query) {
-        return self.exec({query:query, process: 'json'})
+        return self.exec({query: query, process: 'json'})
             .then(function(result) {
-                    return result && result.dataSet;
-                });
+                return result && result.dataSet;
+            });
     });
 };
 
@@ -244,6 +226,95 @@ SqlPort.prototype.execTemplateRows = function(template, params) {
         } else {
             return result;
         }
+    });
+};
+
+SqlPort.prototype.getRequest = function() {
+    return new mssql.Request(this.connection);
+};
+
+SqlPort.prototype.callSP = function(name, params) {
+    var self = this;
+    var outParams = [];
+
+    params.forEach(function(param) {
+        param.out && outParams.push(param.name);
+    });
+
+    function sqlType(def) {
+        var type = mssql[def.type.toUpperCase()];
+        if (def.size) {
+            if (Array.isArray(def.size)) {
+                type = type(def.size[0], def.size[1]);
+            } else {
+                type = (def.size === 'max') ? type(mssql.MAX) : type(def.size);
+            }
+        }
+        return type;
+    }
+
+    return function callLinkedSP(msg) {
+        var request = self.getRequest();
+        request.multiple = true;
+        params.forEach(function(param) {
+            param.out ? request.output(param.name, sqlType(param.def), msg[param.name]) : request.input(param.name, sqlType(param.def), msg[param.name]);
+        });
+        return request.execute(name).then(function(result) {
+            if (outParams.length) {
+                result.push([outParams.reduce(function(prev, curr) {
+                    prev[curr] = request.parameters[curr].value;
+                    return prev;
+                }, {})]);
+            }
+            return result;
+        });
+    };
+};
+
+SqlPort.prototype.linkSP = function(schema) {
+    if (!this.config.linkSP) {
+        return schema;
+    }
+    schema.bindings.forEach(function(binding) {
+        if (!this.config[binding.name]) {
+            this.config[binding.name] = this.callSP(binding.name, binding.params);
+        }
+    }.bind(this));
+    return schema;
+};
+
+SqlPort.prototype.loadSchema = function() {
+    var self = this;
+    this.checkConnection();
+    var request = this.getRequest();
+    var sql = `SELECT
+            RTRIM([type]) [type],
+            SCHEMA_NAME(o.schema_id) [namespace],
+            o.Name AS [name],
+            SCHEMA_NAME(o.schema_id) + '.' + o.Name AS [full],
+            c.text AS [source]
+        FROM
+            dbo.syscomments c,
+            sys.objects o
+        WHERE
+            o.object_id = c.id AND
+            o.type IN ('V', 'P', 'FN','F','IF','SN','TF','TR','U') AND
+            user_name(objectproperty(o.object_id, 'OwnerId')) = '${this.config.db.user}' AND
+            objectproperty(o.object_id, 'IsMSShipped') = 0
+        ORDER BY
+            o.create_date, c.id, c.colid`;
+    return request.query(sql).then(function(result) {
+        return result.reduce(function(prev, cur) {
+            var type = prev[cur.type] || (prev[cur.type] = {});
+            type[cur.full] = (type[cur.full] || '') + cur.source;
+            prev.source[cur.full.toLowerCase()] = (prev.source[cur.full] || '') + cur.source;
+            if (self.config.linkSP && cur.type === 'P') {
+                var parserSP = require('./parsers/mssqlSP');
+                var procedure = parserSP.parse(cur.source);
+                procedure && (procedure.type === 'procedure') && (prev.bindings.push(procedure));
+            }
+            return prev;
+        }, {source: {}, bindings: []});
     });
 };
 
