@@ -104,28 +104,28 @@ SqlPort.prototype.exec = function(message) {
                 reject(errors.sql(err));
             } else {
                 $meta.mtid = 'response';
-                if (result && result.length) {
-                    if (message.process === 'return') {
+                if (message.process === 'return') {
+                    if (result && result.length) {
                         Object.keys(result[0]).forEach(function(value) {
                             setPathProperty(message, value, result[0][value]);
                         });
-                        resolve(message);
-                    } else if (message.process === 'json') {
-                        message.dataSet = result;
-                        resolve(message);
-                    } else if (message.process === 'xls') { //todo
-                        reject(errors.notImplemented(message.process));
-                    } else if (message.process === 'xml') { //todo
-                        reject(errors.notImplemented(message.process));
-                    } else if (message.process === 'csv') { //todo
-                        reject(errors.notImplemented(message.process));
-                    } else if (message.process === 'processRows') { //todo
-                        reject(errors.notImplemented(message.process));
-                    } else if (message.process === 'queueRows') { //todo
-                        reject(errors.notImplemented(message.process));
-                    } else {
-                        reject(errors.missingProcess(message.process));
                     }
+                    resolve(message);
+                } else if (message.process === 'json') {
+                    message.dataSet = result;
+                    resolve(message);
+                } else if (message.process === 'xls') { //todo
+                    reject(errors.notImplemented(message.process));
+                } else if (message.process === 'xml') { //todo
+                    reject(errors.notImplemented(message.process));
+                } else if (message.process === 'csv') { //todo
+                    reject(errors.notImplemented(message.process));
+                } else if (message.process === 'processRows') { //todo
+                    reject(errors.notImplemented(message.process));
+                } else if (message.process === 'queueRows') { //todo
+                    reject(errors.notImplemented(message.process));
+                } else {
+                    reject(errors.missingProcess(message.process));
                 }
             }
         });
