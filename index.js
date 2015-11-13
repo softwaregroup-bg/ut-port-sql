@@ -27,7 +27,7 @@ SqlPort.prototype.init = function init() {
 SqlPort.prototype.connect = function connect() {
     this.connection && this.connection.close();
     this.connection = new mssql.Connection(this.config.db);
-    this.connection.connect()
+    return this.connection.connect()
         .then(this.loadSchema.bind(this))
         .then(this.updateSchema.bind(this))
         .then(this.linkSP.bind(this))
