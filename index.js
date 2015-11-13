@@ -40,10 +40,11 @@ SqlPort.prototype.connect = function connect() {
 SqlPort.prototype.start = function start() {
     Port.prototype.start.apply(this, Array.prototype.slice.call(arguments));
     this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
-    this.connect();
-    this.pipeExec(this.exec.bind(this), this.config.concurrency);
+    return this.connect().then(function(result) {
+        this.pipeExec(this.exec.bind(this), this.config.concurrency);
+        return result;
+    }.bind(this));
 };
-
 SqlPort.prototype.stop = function stop() {
     clearTimeout(this.retryTimeout);
     this.queue.push();
