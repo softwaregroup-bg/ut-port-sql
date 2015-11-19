@@ -1,10 +1,9 @@
 # **SQL Port:** `ut-port-sql` #
 The purpose of this port is to work with SQL Server database. To be responsible for creating connections to the database and for query execution.
 
-### **Technological dependencies** ###
+### **Dependencies** ###
 
  - `mssql` - [Github Official Page](https://github.com/patriksimek/node-mssql)
- - `ut-bus/port` - TODO add link to documentation
 
 In the UT5 implementations the SQL port is initialized in the following manner:
 
@@ -72,4 +71,154 @@ From the example above we see that we load the SQL from a template directory wit
 
     /ports/sql/templates/utNet_CredentialsLogin.sql
 
-The SQL port has a special method `schemaUpdate`, which updates the stored procedures for a particular implementation. It matches procedures from the file systems with those in the database and updates if differences are detected.
+
+### **Schema sync** ###
+
+The SQL port has a special method `updateSchema`, which updates all database object. It matches database objects to files in the file system and updates the database objects if differences are detected.
+The file names in the file system are supposed to follow the following naming: `xxx$schemaName.objectName.sql` , where xxx are numbers, that control the order of execution. The below convention is recommended. 
+Note the **camelCase** naming convention. File names, including extension are **case sensitive**.
+
+ - `150$shemaName.sql` for **schema** creation:
+
+   ```sql
+   CREATE SCHEMA [schemaName]
+   ```
+
+ - `250$schemaName.synonymName.sql` for **single synonym per file** creation. Following the below exact query format (i.e. using the [ and ] brackets and no extra spaces) and filename matches the `xxx$shema.object` pattern. Any deviation from the below query format will lead to pointless recreation of synonyms: 
+
+   ```sql
+   DROP SYNONYM [schemaName].[synonymName] CREATE SYNONYM [schemaName].[synonymName] FOR [foreignDatabaseName].[foreignSchemaName].[foreignObjectName]
+   ```
+
+ - `250$schemaName.scriptName.sql` for **multiple synonyms per file** creation. Filename should not match any object name in the database. The recommended queries in this case are:
+
+   ```sql
+   IF NOT EXISTS (
+     SELECT 
+       * 
+     FROM 
+       sys.synonyms sy 
+     JOIN 
+       sys.schemas s ON s.schema_id=sy.schema_id AND s.name='schemaName' 
+     WHERE 
+       sy.base_objectName='[foreignDatabaseName].[foreignSchemaName].[foreignObjectName]' AND
+       sy.type='SN' and sy.name='synonymName'
+   )
+   BEGIN
+     IF EXISTS (
+     SELECT 
+       * 
+     FROM 
+       sys.synonyms sy 
+     JOIN 
+       sys.schemas s ON s.schema_id=sy.schema_id AND s.name='schemaName' 
+     WHERE 
+       sy.type='SN' and sy.name='synonymName'
+     ) DROP SYNONYM [schemaName].[synonymName]
+     CREATE SYNONYM [schemaName].[synonymName] FOR [foreignDatabaseName].[foreignSchemaName].[foreignObjectName]
+   END
+   ```
+
+ - `350$schemaName.tableName.sql` for **tables without FK**. File content should start with CREATE or ALTER keyword. Note the key field and primary key naming conventions.
+ The script will be executed as is only when the table does not exist.
+
+   ```sql
+   CREATE TABLE [schemaName].[tableName](
+     tableNameId INT,
+     ... -- other column definitions
+     CONSTRAINT [pkTableName] PRIMARY KEY CLUSTERED (tableNameId ASC)
+   )
+   ```
+
+ - `360$schemaName.tableName.sql` for **tables with 1 FK**. File content should start with CREATE or ALTER keyword. Note the foreign field and foreign key naming conventions
+and the use of underscore to separate the foreign table name. The script will be executed as is only when the table does not exist.
+
+   ```sql
+   CREATE TABLE [schemaName].[tableName](
+     tableNameId INT,
+     foreignTableNameId INT,
+     ... -- other column definitions
+     CONSTRAINT [pkTableName] PRIMARY KEY CLUSTERED (tableNameId ASC),
+     CONSTRAINT [fkTableName_foreignTableName] FOREIGN KEY([foreignTableNameId]) REFERENCES [schemaName].[foreignTableName] ([foreignTableNameId])
+   )
+   ```
+
+ - `370$schemaName.tableName.sql` for **tables with more than 1 FK**. File content should start with CREATE or ALTER keyword. Note the foreign field and foreign key naming conventions
+and the use of underscore to separate the foreign table name. The script will be executed as is only when the table does not exist.
+
+   ```sql
+   CREATE TABLE [schemaName].[tableName](
+     xxxxForeignTableNameId INT,
+     yyyyForeignTableNameId INT,
+     ... -- other column definitions
+     CONSTRAINT [pkTableName] PRIMARY KEY CLUSTERED (xxxxForeignTableNameId ASC,yyyyForeignTableNameId ASC),
+     CONSTRAINT [fkTableName_xxxxForeignTableName] FOREIGN KEY([xxxForeignTableNameId]) REFERENCES [schemaName].[foreignTableName] ([foreignTableNameId]),
+     CONSTRAINT [fkTableName_yyyyForeignTableName] FOREIGN KEY([yyyForeignTableNameId]) REFERENCES [schemaName].[foreignTableName] ([foreignTableNameId])
+   )
+   ```
+   
+ - `380$schemaName.alterTable.sql` for **altering tables** to add missing columns or modify existing columns that do not involve table recreation.
+ This script will be executed on each reconnection to the database.
+ 
+   ```sql
+     IF NOT EXISTS(SELECT * FROM sys.columns WHERE Name = N'fieldName' and Object_ID = Object_ID(N'tableName'))
+     begin
+       ALTER TABLE tableNAme ADD fieldName INT
+     end   
+   ```   
+
+ - `450$schemaName.functionName.sql` for **functions**. File content should start with CREATE or ALTER keyword.
+
+   ```sql
+   CREATE FUNCTION [schemaName].[functionName](
+     @parameterName1 INT, 
+     @parameterName2 INT
+   ) 
+   RETURNS type 
+   AS
+   BEGIN
+     ...
+   END
+   ```
+
+ - `550$schemaName.tableNameInsert.sql` for INSERT **triggers**. File content should start with CREATE or ALTER keyword. Similar pattern can be used other triggers. 
+
+   ```sql
+   CREATE TRIGGER [schemaName].[tableNameInsert] 
+   ON [schemaName].[tableName] 
+   FOR INSERT
+   AS
+     ...
+   ```
+
+ - `650$schemaName.viewName.sql` for **views**. File content should start with CREATE or ALTER keyword. 
+
+   ```sql
+   CREATE VIEW [schemaName].[viewName] 
+   AS
+     ...
+   ```
+
+ - `750$schemaName.procedureName.sql` for **stored procedures**. File content should start with CREATE or ALTER keyword. 
+Note the mandatory camelCase naming convention for procedure, parameter and result column names. 
+
+   ```sql
+   CREATE PROCEDURE [schemaName].[procedureName]
+       @paramName1 INT,
+       @paramName2 INT,
+       @paramName3 INT OUT,
+   AS
+     ...
+     SELECT x columnName1, y columnName2, ...
+   ```
+
+ - `850$schemaName.data.sql` for **loading system default data**. Used for any scripts that will insert missing data. The following patterns are recommended:
+
+   ```sql
+   IF NOT EXISTS (SELECT * FROM tableName WHERE tableNameId = '...')
+   BEGIN
+     SET IDENTITY_INSERT tableName ON --in case of presence of identity columns
+     INSERT INTO tableName(...) VALUES  (...)
+     SET IDENTITY_INSERT tableName OFF --in case of presence of identity columns
+   END
+   ```

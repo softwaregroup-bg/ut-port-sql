@@ -160,10 +160,10 @@ SqlPort.prototype.updateSchema = function(schema) {
                     var fileName = schemaPath + '/' + file;
                     var fileContent = fs.readFileSync(fileName).toString();
                     var createStatement = getCreateStatement(fileContent);
-                    if (!schema.source[objectName]) {
+                    if (schema.source[objectName] === undefined) {
                         queries.push({fileName: fileName, objectName: objectName, content: createStatement});
                     } else {
-                        if (createStatement !== schema.source[objectName]) {
+                        if (schema.source[objectName].length && createStatement !== schema.source[objectName]) {
                             queries.push({fileName: fileName, objectName: objectName, content: getAlterStatement(fileContent)});
                         }
                     }
@@ -289,26 +289,32 @@ SqlPort.prototype.loadSchema = function() {
     this.checkConnection();
     var request = this.getRequest();
     var sql = `SELECT
-            RTRIM([type]) [type],
+            RTRIM(o.[type]) [type],
             SCHEMA_NAME(o.schema_id) [namespace],
             o.Name AS [name],
             SCHEMA_NAME(o.schema_id) + '.' + o.Name AS [full],
-            c.text AS [source]
+            CASE o.[type]
+              WHEN 'SN' THEN 'DROP SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name +
+                             '] CREATE SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name + '] FOR ' +  s.base_object_name
+              ELSE c.text
+            END AS [source]
+
         FROM
-            dbo.syscomments c,
             sys.objects o
+        LEFT JOIN
+            dbo.syscomments c on o.object_id = c.id
+        LEFT JOIN
+            sys.synonyms s on s.object_id = o.object_id
         WHERE
-            o.object_id = c.id AND
             o.type IN ('V', 'P', 'FN','F','IF','SN','TF','TR','U') AND
-            user_name(objectproperty(o.object_id, 'OwnerId')) = '${this.config.db.user}' AND
+            user_name(objectproperty(o.object_id, 'OwnerId')) = USER_NAME() AND
             objectproperty(o.object_id, 'IsMSShipped') = 0
         ORDER BY
             o.create_date, c.id, c.colid`;
     return request.query(sql).then(function(result) {
         return result.reduce(function(prev, cur) {
-            var type = prev[cur.type] || (prev[cur.type] = {});
-            type[cur.full] = (type[cur.full] || '') + cur.source;
-            prev.source[cur.full.toLowerCase()] = (prev.source[cur.full] || '') + cur.source;
+            prev.source[cur.namespace] = '';
+            prev.source[cur.full.toLowerCase()] = (prev.source[cur.full.toLowerCase()] || '') + (cur.source || '');
             if (self.config.linkSP && cur.type === 'P') {
                 var parserSP = require('./parsers/mssqlSP');
                 var procedure = parserSP.parse(cur.source);
