@@ -38,13 +38,15 @@ SqlPort.prototype.connect = function connect() {
 };
 
 SqlPort.prototype.start = function start() {
-    Port.prototype.start.apply(this, Array.prototype.slice.call(arguments));
     this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
-    return this.connect().then(function(result) {
-        this.pipeExec(this.exec.bind(this), this.config.concurrency);
-        return result;
-    }.bind(this));
+    return Port.prototype.start.apply(this, Array.prototype.slice.call(arguments))
+        .then(this.connect.bind(this))
+        .then(function(result) {
+            this.pipeExec(this.exec.bind(this), this.config.concurrency);
+            return result;
+        }.bind(this));
 };
+
 SqlPort.prototype.stop = function stop() {
     clearTimeout(this.retryTimeout);
     this.queue.push();
@@ -144,50 +146,58 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     var self = this;
-    var schemaPath = this.config.schema;
-    if (!schemaPath) {
+    var schemas = Array.isArray(this.config.schema) ? this.config.schema : [{path:this.config.schema}];
+    if (!schemas) {
         return schema;
     }
-    return when.promise(function(resolve, reject) {
-        fs.readdir(schemaPath, function(err, files) {
-            if (err) {
-                reject(err);
-            } else {
-                var queries = [];
-                files = files.sort();
-                files.forEach(function(file) {
-                    var objectName = file.toLowerCase().replace(/\.sql/, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
-                    var fileName = schemaPath + '/' + file;
-                    var fileContent = fs.readFileSync(fileName).toString();
-                    var createStatement = getCreateStatement(fileContent);
-                    if (schema.source[objectName] === undefined) {
-                        queries.push({fileName: fileName, objectName: objectName, content: createStatement});
+
+    return when.reduce(schemas, function(prev, schemaConfig) {// visit each schema folder
+            return when.promise(function(resolve, reject) {
+                fs.readdir(schemaConfig.path, function(err, files) {
+                    if (err) {
+                        reject(err);
                     } else {
-                        if (schema.source[objectName].length && createStatement !== schema.source[objectName]) {
-                            queries.push({fileName: fileName, objectName: objectName, content: getAlterStatement(fileContent)});
-                        }
+                        var queries = [];
+                        files = files.sort();
+                        files.forEach(function(file) {
+                            var objectName = file.replace(/\.sql/i, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                            var objectId = objectName.toLowerCase();
+                            schemaConfig.linkSP && prev.push(objectId);
+                            var fileName = schemaConfig.path + '/' + file;
+                            var fileContent = fs.readFileSync(fileName).toString();
+                            var createStatement = getCreateStatement(fileContent);
+                            if (schema.source[objectId] === undefined) {
+                                queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: createStatement});
+                            } else {
+                                if (schema.source[objectId].length && (createStatement !== schema.source[objectId])) {
+                                    queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: getAlterStatement(fileContent)});
+                                }
+                            }
+                        });
+
+                        var request = self.getRequest();
+                        var currentFileName = '';
+                        var updated = [];
+                        when.reduce(queries, function(result, query) {
+                                updated.push(query.objectName);
+                                currentFileName = query.fileName;
+                                return request.batch(query.content);
+                            }, [])
+                            .then(function() {
+                                updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
+                                resolve(prev);
+                            })
+                            .catch(function(error) {
+                                error.fileName = currentFileName;
+                                reject(error);
+                            });
                     }
                 });
-
-                var request = self.getRequest();
-                var currentFileName = '';
-                var updated = [];
-                when.reduce(queries, function(result, query) {
-                        updated.push(query.objectName);
-                        currentFileName = query.fileName;
-                        return request.batch(query.content);
-                    }, [])
-                    .then(function() {
-                        updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
-                        resolve(self.loadSchema());
-                    })
-                    .catch(function(error) {
-                        error.fileName = currentFileName;
-                        reject(error);
-                    });
-            }
+            }, []);
+        },[])
+        .then(function(objectList) {
+            return self.loadSchema(objectList);
         });
-    });
 };
 
 SqlPort.prototype.execTemplate = function(template, params) {
@@ -273,22 +283,30 @@ SqlPort.prototype.callSP = function(name, params) {
 };
 
 SqlPort.prototype.linkSP = function(schema) {
-    if (!this.config.linkSP) {
-        return schema;
+    if (schema.parseList.length) {
+        var parserSP = require('./parsers/mssqlSP');
+        schema.parseList.forEach(function(source) {
+            var binding = parserSP.parse(source);
+            if (binding && binding.type === 'procedure' && !this.config[binding.name]) {
+                this.config[binding.name] = this.callSP(binding.name, binding.params);
+            }
+        }.bind(this));
     }
-    schema.bindings.forEach(function(binding) {
-        if (!this.config[binding.name]) {
-            this.config[binding.name] = this.callSP(binding.name, binding.params);
-        }
-    }.bind(this));
     return schema;
 };
 
-SqlPort.prototype.loadSchema = function() {
+SqlPort.prototype.loadSchema = function(objectList) {
     var self = this;
+    if ((Array.isArray(this.config.schema) && !this.config.schema.length) || !this.config.schema) {
+        return {source: {}, parseList: []};
+    }
+
     this.checkConnection();
     var request = this.getRequest();
     var sql = `SELECT
+            o.create_date,
+            c.id,
+            c.colid,
             RTRIM(o.[type]) [type],
             SCHEMA_NAME(o.schema_id) [namespace],
             o.Name AS [name],
@@ -309,19 +327,26 @@ SqlPort.prototype.loadSchema = function() {
             o.type IN ('V', 'P', 'FN','F','IF','SN','TF','TR','U') AND
             user_name(objectproperty(o.object_id, 'OwnerId')) = USER_NAME() AND
             objectproperty(o.object_id, 'IsMSShipped') = 0
+        UNION ALL
+        SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
         ORDER BY
-            o.create_date, c.id, c.colid`;
+            1, 2, 3`;
     return request.query(sql).then(function(result) {
         return result.reduce(function(prev, cur) {
-            prev.source[cur.namespace] = '';
-            prev.source[cur.full.toLowerCase()] = (prev.source[cur.full.toLowerCase()] || '') + (cur.source || '');
-            if (self.config.linkSP && cur.type === 'P') {
-                var parserSP = require('./parsers/mssqlSP');
-                var procedure = parserSP.parse(cur.source);
-                procedure && (procedure.type === 'procedure') && (prev.bindings.push(procedure));
+            cur.namespace = cur.namespace && cur.namespace.toLowerCase();
+            cur.full = cur.full && cur.full.toLowerCase();
+            if (cur.source) {
+                prev.source[cur.full] = (prev.source[cur.full] || '') + (cur.source || '');
+            } else if (cur.full) {
+                prev.source[cur.full] = '';
+            } else {
+                prev.source[cur.namespace] = '';
+            }
+            if ((cur.type === 'P') && (cur.colid === 1) && (self.config.linkSP || (objectList && objectList.indexOf(cur.full) >= 0))) {
+                prev.parseList.push(cur.source);
             }
             return prev;
-        }, {source: {}, bindings: []});
+        }, {source: {}, parseList: []});
     });
 };
 

@@ -74,7 +74,38 @@ From the example above we see that we load the SQL from a template directory wit
 
 ### **Schema sync** ###
 
-The SQL port has a special method `updateSchema`, which updates all database object. It matches database objects to files in the file system and updates the database objects if differences are detected.
+The SQL port has a configuration property named 'schema'. This property can be set to an array of object, specifying folders that contain source code of database objects.
+Here is example:
+
+    ```js
+    module.exports = {
+        type: 'sql',
+        namespace: ['s1','s2']
+        schema: [
+            {path:__dirname + '/schema/1', linkSP:true},
+            {path:__dirname + '/schema/2', linkSP:false},
+        ]
+    }
+    ```
+
+This configuration will make the port scan the specified folders and synchronize database schema. In addition, procedures from the first folder will be automatically 
+linked to the port, so that they can be executed directly, based on their schema name and procedure name. So for the following procedure:
+    
+  ```sql
+  CREATE PROCEDURE schemaName.storedProcedureName
+    @param1 int,
+    @param2 nvarchar(20)
+  AS
+    ...
+  ```
+    
+The stored procedure can be called using this:
+
+  ```js
+  bus.importMethod('schemaName.storedProcedureName')({param1:1, param2:'value'})
+  ```
+
+The schema sync algorithm matches database objects to files in the file system and updates the database objects if differences are detected.
 The file names in the file system are supposed to follow the following naming: `xxx$schemaName.objectName.sql` , where xxx are numbers, that control the order of execution. The below convention is recommended. 
 Note the **camelCase** naming convention. File names, including extension are **case sensitive**.
 

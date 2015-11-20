@@ -5,7 +5,7 @@ name =
   "[" str:[A-Za-z0-9_]+ "]" { return str.join('') } /
   str:[A-Za-z0-9_]+ { return str.join('') }
 
-namespace = name "." {return text()}
+namespace = name:name "." {return name+'.'}
 
 fullname = ns:namespace? n:name ? {return (ns||'')+n}
 
