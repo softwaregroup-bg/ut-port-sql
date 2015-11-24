@@ -146,7 +146,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     var self = this;
-    var schemas = Array.isArray(this.config.schema) ? this.config.schema : [{path:this.config.schema}];
+    var schemas = this.config.schema && (Array.isArray(this.config.schema) ? this.config.schema : [{path:this.config.schema}]);
     if (!schemas) {
         return schema;
     }
