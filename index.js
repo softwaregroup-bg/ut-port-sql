@@ -248,7 +248,7 @@ SqlPort.prototype.callSP = function(name, params) {
     var self = this;
     var outParams = [];
 
-    params.forEach(function(param) {
+    params && params.forEach(function(param) {
         param.out && outParams.push(param.name);
     });
 
@@ -267,7 +267,7 @@ SqlPort.prototype.callSP = function(name, params) {
     return function callLinkedSP(msg) {
         var request = self.getRequest();
         request.multiple = true;
-        params.forEach(function(param) {
+        params && params.forEach(function(param) {
             param.out ? request.output(param.name, sqlType(param.def), msg[param.name]) : request.input(param.name, sqlType(param.def), msg[param.name]);
         });
         return request.execute(name).then(function(result) {
