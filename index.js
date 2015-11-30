@@ -95,13 +95,13 @@ SqlPort.prototype.exec = function(message) {
         this.config.validate(message);
     }
 
-    //var start = +new Date();
+    // var start = +new Date();
     var request = this.getRequest();
     return when.promise(function(resolve, reject) {
         request.query(message.query, function(err, result) {
-            //var end = +new Date();
-            //var execTime = end - start;
-            //todo record execution time
+            // var end = +new Date();
+            // var execTime = end - start;
+            // todo record execution time
             if (err) {
                 reject(errors.sql(err));
             } else {
@@ -116,15 +116,15 @@ SqlPort.prototype.exec = function(message) {
                 } else if (message.process === 'json') {
                     message.dataSet = result;
                     resolve(message);
-                } else if (message.process === 'xls') { //todo
+                } else if (message.process === 'xls') { // todo
                     reject(errors.notImplemented(message.process));
-                } else if (message.process === 'xml') { //todo
+                } else if (message.process === 'xml') { // todo
                     reject(errors.notImplemented(message.process));
-                } else if (message.process === 'csv') { //todo
+                } else if (message.process === 'csv') { // todo
                     reject(errors.notImplemented(message.process));
-                } else if (message.process === 'processRows') { //todo
+                } else if (message.process === 'processRows') { // todo
                     reject(errors.notImplemented(message.process));
-                } else if (message.process === 'queueRows') { //todo
+                } else if (message.process === 'queueRows') { // todo
                     reject(errors.notImplemented(message.process));
                 } else {
                     reject(errors.missingProcess(message.process));
@@ -146,58 +146,58 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     var self = this;
-    var schemas = this.config.schema && (Array.isArray(this.config.schema) ? this.config.schema : [{path:this.config.schema}]);
+    var schemas = this.config.schema && (Array.isArray(this.config.schema) ? this.config.schema : [{path: this.config.schema}]);
     if (!schemas) {
         return schema;
     }
 
-    return when.reduce(schemas, function(prev, schemaConfig) {// visit each schema folder
-            return when.promise(function(resolve, reject) {
-                fs.readdir(schemaConfig.path, function(err, files) {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        var queries = [];
-                        files = files.sort();
-                        files.forEach(function(file) {
-                            var objectName = file.replace(/\.sql/i, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
-                            var objectId = objectName.toLowerCase();
-                            schemaConfig.linkSP && prev.push(objectId);
-                            var fileName = schemaConfig.path + '/' + file;
-                            var fileContent = fs.readFileSync(fileName).toString();
-                            var createStatement = getCreateStatement(fileContent);
-                            if (schema.source[objectId] === undefined) {
-                                queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: createStatement});
-                            } else {
-                                if (schema.source[objectId].length && (createStatement !== schema.source[objectId])) {
-                                    queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: getAlterStatement(fileContent)});
-                                }
+    return when.reduce(schemas, function(prev, schemaConfig) { // visit each schema folder
+        return when.promise(function(resolve, reject) {
+            fs.readdir(schemaConfig.path, function(err, files) {
+                if (err) {
+                    reject(err);
+                } else {
+                    var queries = [];
+                    files = files.sort();
+                    files.forEach(function(file) {
+                        var objectName = file.replace(/\.sql/i, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                        var objectId = objectName.toLowerCase();
+                        schemaConfig.linkSP && prev.push(objectId);
+                        var fileName = schemaConfig.path + '/' + file;
+                        var fileContent = fs.readFileSync(fileName).toString();
+                        var createStatement = getCreateStatement(fileContent);
+                        if (schema.source[objectId] === undefined) {
+                            queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: createStatement});
+                        } else {
+                            if (schema.source[objectId].length && (createStatement !== schema.source[objectId])) {
+                                queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: getAlterStatement(fileContent)});
                             }
-                        });
+                        }
+                    });
 
-                        var request = self.getRequest();
-                        var currentFileName = '';
-                        var updated = [];
-                        when.reduce(queries, function(result, query) {
-                                updated.push(query.objectName);
-                                currentFileName = query.fileName;
-                                return request.batch(query.content);
-                            }, [])
-                            .then(function() {
-                                updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
-                                resolve(prev);
-                            })
-                            .catch(function(error) {
-                                error.fileName = currentFileName;
-                                reject(error);
-                            });
-                    }
-                });
-            }, []);
-        },[])
-        .then(function(objectList) {
-            return self.loadSchema(objectList);
-        });
+                    var request = self.getRequest();
+                    var currentFileName = '';
+                    var updated = [];
+                    when.reduce(queries, function(result, query) {
+                        updated.push(query.objectName);
+                        currentFileName = query.fileName;
+                        return request.batch(query.content);
+                    }, [])
+                    .then(function() {
+                        updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
+                        resolve(prev);
+                    })
+                    .catch(function(error) {
+                        error.fileName = currentFileName;
+                        reject(error);
+                    });
+                }
+            });
+        }, []);
+    }, [])
+    .then(function(objectList) {
+        return self.loadSchema(objectList);
+    });
 };
 
 SqlPort.prototype.execTemplate = function(template, params) {
@@ -213,7 +213,7 @@ SqlPort.prototype.execTemplate = function(template, params) {
 SqlPort.prototype.execTemplateRow = function(template, params) {
     return this.execTemplate(template, params).then(function(data) {
         var result = (data && data[0]) || {};
-        if (result._errorCode && parseInt(result._errorCode) !== 0) {
+        if (result._errorCode && parseInt(result._errorCode, 10) !== 0) {
             // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
             throw errors.sql({
                 code: result._errorCode || -1,
@@ -228,7 +228,7 @@ SqlPort.prototype.execTemplateRow = function(template, params) {
 SqlPort.prototype.execTemplateRows = function(template, params) {
     return this.execTemplate(template, params).then(function(data) {
         var result = data || [{}];
-        if (result[0]._errorCode && parseInt(result[0]._errorCode) !== 0) {
+        if (result[0]._errorCode && parseInt(result[0]._errorCode, 10) !== 0) {
             // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
             throw errors.sql({
                 code: result._errorCode || -1,
@@ -244,7 +244,7 @@ SqlPort.prototype.getRequest = function() {
     return new mssql.Request(this.connection);
 };
 
-SqlPort.prototype.callSP = function(name, params) {
+SqlPort.prototype.callSP = function(name, params, flatten) {
     var self = this;
     var outParams = [];
 
@@ -264,11 +264,40 @@ SqlPort.prototype.callSP = function(name, params) {
         return type;
     }
 
+    function flattenMessage(data) {
+        var result = {};
+        function recurse(cur, prop) {
+            if (Object(cur) !== cur) {
+                result[prop] = cur;
+            } else if (Array.isArray(cur)) {
+                for (var i = 0, l = cur.length; i < l; i += 1) {
+                    recurse(cur[i], prop + '[' + i + ']');
+                }
+                if (l === 0) {
+                    result[prop] = [];
+                }
+            } else {
+                var isEmpty = true;
+                for (var p in cur) {
+                    isEmpty = false;
+                    recurse(cur[p], prop ? prop + '_' + p : p);
+                }
+                if (isEmpty && prop) {
+                    result[prop] = {};
+                }
+            }
+        }
+        recurse(data, '');
+        return result;
+    }
+
     return function callLinkedSP(msg) {
         var request = self.getRequest();
+        var data = flatten ? flattenMessage(msg) : msg;
         request.multiple = true;
         params && params.forEach(function(param) {
-            param.out ? request.output(param.name, sqlType(param.def), msg[param.name]) : request.input(param.name, sqlType(param.def), msg[param.name]);
+            var value = param.update ? (data[param.name] || data.hasOwnProperty(param.update)) : data[param.name];
+            param.out ? request.output(param.name, sqlType(param.def), value) : request.input(param.name, sqlType(param.def), value);
         });
         return request.execute(name).then(function(result) {
             if (outParams.length) {
@@ -287,8 +316,21 @@ SqlPort.prototype.linkSP = function(schema) {
         var parserSP = require('./parsers/mssqlSP');
         schema.parseList.forEach(function(source) {
             var binding = parserSP.parse(source);
-            if (binding && binding.type === 'procedure' && !this.config[binding.name]) {
-                this.config[binding.name] = this.callSP(binding.name, binding.params);
+            var flatName = binding.name.replace(/[\[\]]/g, '');
+            if (binding && binding.type === 'procedure' && !this.config[flatName]) {
+                var update = [];
+                var flatten = false;
+                binding.params && binding.params.forEach(function(param) {
+                    update.push(param.name + '$update');
+                    // flatten in case a parameter's name have at least one underscore character surrounded by non underscore characters
+                    if (!flatten && param.name.match(/[^_]_[^_]/)) { 
+                        flatten = true;
+                    }
+                });
+                binding.params && binding.params.forEach(function(param) {
+                    (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
+                });
+                this.config[flatName] = this.callSP(binding.name, binding.params, flatten);
             }
         }.bind(this));
     }

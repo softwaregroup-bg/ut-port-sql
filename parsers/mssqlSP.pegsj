@@ -2,8 +2,8 @@ procedure
   = ws CREATE ws1 PROCEDURE ws1 name:fullname params:params? ws1 AS ws1 body {return {type:'procedure', name:name, params:params}}
 
 name =
-  "[" str:[A-Za-z0-9_]+ "]" { return str.join('') } /
-  str:[A-Za-z0-9_]+ { return str.join('') }
+  "[" str:[^\]]+ "]" { return '['+str.join('')+']' } /
+  str:[A-Za-z0-9_$]+ { return str.join('') }
 
 namespace = name:name "." {return name+'.'}
 
