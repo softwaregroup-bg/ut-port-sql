@@ -8,13 +8,15 @@
     "when": "~3.7.2"
   },
   "devDependencies": {
+    "ut-tools": "~0.5.1",
     "intern": "~2.2.2"
   },
   "peerDependencies": {
     "ut-bus": "~5.3.0"
   },
   "scripts": {
-    "test": "intern-client config=tests/intern"
+    "lint": "ut-lint .",
+    "test": "npm run lint"
   },
   "publishConfig": {
     "registry": "http://npm.softwaregroup-bg.com:5001"

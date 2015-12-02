@@ -323,7 +323,7 @@ SqlPort.prototype.linkSP = function(schema) {
                 binding.params && binding.params.forEach(function(param) {
                     update.push(param.name + '$update');
                     // flatten in case a parameter's name have at least one underscore character surrounded by non underscore characters
-                    if (!flatten && param.name.match(/[^_]_[^_]/)) { 
+                    if (!flatten && param.name.match(/[^_]_[^_]/)) {
                         flatten = true;
                     }
                 });
