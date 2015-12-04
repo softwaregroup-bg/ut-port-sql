@@ -70,7 +70,10 @@ function setPathProperty(object, fieldName, fieldValue) {
 
 SqlPort.prototype.checkConnection = function() {
     if (!this.connection) {
-        throw errors.noConnection();
+        throw errors.noConnection({
+            server: this.config.db && this.config.db.server,
+            database: this.config.db && this.config.db.database
+        });
     }
 };
 
