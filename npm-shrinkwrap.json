@@ -1,0 +1,308 @@
+{
+  "name": "ut-port-sql",
+  "version": "5.3.12",
+  "dependencies": {
+    "mssql": {
+      "version": "2.3.2",
+      "from": "mssql@>=2.3.1 <2.4.0",
+      "resolved": "http://npm.softwaregroup-bg.com:5001/mssql/-/mssql-2.3.2.tgz",
+      "dependencies": {
+        "tedious": {
+          "version": "1.13.1",
+          "from": "tedious@>=1.13.1 <1.14.0",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/tedious/-/tedious-1.13.1.tgz",
+          "dependencies": {
+            "babel-runtime": {
+              "version": "5.8.34",
+              "from": "babel-runtime@>=5.8.19 <6.0.0",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/babel-runtime/-/babel-runtime-5.8.34.tgz",
+              "dependencies": {
+                "core-js": {
+                  "version": "1.2.6",
+                  "from": "core-js@>=1.0.0 <2.0.0",
+                  "resolved": "http://npm.softwaregroup-bg.com:5001/core-js/-/core-js-1.2.6.tgz"
+                }
+              }
+            },
+            "big-number": {
+              "version": "0.3.1",
+              "from": "big-number@0.3.1",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/big-number/-/big-number-0.3.1.tgz"
+            },
+            "bl": {
+              "version": "1.0.0",
+              "from": "bl@>=1.0.0 <2.0.0",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/bl/-/bl-1.0.0.tgz"
+            },
+            "iconv-lite": {
+              "version": "0.4.13",
+              "from": "iconv-lite@>=0.4.11 <0.5.0",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/iconv-lite/-/iconv-lite-0.4.13.tgz"
+            },
+            "readable-stream": {
+              "version": "2.0.4",
+              "from": "readable-stream@>=2.0.2 <3.0.0",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/readable-stream/-/readable-stream-2.0.4.tgz",
+              "dependencies": {
+                "core-util-is": {
+                  "version": "1.0.2",
+                  "from": "core-util-is@>=1.0.0 <1.1.0",
+                  "resolved": "http://npm.softwaregroup-bg.com:5001/core-util-is/-/core-util-is-1.0.2.tgz"
+                },
+                "inherits": {
+                  "version": "2.0.1",
+                  "from": "inherits@>=2.0.1 <2.1.0",
+                  "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
+                },
+                "isarray": {
+                  "version": "0.0.1",
+                  "from": "isarray@0.0.1",
+                  "resolved": "http://npm.softwaregroup-bg.com:5001/isarray/-/isarray-0.0.1.tgz"
+                },
+                "process-nextick-args": {
+                  "version": "1.0.6",
+                  "from": "process-nextick-args@>=1.0.0 <1.1.0",
+                  "resolved": "http://npm.softwaregroup-bg.com:5001/process-nextick-args/-/process-nextick-args-1.0.6.tgz"
+                },
+                "string_decoder": {
+                  "version": "0.10.31",
+                  "from": "string_decoder@>=0.10.0 <0.11.0",
+                  "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz"
+                },
+                "util-deprecate": {
+                  "version": "1.0.2",
+                  "from": "util-deprecate@>=1.0.1 <1.1.0",
+                  "resolved": "http://npm.softwaregroup-bg.com:5001/util-deprecate/-/util-deprecate-1.0.2.tgz"
+                }
+              }
+            },
+            "sprintf": {
+              "version": "0.1.5",
+              "from": "sprintf@0.1.5",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/sprintf/-/sprintf-0.1.5.tgz"
+            }
+          }
+        },
+        "generic-pool": {
+          "version": "2.2.1",
+          "from": "generic-pool@>=2.2.0 <3.0.0",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/generic-pool/-/generic-pool-2.2.1.tgz"
+        },
+        "promise": {
+          "version": "7.0.4",
+          "from": "promise@>=7.0.1 <8.0.0",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/promise/-/promise-7.0.4.tgz",
+          "dependencies": {
+            "asap": {
+              "version": "2.0.3",
+              "from": "asap@>=2.0.3 <2.1.0",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/asap/-/asap-2.0.3.tgz"
+            }
+          }
+        }
+      }
+    },
+    "ut-bus": {
+      "version": "5.3.16",
+      "from": "ut-bus@>=5.3.0 <5.4.0",
+      "resolved": "http://npm.softwaregroup-bg.com:5001/ut-bus/-/ut-bus-5.3.16.tgz",
+      "dependencies": {
+        "browser-process-hrtime": {
+          "version": "0.1.2",
+          "from": "http://npm.softwaregroup-bg.com:5001/browser-process-hrtime/-/browser-process-hrtime-0.1.2.tgz",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/browser-process-hrtime/-/browser-process-hrtime-0.1.2.tgz"
+        },
+        "errno": {
+          "version": "0.1.4",
+          "from": "http://192.168.129.150:5001/errno/-/errno-0.1.4.tgz",
+          "resolved": "http://192.168.129.150:5001/errno/-/errno-0.1.4.tgz",
+          "dependencies": {
+            "prr": {
+              "version": "0.0.0",
+              "from": "http://192.168.129.150:5001/prr/-/prr-0.0.0.tgz",
+              "resolved": "http://192.168.129.150:5001/prr/-/prr-0.0.0.tgz"
+            }
+          }
+        },
+        "joi": {
+          "version": "6.6.1",
+          "from": "http://npm.softwaregroup-bg.com:5001/joi/-/joi-6.6.1.tgz",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/joi/-/joi-6.6.1.tgz",
+          "dependencies": {
+            "hoek": {
+              "version": "2.16.3",
+              "from": "http://192.168.129.150:5001/hoek/-/hoek-2.16.3.tgz",
+              "resolved": "http://192.168.129.150:5001/hoek/-/hoek-2.16.3.tgz"
+            },
+            "topo": {
+              "version": "1.1.0",
+              "from": "http://192.168.129.150:5001/topo/-/topo-1.1.0.tgz",
+              "resolved": "http://192.168.129.150:5001/topo/-/topo-1.1.0.tgz"
+            },
+            "isemail": {
+              "version": "1.2.0",
+              "from": "http://192.168.129.150:5001/isemail/-/isemail-1.2.0.tgz",
+              "resolved": "http://192.168.129.150:5001/isemail/-/isemail-1.2.0.tgz"
+            },
+            "moment": {
+              "version": "2.10.6",
+              "from": "http://npm.softwaregroup-bg.com:5001/moment/-/moment-2.10.6.tgz",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/moment/-/moment-2.10.6.tgz"
+            }
+          }
+        },
+        "lodash": {
+          "version": "3.10.1",
+          "from": "http://npm.softwaregroup-bg.com:5001/lodash/-/lodash-3.10.1.tgz",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/lodash/-/lodash-3.10.1.tgz"
+        },
+        "readable-stream": {
+          "version": "1.1.13",
+          "from": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.1.13.tgz",
+          "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.1.13.tgz",
+          "dependencies": {
+            "core-util-is": {
+              "version": "1.0.2",
+              "from": "http://npm.softwaregroup-bg.com:5001/core-util-is/-/core-util-is-1.0.2.tgz",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/core-util-is/-/core-util-is-1.0.2.tgz"
+            },
+            "isarray": {
+              "version": "0.0.1",
+              "from": "http://npm.softwaregroup-bg.com:5001/isarray/-/isarray-0.0.1.tgz",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/isarray/-/isarray-0.0.1.tgz"
+            },
+            "string_decoder": {
+              "version": "0.10.31",
+              "from": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz",
+              "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz"
+            },
+            "inherits": {
+              "version": "2.0.1",
+              "from": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz",
+              "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
+            }
+          }
+        },
+        "reconnect-core": {
+          "version": "1.1.0",
+          "from": "http://npm.softwaregroup-bg.com:5001/reconnect-core/-/reconnect-core-1.1.0.tgz",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/reconnect-core/-/reconnect-core-1.1.0.tgz",
+          "dependencies": {
+            "backoff": {
+              "version": "2.3.0",
+              "from": "http://192.168.129.150:5001/backoff/-/backoff-2.3.0.tgz",
+              "resolved": "http://192.168.129.150:5001/backoff/-/backoff-2.3.0.tgz"
+            }
+          }
+        },
+        "through2": {
+          "version": "1.1.1",
+          "from": "https://registry.npmjs.org/through2/-/through2-1.1.1.tgz",
+          "resolved": "https://registry.npmjs.org/through2/-/through2-1.1.1.tgz",
+          "dependencies": {
+            "xtend": {
+              "version": "4.0.1",
+              "from": "http://npm.softwaregroup-bg.com:5001/xtend/-/xtend-4.0.1.tgz",
+              "resolved": "http://npm.softwaregroup-bg.com:5001/xtend/-/xtend-4.0.1.tgz"
+            }
+          }
+        },
+        "ut-rpc": {
+          "version": "5.3.1",
+          "from": "http://npm.softwaregroup-bg.com:5001/ut-rpc/-/ut-rpc-5.3.1.tgz",
+          "resolved": "http://npm.softwaregroup-bg.com:5001/ut-rpc/-/ut-rpc-5.3.1.tgz",
+          "dependencies": {
+            "mux-demux": {
+              "version": "3.7.9",
+              "from": "https://registry.npmjs.org/mux-demux/-/mux-demux-3.7.9.tgz",
+              "resolved": "https://registry.npmjs.org/mux-demux/-/mux-demux-3.7.9.tgz",
+              "dependencies": {
+                "xtend": {
+                  "version": "1.0.3",
+                  "from": "https://registry.npmjs.org/xtend/-/xtend-1.0.3.tgz",
+                  "resolved": "https://registry.npmjs.org/xtend/-/xtend-1.0.3.tgz"
+                },
+                "stream-serializer": {
+                  "version": "1.1.2",
+                  "from": "https://registry.npmjs.org/stream-serializer/-/stream-serializer-1.1.2.tgz",
+                  "resolved": "https://registry.npmjs.org/stream-serializer/-/stream-serializer-1.1.2.tgz"
+                },
+                "through": {
+                  "version": "2.3.8",
+                  "from": "https://registry.npmjs.org/through/-/through-2.3.8.tgz",
+                  "resolved": "https://registry.npmjs.org/through/-/through-2.3.8.tgz"
+                },
+                "duplex": {
+                  "version": "1.0.0",
+                  "from": "https://registry.npmjs.org/duplex/-/duplex-1.0.0.tgz",
+                  "resolved": "https://registry.npmjs.org/duplex/-/duplex-1.0.0.tgz"
+                },
+                "stream-combiner": {
+                  "version": "0.0.2",
+                  "from": "http://npm.softwaregroup-bg.com:5001/stream-combiner/-/stream-combiner-0.0.2.tgz",
+                  "resolved": "http://npm.softwaregroup-bg.com:5001/stream-combiner/-/stream-combiner-0.0.2.tgz",
+                  "dependencies": {
+                    "duplexer": {
+                      "version": "0.0.4",
+                      "from": "https://registry.npmjs.org/duplexer/-/duplexer-0.0.4.tgz",
+                      "resolved": "https://registry.npmjs.org/duplexer/-/duplexer-0.0.4.tgz"
+                    }
+                  }
+                },
+                "msgpack-stream": {
+                  "version": "0.0.12",
+                  "from": "https://registry.npmjs.org/msgpack-stream/-/msgpack-stream-0.0.12.tgz",
+                  "resolved": "https://registry.npmjs.org/msgpack-stream/-/msgpack-stream-0.0.12.tgz",
+                  "dependencies": {
+                    "through": {
+                      "version": "2.3.4",
+                      "from": "https://registry.npmjs.org/through/-/through-2.3.4.tgz",
+                      "resolved": "https://registry.npmjs.org/through/-/through-2.3.4.tgz"
+                    },
+                    "msgpack-js": {
+                      "version": "0.3.0",
+                      "from": "http://npm.softwaregroup-bg.com:5001/msgpack-js/-/msgpack-js-0.3.0.tgz",
+                      "resolved": "http://npm.softwaregroup-bg.com:5001/msgpack-js/-/msgpack-js-0.3.0.tgz"
+                    },
+                    "bops": {
+                      "version": "0.0.6",
+                      "from": "http://192.168.129.150:5001/bops/-/bops-0.0.6.tgz",
+                      "resolved": "http://192.168.129.150:5001/bops/-/bops-0.0.6.tgz",
+                      "dependencies": {
+                        "base64-js": {
+                          "version": "0.0.2",
+                          "from": "http://npm.softwaregroup-bg.com:5001/base64-js/-/base64-js-0.0.2.tgz",
+                          "resolved": "http://npm.softwaregroup-bg.com:5001/base64-js/-/base64-js-0.0.2.tgz"
+                        },
+                        "to-utf8": {
+                          "version": "0.0.1",
+                          "from": "http://npm.softwaregroup-bg.com:5001/to-utf8/-/to-utf8-0.0.1.tgz",
+                          "resolved": "http://npm.softwaregroup-bg.com:5001/to-utf8/-/to-utf8-0.0.1.tgz"
+                        }
+                      }
+                    }
+                  }
+                },
+                "json-buffer": {
+                  "version": "2.0.11",
+                  "from": "https://registry.npmjs.org/json-buffer/-/json-buffer-2.0.11.tgz",
+                  "resolved": "https://registry.npmjs.org/json-buffer/-/json-buffer-2.0.11.tgz"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ut-error": {
+      "version": "5.3.3",
+      "from": "ut-error@>=5.3.2 <5.4.0",
+      "resolved": "http://npm.softwaregroup-bg.com:5001/ut-error/-/ut-error-5.3.3.tgz"
+    },
+    "when": {
+      "version": "3.7.5",
+      "from": "when@>=3.7.2 <3.8.0",
+      "resolved": "http://npm.softwaregroup-bg.com:5001/when/-/when-3.7.5.tgz"
+    }
+  }
+}
