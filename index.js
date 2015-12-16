@@ -231,11 +231,11 @@ SqlPort.prototype.execTemplateRow = function(template, params) {
 SqlPort.prototype.execTemplateRows = function(template, params) {
     return this.execTemplate(template, params).then(function(data) {
         var result = data || [{}];
-        if (result[0]._errorCode && parseInt(result[0]._errorCode, 10) !== 0) {
+        if (result[0] && result[0]._errorCode && parseInt(result[0]._errorCode, 10) !== 0) {
             // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
             throw errors.sql({
-                code: result._errorCode || -1,
-                message: result._errorMessage || 'sql error'
+                code: result[0]._errorCode || -1,
+                message: result[0]._errorMessage || 'sql error'
             });
         } else {
             return result;
