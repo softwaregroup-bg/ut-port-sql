@@ -370,7 +370,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
             sys.synonyms s on s.object_id = o.object_id
         WHERE
             o.type IN ('V', 'P', 'FN','F','IF','SN','TF','TR','U') AND
-            user_name(objectproperty(o.object_id, 'OwnerId')) = USER_NAME() AND
+            user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo') AND
             objectproperty(o.object_id, 'IsMSShipped') = 0
         UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
