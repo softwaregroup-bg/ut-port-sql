@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "5.2.2",
+  "version": "5.2.3",
   "main": "./index",
   "dependencies": {
     "mssql": "~1.3.0",
