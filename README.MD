@@ -95,6 +95,7 @@ linked to the port, so that they can be executed directly, based on their schema
   CREATE PROCEDURE schemaName.storedProcedureName
     @param1 int,
     @param2 nvarchar(20)
+    @param3 tableType
   AS
     ...
   ```
@@ -102,7 +103,7 @@ linked to the port, so that they can be executed directly, based on their schema
 The stored procedure can be called using this:
 
   ```js
-  bus.importMethod('schemaName.storedProcedureName')({param1:1, param2:'value'})
+  bus.importMethod('schemaName.storedProcedureName')({param1:1, param2:'value', param3:[{column1:'value row 1'},{column1:'value row 2'}]})
   ```
 
 The schema sync algorithm matches database objects to files in the file system and updates the database objects if differences are detected.
@@ -150,8 +151,20 @@ Note the **camelCase** naming convention. File names, including extension are **
    END
    ```
 
+ - `340$schemaName.typeName.sql` for **used defined table type**. 
+ The script will be executed as is, only when the used defined table type does not exist. 
+ Altering user defined types is currently related to the complexity of other objects depending on the type,
+ so currently there is no automatic way for modifying already existing type. 
+
+   ```sql
+   CREATE TYPE [schemaName].[typeName] AS TABLE(
+     column1 int,
+     ... -- other column definitions
+   )
+   ```
+
  - `350$schemaName.tableName.sql` for **tables without FK**. File content should start with CREATE or ALTER keyword. Note the key field and primary key naming conventions.
- The script will be executed as is only when the table does not exist.
+ The script will be executed as is, only when the table does not exist.
 
    ```sql
    CREATE TABLE [schemaName].[tableName](
@@ -162,7 +175,7 @@ Note the **camelCase** naming convention. File names, including extension are **
    ```
 
  - `360$schemaName.tableName.sql` for **tables with 1 FK**. File content should start with CREATE or ALTER keyword. Note the foreign field and foreign key naming conventions
-and the use of underscore to separate the foreign table name. The script will be executed as is only when the table does not exist.
+and the use of underscore to separate the foreign table name. The script will be executed as is, only when the table does not exist.
 
    ```sql
    CREATE TABLE [schemaName].[tableName](
@@ -175,7 +188,7 @@ and the use of underscore to separate the foreign table name. The script will be
    ```
 
  - `370$schemaName.tableName.sql` for **tables with more than 1 FK**. File content should start with CREATE or ALTER keyword. Note the foreign field and foreign key naming conventions
-and the use of underscore to separate the foreign table name. The script will be executed as is only when the table does not exist.
+and the use of underscore to separate the foreign table name. The script will be executed as is, only when the table does not exist.
 
    ```sql
    CREATE TABLE [schemaName].[tableName](

@@ -2,6 +2,7 @@ var create = require('ut-error').define;
 
 var PortSQL = create('PortSQL');
 var NoConnection = create('NoConnection', PortSQL);
+var NotReady = create('NotReady', PortSQL);
 var MissingProcess = create('MissingProcess', PortSQL);
 var NotImplemented = create('NotImplemented', PortSQL);
 
@@ -11,6 +12,9 @@ module.exports = {
     },
     noConnection: function(params) {
         return new NoConnection({message: 'No connection to SQL server', params: params});
+    },
+    notReady: function(params) {
+        return new NotReady({message: 'The connection is not ready', params: params});
     },
     missingProcess: function(process) {
         return new MissingProcess({message: 'Invalid SQL process parameter', params: {process: process}});

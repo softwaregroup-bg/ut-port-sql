@@ -26,12 +26,16 @@ SqlPort.prototype.init = function init() {
 
 SqlPort.prototype.connect = function connect() {
     this.connection && this.connection.close();
+    this.connectionReady = false;
+    var self = this;
     this.connection = new mssql.Connection(this.config.db);
     return this.connection.connect()
         .then(this.loadSchema.bind(this))
         .then(this.updateSchema.bind(this))
         .then(this.linkSP.bind(this))
+        .then(function(v) { self.connectionReady = true; return v; })
         .catch(function(err) {
+            try { this.connection.close(); } catch (e) {};
             this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
             this.log.error && this.log.error(err);
         }.bind(this));
@@ -50,6 +54,7 @@ SqlPort.prototype.start = function start() {
 SqlPort.prototype.stop = function stop() {
     clearTimeout(this.retryTimeout);
     this.queue.push();
+    this.connectionReady = false;
     this.connection.close();
     Port.prototype.stop.apply(this, Array.prototype.slice.call(arguments));
 };
@@ -68,9 +73,15 @@ function setPathProperty(object, fieldName, fieldValue) {
     object[fieldName] = fieldValue;
 }
 
-SqlPort.prototype.checkConnection = function() {
+SqlPort.prototype.checkConnection = function(checkReady) {
     if (!this.connection) {
         throw errors.noConnection({
+            server: this.config.db && this.config.db.server,
+            database: this.config.db && this.config.db.database
+        });
+    }
+    if (checkReady && !this.connectionReady) {
+        throw errors.notReady({
             server: this.config.db && this.config.db.server,
             database: this.config.db && this.config.db.database
         });
@@ -92,7 +103,7 @@ SqlPort.prototype.exec = function(message) {
         }
     }
 
-    this.checkConnection();
+    this.checkConnection(true);
 
     if (this.config.validate instanceof Function) {
         this.config.validate(message);
@@ -256,7 +267,12 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
     });
 
     function sqlType(def) {
-        var type = mssql[def.type.toUpperCase()];
+        var type;
+        if (def.type === 'table') {
+            type = def.create();
+        } else {
+            type = mssql[def.type.toUpperCase()];
+        }
         if (def.size) {
             if (Array.isArray(def.size)) {
                 type = type(def.size[0], def.size[1]);
@@ -273,12 +289,13 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
             if (Object(cur) !== cur) {
                 result[prop] = cur;
             } else if (Array.isArray(cur)) {
-                for (var i = 0, l = cur.length; i < l; i += 1) {
-                    recurse(cur[i], prop + '[' + i + ']');
-                }
-                if (l === 0) {
-                    result[prop] = [];
-                }
+                // for (var i = 0, l = cur.length; i < l; i += 1) {
+                //     recurse(cur[i], prop + '[' + i + ']');
+                // }
+                // if (l === 0) {
+                //     result[prop] = [];
+                // }
+                result[prop] = cur;
             } else {
                 var isEmpty = true;
                 for (var p in cur) {
@@ -295,12 +312,28 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
     }
 
     return function callLinkedSP(msg) {
+        self.checkConnection(true);
         var request = self.getRequest();
         var data = flatten ? flattenMessage(msg) : msg;
         request.multiple = true;
         params && params.forEach(function(param) {
             var value = param.update ? (data[param.name] || data.hasOwnProperty(param.update)) : data[param.name];
-            param.out ? request.output(param.name, sqlType(param.def), value) : request.input(param.name, sqlType(param.def), value);
+            var type = sqlType(param.def);
+            if (param.out) {
+                request.output(param.name, type, value);
+            } else {
+                if (param.def && param.def.type === 'table') {
+                    value && (value.forEach instanceof Function) && value.forEach(function(row){
+                        type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
+                            prev.push(row[cur]);
+                            return prev;
+                        }, []));
+                    });
+                    request.input(param.name, type);
+                } else {
+                    request.input(param.name, type, value);
+                }
+            }
         });
         return request.execute(name).then(function(result) {
             if (outParams.length) {
@@ -332,6 +365,24 @@ SqlPort.prototype.linkSP = function(schema) {
                 });
                 binding.params && binding.params.forEach(function(param) {
                     (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
+                    if (param.def && param.def.type === 'table') {
+                        var columns = schema.types[param.def.typeName];
+                        param.columns = [];
+                        columns.forEach(function(column) {
+                            param.columns.push(column.column);
+                        });
+                        param.def.create = function() {
+                            var table = new mssql.Table(param.def.typeName);
+                            columns && columns.forEach(function(column) {
+                                var type = mssql[column.type.toUpperCase()];
+                                if (!(type instanceof Function)) {
+                                    throw Error.create('Unexpected type ' + column.type + ' in stored procedure ' + binding.name);
+                                }
+                                table.columns.add(column.column, type(column.length, column.scale));
+                            });
+                            return table;
+                        };
+                    }
                 });
                 this.config[flatName] = this.callSP(binding.name, binding.params, flatten);
             }
@@ -348,6 +399,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
 
     this.checkConnection();
     var request = this.getRequest();
+    request.multiple = true;
     var sql = `SELECT
             o.create_date,
             c.id,
@@ -374,10 +426,42 @@ SqlPort.prototype.loadSchema = function(objectList) {
             objectproperty(o.object_id, 'IsMSShipped') = 0
         UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
+        UNION ALL
+        SELECT
+            0,0,0,'T',SCHEMA_NAME(t.schema_id)+'.'+t.name,NULL,NULL,NULL
+        FROM
+            sys.types t
+        JOIN
+            sys.schemas s ON s.principal_id = USER_ID() AND s.schema_id=t.schema_id
+        WHERE
+            t.is_user_defined=1
         ORDER BY
-            1, 2, 3`;
+            1, 2, 3
+
+        SELECT
+            SCHEMA_NAME(types.schema_id) + '.' + types.name name,
+            c.name [column],
+            st.name type,
+            CASE
+                WHEN st.name in ('decimal','numeric') then c.[precision]
+                WHEN st.name in ('varchar','nvarchar','nvarbinary') then c.max_length
+            END [length],
+            CASE
+                WHEN st.name in ('decimal','numeric') then c.scale
+            END scale
+        FROM
+            sys.table_types types
+        JOIN
+            sys.columns c ON types.type_table_object_id = c.object_id
+        JOIN
+            sys.systypes AS st ON st.xtype = c.system_type_id
+        WHERE
+            types.is_user_defined = 1
+        ORDER BY
+            1,c.column_id`;
     return request.query(sql).then(function(result) {
-        return result.reduce(function(prev, cur) {
+        var schema = {source: {}, parseList: [], types: {}};
+        result[0].reduce(function(prev, cur) {
             cur.namespace = cur.namespace && cur.namespace.toLowerCase();
             cur.full = cur.full && cur.full.toLowerCase();
             if (cur.source) {
@@ -391,7 +475,16 @@ SqlPort.prototype.loadSchema = function(objectList) {
                 prev.parseList.push(cur.source);
             }
             return prev;
-        }, {source: {}, parseList: []});
+        }, schema);
+        result[1].reduce(function(prev, cur) {
+            if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
+                throw Error.create('Unexpected column type ' + cur.type + ' in user defined table type ' + cur.name);
+            }
+            var type = prev[cur.name] || (prev[cur.name] = []);
+            type.push(cur);
+            return prev;
+        }, schema.types);
+        return schema;
     });
 };
 

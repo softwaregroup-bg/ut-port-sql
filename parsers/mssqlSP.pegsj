@@ -2,26 +2,33 @@ procedure
   = ws CREATE ws1 PROCEDURE ws1 name:fullname params:params? ws1 AS ws1 body {return {type:'procedure', name:name, params:params}}
 
 name =
-  "[" str:[^\]]+ "]" { return '['+str.join('')+']' } /
-  str:[A-Za-z0-9_$]+ { return str.join('') }
+  "[" str:$[^\]]+ "]" {return str} / 
+  $[A-Za-z0-9_$]+
 
-namespace = name:name "." {return name+'.'}
+namespace = name:name "." {return '['+name+'].'}
 
-fullname = ns:namespace? n:name ? {return (ns||'')+n}
+fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
   (ws1 p:param q:(ws comma ws r:param {return r})*) {q.unshift(p); return q}
 
-param = n:param_name ws1 t:param_type o:(ws1 "out"i)? {return {name:n, def:t, out:!!o}}
+param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
-param_type =  ( n:name )
+param_type = table_type / scalar_type
+
+table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
+
+scalar_type = ( n:name )
   size:( ( ws lparen ws s:(signed_number / "max") ws rparen  ) {return s}
   / ( ws lparen ws s1:signed_number ws comma ws s2:signed_number ws rparen){return [s1,s2]})? {return {type:n.toLowerCase(), size:size}}
 
 signed_number =
   ( ( plus / minus )? numeric_literal ) {return text()}
 
+value = numeric_literal / string_literal / "NULL"i
+
+string_literal = quote (!quote !LineTerminatorSequence . / quote quote)* quote
 
 numeric_literal =
   digits:( ( ( ( digit )+ ( decimal_point ( digit )+ )? )
@@ -29,6 +36,7 @@ numeric_literal =
            ( E ( plus / minus )? ( digit )+ )? )
 
 digit = [0-9]
+quote = "'"
 decimal_point = "."
 E = "E"
 ws = (WhiteSpace / LineTerminatorSequence / Comment)*
