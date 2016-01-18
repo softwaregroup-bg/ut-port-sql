@@ -323,7 +323,7 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                 request.output(param.name, type, value);
             } else {
                 if (param.def && param.def.type === 'table') {
-                    value && (value.forEach instanceof Function) && value.forEach(function(row){
+                    value && (value.forEach instanceof Function) && value.forEach(function(row) {
                         type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
                             prev.push(row[cur]);
                             return prev;
