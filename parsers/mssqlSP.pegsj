@@ -1,5 +1,10 @@
+create = procedure / tableValue
+
 procedure
   = ws CREATE ws1 PROCEDURE ws1 name:fullname params:params? ws1 AS ws1 body {return {type:'procedure', name:name, params:params}}
+
+tableValue
+  = ws CREATE ws1 TYPE ws1 name:fullname ws1 AS ws1 TABLE ws lparen ws fields:fields ws rparen {return {type:'type', name:name, fields:fields}}
 
 name =
   "[" str:$[^\]]+ "]" {return str} / 
@@ -11,9 +16,14 @@ fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
   (ws1 p:param q:(ws comma ws r:param {return r})*) {q.unshift(p); return q}
+  
+fields =
+  (p:field q:(ws comma ws r:field {return r})*) {q.unshift(p); return q}
 
 param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
+
+field = n:name ws1 t:param_type {return {name:n, type:t.type, length:Array.isArray(t.size)?t.size[0]:t.size,scale:Array.isArray(t.size)?t.size[1]:null}}
 
 param_type = table_type / scalar_type
 
@@ -42,8 +52,10 @@ E = "E"
 ws = (WhiteSpace / LineTerminatorSequence / Comment)*
 ws1 = (WhiteSpace / LineTerminatorSequence / Comment)+
 CREATE =  "CREATE"i
+TYPE = "TYPE"i
 PROCEDURE = "PROCEDURE"i
 AS = "AS"i
+TABLE = "TABLE"i
 body = .*
 lparen = "("
 rparen = ")"

@@ -488,4 +488,23 @@ SqlPort.prototype.loadSchema = function(objectList) {
     });
 };
 
+SqlPort.prototype.loadTypes = function(objectList) {
+    var request = this.getRequest();
+    return request.query(
+        `
+        SELECT
+            s.name [schema],o.name [object],p.name [param],t.name [type]
+        FROM
+            sys.schemas s
+        JOIN
+            sys.objects o ON o.schema_id = s.schema_id
+        JOIN
+            sys.parameters p ON p.object_id = o.object_id
+        JOIN
+            sys.types t ON p.user_type_id = t.user_type_id AND t.is_user_defined=1
+        WHERE
+            user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo')
+        `);
+};
+
 module.exports = SqlPort;
