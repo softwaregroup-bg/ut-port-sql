@@ -17,6 +17,10 @@ function SqlPort() {
     return this;
 }
 
+function fieldSource(column) {
+    return column.column.toLowerCase() + '\t' + column.type.toLowerCase() + '\t' + (column.length || '') + '\t' + (column.scale || '');
+}
+
 util.inherits(SqlPort, Port);
 
 SqlPort.prototype.init = function init() {
@@ -152,10 +156,21 @@ SqlPort.prototype.updateSchema = function(schema) {
     this.checkConnection();
 
     function getAlterStatement(statement) {
-        return statement.trim().replace(/^CREATE /i, 'ALTER ');
+        if (statement.trim().match(/^CREATE\s+TYPE/i)) {
+            return statement.trim();
+        } else {
+            return statement.trim().replace(/^CREATE /i, 'ALTER ');
+        }
     }
 
     function getCreateStatement(statement) {
+        if (statement.trim().match(/^CREATE\s+TYPE/i)) {
+            var parserSP = require('./parsers/mssqlSP');
+            var binding = parserSP.parse(statement);
+            if (binding && binding.type === 'table type') {
+                return binding.fields.map(fieldSource).join('\r\n');
+            }
+        }
         return statement.trim().replace(/^ALTER /i, 'CREATE ');
     }
 
@@ -184,6 +199,18 @@ SqlPort.prototype.updateSchema = function(schema) {
                             queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: createStatement});
                         } else {
                             if (schema.source[objectId].length && (createStatement !== schema.source[objectId])) {
+                                var deps = schema.deps[objectId];
+                                if (deps) {
+                                    deps.names.forEach(function(dep) {
+                                        delete schema.source[dep];
+                                    });
+                                    queries.push({
+                                        fileName: fileName,
+                                        objectName: objectName + ' drop dependencies',
+                                        objectId: objectId,
+                                        content: deps.drop.reverse().join('\r\n')
+                                    });
+                                }
                                 queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: getAlterStatement(fileContent)});
                             }
                         }
@@ -366,13 +393,13 @@ SqlPort.prototype.linkSP = function(schema) {
                 binding.params && binding.params.forEach(function(param) {
                     (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
                     if (param.def && param.def.type === 'table') {
-                        var columns = schema.types[param.def.typeName];
+                        var columns = schema.types[param.def.typeName.toLowerCase()];
                         param.columns = [];
                         columns.forEach(function(column) {
                             param.columns.push(column.column);
                         });
                         param.def.create = function() {
-                            var table = new mssql.Table(param.def.typeName);
+                            var table = new mssql.Table(param.def.typeName.toLowerCase());
                             columns && columns.forEach(function(column) {
                                 var type = mssql[column.type.toUpperCase()];
                                 if (!(type instanceof Function)) {
@@ -458,10 +485,28 @@ SqlPort.prototype.loadSchema = function(objectList) {
         WHERE
             types.is_user_defined = 1
         ORDER BY
-            1,c.column_id`;
+            1,c.column_id
+
+        SELECT
+            s.name + '.' + o.name [name],
+            'DROP PROCEDURE [' + s.name + '].[' + o.name + ']' [drop],
+            p.name [param],
+            SCHEMA_NAME(t.schema_id) + '.' + t.name [type],
+            'DROP TYPE [' + SCHEMA_NAME(t.schema_id) + '].[' + t.name + ']' [droptype]
+        FROM
+            sys.schemas s
+        JOIN
+            sys.objects o ON o.schema_id = s.schema_id
+        JOIN
+            sys.parameters p ON p.object_id = o.object_id
+        JOIN
+            sys.types t ON p.user_type_id = t.user_type_id AND t.is_user_defined=1
+        WHERE
+            user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo')`;
+
     return request.query(sql).then(function(result) {
-        var schema = {source: {}, parseList: [], types: {}};
-        result[0].reduce(function(prev, cur) {
+        var schema = {source: {}, parseList: [], types: {}, deps: {}};
+        result[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
             cur.namespace = cur.namespace && cur.namespace.toLowerCase();
             cur.full = cur.full && cur.full.toLowerCase();
             if (cur.source) {
@@ -476,35 +521,30 @@ SqlPort.prototype.loadSchema = function(objectList) {
             }
             return prev;
         }, schema);
-        result[1].reduce(function(prev, cur) {
+        result[1].reduce(function(prev, cur) { // extract columns of user defined table types
             if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
                 throw Error.create('Unexpected column type ' + cur.type + ' in user defined table type ' + cur.name);
             }
+            cur.name = cur.name && cur.name.toLowerCase();
             var type = prev[cur.name] || (prev[cur.name] = []);
             type.push(cur);
             return prev;
         }, schema.types);
+        result[2].reduce(function(prev, cur) { // extract dependencies
+            cur.name = cur.name && cur.name.toLowerCase();
+            cur.type = cur.type && cur.type.toLowerCase();
+            var dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: [cur.droptype]});
+            if (dep.names.indexOf(cur.name) < 0) {
+                dep.names.push(cur.name);
+                dep.drop.push(cur.drop);
+            }
+            return prev;
+        }, schema.deps);
+        Object.keys(schema.types).forEach(function(type) { // extract pseudo source code of user defined table types
+            schema.source[type] = schema.types[type].map(fieldSource).join('\r\n');
+        });
         return schema;
     });
-};
-
-SqlPort.prototype.loadTypes = function(objectList) {
-    var request = this.getRequest();
-    return request.query(
-        `
-        SELECT
-            s.name [schema],o.name [object],p.name [param],t.name [type]
-        FROM
-            sys.schemas s
-        JOIN
-            sys.objects o ON o.schema_id = s.schema_id
-        JOIN
-            sys.parameters p ON p.object_id = o.object_id
-        JOIN
-            sys.types t ON p.user_type_id = t.user_type_id AND t.is_user_defined=1
-        WHERE
-            user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo')
-        `);
 };
 
 module.exports = SqlPort;
