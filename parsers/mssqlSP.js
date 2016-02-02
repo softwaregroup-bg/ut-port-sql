@@ -69,7 +69,7 @@ module.exports = (function() {
         peg$c34 = function(s) {return s},
         peg$c35 = function(s1, s2) {return [s1,s2]},
         peg$c36 = function(n, size) {return {type:n.toLowerCase(), size:size}},
-        peg$c37 = function() {return text()},
+        peg$c37 = function() {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;},
         peg$c38 = "null",
         peg$c39 = { type: "literal", value: "NULL", description: "\"NULL\"" },
         peg$c40 = void 0,
@@ -1071,8 +1071,8 @@ module.exports = (function() {
             if (s5 !== peg$FAILED) {
               s6 = peg$parsesigned_number();
               if (s6 === peg$FAILED) {
-                if (input.substr(peg$currPos, 3) === peg$c32) {
-                  s6 = peg$c32;
+                if (input.substr(peg$currPos, 3).toLowerCase() === peg$c32) {
+                  s6 = input.substr(peg$currPos, 3);
                   peg$currPos += 3;
                 } else {
                   s6 = peg$FAILED;

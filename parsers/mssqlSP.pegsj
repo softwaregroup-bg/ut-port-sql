@@ -30,11 +30,11 @@ param_type = table_type / scalar_type
 table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
 
 scalar_type = ( n:name )
-  size:( ( ws lparen ws s:(signed_number / "max") ws rparen  ) {return s}
+  size:( ( ws lparen ws s:(signed_number / "max"i) ws rparen  ) {return s}
   / ( ws lparen ws s1:signed_number ws comma ws s2:signed_number ws rparen){return [s1,s2]})? {return {type:n.toLowerCase(), size:size}}
 
 signed_number =
-  ( ( plus / minus )? numeric_literal ) {return text()}
+  ( ( plus / minus )? numeric_literal ) {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;}
 
 value = numeric_literal / string_literal / "NULL"i
 
