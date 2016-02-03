@@ -407,7 +407,10 @@ SqlPort.prototype.linkSP = function(schema) {
                             columns && columns.forEach(function(column) {
                                 var type = mssql[column.type.toUpperCase()];
                                 if (!(type instanceof Function)) {
-                                    throw Error.create('Unexpected type ' + column.type + ' in stored procedure ' + binding.name);
+                                    throw errors.unexpectedType({
+                                        type: column.type,
+                                        procedure: binding.name
+                                    });
                                 }
                                 table.columns.add(column.column, type(column.length, column.scale));
                             });
@@ -541,7 +544,10 @@ SqlPort.prototype.loadSchema = function(objectList) {
         }, schema);
         result[1].reduce(function(prev, cur) { // extract columns of user defined table types
             if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
-                throw Error.create('Unexpected column type ' + cur.type + ' in user defined table type ' + cur.name);
+                throw errors.unexpectedColumnType({
+                    type: cur.type,
+                    userDefinedTableType: cur.name
+                });
             }
             cur.name = cur.name && cur.name.toLowerCase();
             var type = prev[cur.name] || (prev[cur.name] = []);
