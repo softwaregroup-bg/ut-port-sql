@@ -164,6 +164,10 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function getCreateStatement(statement) {
+        return statement.trim().replace(/^ALTER /i, 'CREATE ');
+    }
+
+    function getSource(statement) {
         if (statement.trim().match(/^CREATE\s+TYPE/i)) {
             var parserSP = require('./parsers/mssqlSP');
             var binding = parserSP.parse(statement);
@@ -198,7 +202,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                         if (schema.source[objectId] === undefined) {
                             queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: createStatement});
                         } else {
-                            if (schema.source[objectId].length && (createStatement !== schema.source[objectId])) {
+                            if (schema.source[objectId].length && (getSource(fileContent) !== schema.source[objectId])) {
                                 var deps = schema.deps[objectId];
                                 if (deps) {
                                     deps.names.forEach(function(dep) {
