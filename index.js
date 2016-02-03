@@ -212,7 +212,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                                         fileName: fileName,
                                         objectName: objectName + ' drop dependencies',
                                         objectId: objectId,
-                                        content: deps.drop.reverse().join('\r\n')
+                                        content: deps.drop.join('\r\n')
                                     });
                                 }
                                 queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: getAlterStatement(fileContent)});
@@ -492,11 +492,11 @@ SqlPort.prototype.loadSchema = function(objectList) {
             1,c.column_id
 
         SELECT
+            1 sort,
             s.name + '.' + o.name [name],
-            'DROP PROCEDURE [' + s.name + '].[' + o.name + ']' [drop],
+            'IF (OBJECT_ID(''[' + s.name + '].[' + o.name + ']'') IS NOT NULL) DROP PROCEDURE [' + s.name + '].[' + o.name + ']' [drop],
             p.name [param],
-            SCHEMA_NAME(t.schema_id) + '.' + t.name [type],
-            'DROP TYPE [' + SCHEMA_NAME(t.schema_id) + '].[' + t.name + ']' [droptype]
+            SCHEMA_NAME(t.schema_id) + '.' + t.name [type]
         FROM
             sys.schemas s
         JOIN
@@ -506,7 +506,21 @@ SqlPort.prototype.loadSchema = function(objectList) {
         JOIN
             sys.types t ON p.user_type_id = t.user_type_id AND t.is_user_defined=1
         WHERE
-            user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo')`;
+            user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo')
+        UNION
+        SELECT
+            2,
+            s.name + '.' + t.name [name],
+            'DROP TYPE [' + s.name + '].[' + t.name + ']' [drop],
+            NULL [param],
+            SCHEMA_NAME(t.schema_id) + '.' + t.name [type]
+        FROM
+            sys.schemas s
+        JOIN
+            sys.types t ON t.schema_id=s.schema_id and t.is_user_defined=1
+        WHERE
+            user_name(s.principal_id) in (USER_NAME(),'dbo')
+        ORDER BY 1`;
 
     return request.query(sql).then(function(result) {
         var schema = {source: {}, parseList: [], types: {}, deps: {}};
@@ -537,7 +551,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
         result[2].reduce(function(prev, cur) { // extract dependencies
             cur.name = cur.name && cur.name.toLowerCase();
             cur.type = cur.type && cur.type.toLowerCase();
-            var dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: [cur.droptype]});
+            var dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: []});
             if (dep.names.indexOf(cur.name) < 0) {
                 dep.names.push(cur.name);
                 dep.drop.push(cur.drop);
