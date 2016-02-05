@@ -4,6 +4,7 @@ var util = require('util');
 var fs = require('fs');
 var when = require('when');
 var errors = require('./errors');
+var uterror = require('ut-error');
 
 function SqlPort() {
     Port.call(this);
@@ -121,7 +122,8 @@ SqlPort.prototype.exec = function(message) {
             // var execTime = end - start;
             // todo record execution time
             if (err) {
-                reject(errors.sql(err));
+                var error = uterror.get(err.message) || errors.sql;
+                reject(error(err));
             } else {
                 $meta.mtid = 'response';
                 if (message.process === 'return') {
@@ -366,15 +368,20 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                 }
             }
         });
-        return request.execute(name).then(function(result) {
-            if (outParams.length) {
-                result.push([outParams.reduce(function(prev, curr) {
-                    prev[curr] = request.parameters[curr].value;
-                    return prev;
-                }, {})]);
-            }
-            return result;
-        });
+        return request.execute(name)
+            .then(function(result) {
+                if (outParams.length) {
+                    result.push([outParams.reduce(function(prev, curr) {
+                        prev[curr] = request.parameters[curr].value;
+                        return prev;
+                    }, {})]);
+                }
+                return result;
+            })
+            .catch(function(err) {
+                var error = uterror.get(err.message) || errors.sql;
+                throw error(err);
+            });
     };
 };
 
