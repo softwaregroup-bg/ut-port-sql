@@ -497,7 +497,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
         JOIN
             sys.systypes AS st ON st.xtype = c.system_type_id
         WHERE
-            types.is_user_defined = 1
+            types.is_user_defined = 1 AND st.name <> 'sysname'
         ORDER BY
             1,c.column_id
 
