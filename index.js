@@ -423,7 +423,7 @@ SqlPort.prototype.linkSP = function(schema) {
                                     table.columns.add(column.column, type(mssql.MAX));
                                 } else {
                                     table.columns.add(column.column, type(column.length, column.scale));
-                                }                   
+                                }
                             });
                             return table;
                         };
