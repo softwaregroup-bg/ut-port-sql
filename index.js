@@ -419,7 +419,11 @@ SqlPort.prototype.linkSP = function(schema) {
                                         procedure: binding.name
                                     });
                                 }
-                                table.columns.add(column.column, type(column.length, column.scale));
+                                if (typeof column.length === 'string' && column.length.match(/^max$/i)) {
+                                    table.columns.add(column.column, type(mssql.MAX));
+                                } else {
+                                    table.columns.add(column.column, type(column.length, column.scale));
+                                }                   
                             });
                             return table;
                         };
@@ -484,8 +488,9 @@ SqlPort.prototype.loadSchema = function(objectList) {
             c.name [column],
             st.name type,
             CASE
-                WHEN st.name in ('decimal','numeric') then c.[precision]
-                WHEN st.name in ('varchar','nvarchar','nvarbinary') then c.max_length
+                WHEN st.name in ('decimal','numeric') then CAST(c.[precision] AS VARCHAR)
+                WHEN st.name in ('varchar','nvarchar','nvarbinary') AND c.max_length>=0 THEN CAST(c.max_length as VARCHAR)
+                WHEN st.name in ('varchar','nvarchar','nvarbinary') AND c.max_length<0 THEN 'max'
             END [length],
             CASE
                 WHEN st.name in ('decimal','numeric') then c.scale
