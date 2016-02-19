@@ -7,6 +7,7 @@ var MissingProcess = create('MissingProcess', PortSQL);
 var NotImplemented = create('NotImplemented', PortSQL);
 var UnexpectedType = create('UnexpectedType', PortSQL);
 var UnexpectedColumnType = create('UnexpectedColumnType', PortSQL);
+var InvalidView = create('InvalidView', PortSQL);
 
 module.exports = {
     sql: function(cause) {
@@ -29,6 +30,8 @@ module.exports = {
     },
     unexpectedColumnType: function(params) {
         return new UnexpectedColumnType({message: 'Unexpected column type', params: params});
+    },
+    invalidView: function(params) {
+        return new InvalidView({message: 'Invalid view', params: params});
     }
-
 };
