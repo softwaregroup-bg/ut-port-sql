@@ -359,12 +359,27 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                 request.output(param.name, type, value);
             } else {
                 if (param.def && param.def.type === 'table') {
-                    value && (value.forEach instanceof Function || (typeof value === 'object' && (value = [value]))) && value.forEach(function(row) {
-                        type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
-                            prev.push(row[cur]);
-                            return prev;
-                        }, []));
-                    });
+                    if (value) {
+                        if (Array.isArray(value)) {
+                            value.forEach(function(row) {
+                                if (typeof row === 'object') {
+                                    type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
+                                        prev.push(row[cur]);
+                                        return prev;
+                                    }, []));
+                                } else {
+                                    type.rows.add.apply(type.rows, [row].concat(new Array(param.columns.length - 1)));
+                                }
+                            });
+                        } else if (typeof value === 'object') {
+                            type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
+                                prev.push(value[cur]);
+                                return prev;
+                            }, []));
+                        } else {
+                            type.rows.add.apply(type.rows, [value].concat(new Array(param.columns.length - 1)));
+                        }
+                    }
                     request.input(param.name, type);
                 } else {
                     request.input(param.name, type, value);
