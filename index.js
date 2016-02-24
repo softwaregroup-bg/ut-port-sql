@@ -346,7 +346,15 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
         recurse(data, '');
         return result;
     }
-
+    function getValue(column, value) {
+        if (value) {
+            if (column.type.declaration.startsWith('date')) {
+                // set a javascript date for 'date', 'datetime' and 'datetime2'
+                value = new Date(value);
+            }
+        }
+        return value;
+    }
     return function callLinkedSP(msg) {
         self.checkConnection(true);
         var request = self.getRequest();
@@ -363,21 +371,21 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                         if (Array.isArray(value)) {
                             value.forEach(function(row) {
                                 if (typeof row === 'object') {
-                                    type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
-                                        prev.push(row[cur]);
+                                    type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
+                                        prev.push(getValue(type.columns[i], row[cur]));
                                         return prev;
                                     }, []));
                                 } else {
-                                    type.rows.add.apply(type.rows, [row].concat(new Array(param.columns.length - 1)));
+                                    type.rows.add.apply(type.rows, [getValue(type.columns[0], row)].concat(new Array(param.columns.length - 1)));
                                 }
                             });
                         } else if (typeof value === 'object') {
-                            type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur) {
-                                prev.push(value[cur]);
+                            type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
+                                prev.push(getValue(type.columns[i], value[cur]));
                                 return prev;
                             }, []));
                         } else {
-                            type.rows.add.apply(type.rows, [value].concat(new Array(param.columns.length - 1)));
+                            type.rows.add.apply(type.rows, [getValue(type.columns[0], value)].concat(new Array(param.columns.length - 1)));
                         }
                     }
                     request.input(param.name, type);
