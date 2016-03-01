@@ -109,7 +109,7 @@ module.exports = {
         FOR
             --- Get all the user defined views with no schema binding on them
             SELECT DISTINCT
-                    ss.name + '.' + av.name AS ViewName
+                    '[' + ss.name + '].[' + av.name +']' AS ViewName
             FROM    sys.all_views av
                     JOIN sys.schemas ss ON av.schema_id = ss.schema_id
             WHERE   OBJECTPROPERTY(av.[object_id], 'IsSchemaBound') <> 1
