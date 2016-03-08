@@ -118,6 +118,7 @@ SqlPort.prototype.exec = function(message) {
     }
 
     // var start = +new Date();
+    var debug = this.isDebug();
     var request = this.getRequest();
     return when.promise(function(resolve, reject) {
         request.query(message.query, function(err, result) {
@@ -125,6 +126,7 @@ SqlPort.prototype.exec = function(message) {
             // var execTime = end - start;
             // todo record execution time
             if (err) {
+                debug && (err.query = message.query);
                 var error = uterror.get(err.message) || errors.sql;
                 reject(error(err));
             } else {
@@ -157,6 +159,22 @@ SqlPort.prototype.exec = function(message) {
     });
 };
 
+SqlPort.prototype.getSchema = function() {
+    var result = [];
+    if (this.config.schema) {
+        if (Array.isArray(this.config.schema)) {
+            result = this.config.schema.slice();
+        } else {
+            result.push({path: this.config.schema});
+        }
+    }
+    this.config.imports && this.config.imports.forEach(function(imp) {
+        imp.match(/\.schema$/) && Array.prototype.push.apply(result, this.config[imp]);
+        this.config[imp + '.schema'] && Array.prototype.push.apply(result, this.config[imp + '.schema']);
+    }.bind(this));
+    return result;
+};
+
 SqlPort.prototype.updateSchema = function(schema) {
     this.checkConnection();
 
@@ -184,7 +202,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     var self = this;
-    var schemas = this.config.schema && (Array.isArray(this.config.schema) ? this.config.schema : [{path: this.config.schema}]);
+    var schemas = this.getSchema();
     if (!schemas) {
         return schema;
     }
@@ -359,10 +377,13 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
         self.checkConnection(true);
         var request = self.getRequest();
         var data = flatten ? flattenMessage(msg) : msg;
+        var debug = this.isDebug();
+        var debugParams = {};
         request.multiple = true;
         params && params.forEach(function(param) {
             var value = param.update ? (data[param.name] || data.hasOwnProperty(param.update)) : data[param.name];
             var type = sqlType(param.def);
+            debug && (debugParams[param.name] = value);
             if (param.out) {
                 request.output(param.name, type, value);
             } else {
@@ -405,6 +426,8 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                 return result;
             })
             .catch(function(err) {
+                debug && (err.storedProcedure = name);
+                debug && (err.params = debugParams);
                 var error = uterror.get(err.message) || errors.sql;
                 throw error(err);
             });
@@ -464,7 +487,8 @@ SqlPort.prototype.linkSP = function(schema) {
 
 SqlPort.prototype.loadSchema = function(objectList) {
     var self = this;
-    if ((Array.isArray(this.config.schema) && !this.config.schema.length) || !this.config.schema) {
+    var schema = this.getSchema();
+    if ((Array.isArray(schema) && !schema.length) || !schema) {
         return {source: {}, parseList: []};
     }
 
