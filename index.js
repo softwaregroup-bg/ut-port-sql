@@ -14,6 +14,7 @@ function SqlPort() {
         logLevel: '',
         type: 'sql'
     };
+    this.super = {};
     this.connection = null;
     this.retryTimeout = null;
     return this;
@@ -440,7 +441,7 @@ SqlPort.prototype.linkSP = function(schema) {
         schema.parseList.forEach(function(source) {
             var binding = parserSP.parse(source);
             var flatName = binding.name.replace(/[\[\]]/g, '');
-            if (binding && binding.type === 'procedure' && !this.config[flatName]) {
+            if (binding && binding.type === 'procedure') {
                 var update = [];
                 var flatten = false;
                 binding.params && binding.params.forEach(function(param) {
@@ -478,7 +479,10 @@ SqlPort.prototype.linkSP = function(schema) {
                         };
                     }
                 });
-                this.config[flatName] = this.callSP(binding.name, binding.params, flatten);
+                this.super[flatName] = this.callSP(binding.name, binding.params, flatten).bind(this);
+                if (!this.config[flatName]) {
+                    this.config[flatName] = this.super[flatName];
+                }
             }
         }.bind(this));
     }
