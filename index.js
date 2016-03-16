@@ -12,7 +12,9 @@ function SqlPort() {
     this.config = {
         id: null,
         logLevel: '',
-        type: 'sql'
+        type: 'sql',
+        createTT: false,
+        tableToType: {}
     };
     this.super = {};
     this.connection = null;
@@ -21,7 +23,7 @@ function SqlPort() {
 }
 
 function fieldSource(column) {
-    return column.column.toLowerCase() + '\t' + column.type.toLowerCase() + '\t' + (column.length || '') + '\t' + (column.scale || '');
+    return (column.column + '\t' + column.type + '\t' + (column.length || '') + '\t' + (column.scale || '')).toLowerCase();
 }
 
 util.inherits(SqlPort, Port);
@@ -52,6 +54,12 @@ SqlPort.prototype.connect = function connect() {
 
 SqlPort.prototype.start = function start() {
     this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
+    if (Array.isArray(this.config.createTT)) {
+        this.config.tableToType = this.config.createTT.reduce(function(obj, tableName) {
+            obj[tableName.toLowerCase()] = true;
+            return obj;
+        }, {});
+    }
     return Port.prototype.start.apply(this, Array.prototype.slice.call(arguments))
         .then(this.connect.bind(this))
         .then(function(result) {
@@ -187,6 +195,22 @@ SqlPort.prototype.updateSchema = function(schema) {
         }
     }
 
+    function tableToType(statement) {
+        var result = '';
+        if (statement.match(/^CREATE\s+TABLE/i)) {
+            var parserSP = require('./parsers/mssqlSP');
+            var binding = parserSP.parse(statement);
+            if (binding.type === 'table') {
+                var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
+                var columns = binding.fields.map(function(field) {
+                    return ('[' + field.column + '] [' + field.type + ']' + (field.length ? '(' + field.length + ')' : ''));
+                });
+                result = 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
+            }
+        }
+        return result;
+    }
+
     function getCreateStatement(statement) {
         return statement.trim().replace(/^ALTER /i, 'CREATE ');
     }
@@ -200,6 +224,39 @@ SqlPort.prototype.updateSchema = function(schema) {
             }
         }
         return statement.trim().replace(/^ALTER /i, 'CREATE ');
+    }
+
+    function addQuery(queries, params) {
+        if (schema.source[params.objectId] === undefined) {
+            queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: params.createStatement});
+        } else {
+            if (schema.source[params.objectId].length && (getSource(params.fileContent) !== schema.source[params.objectId])) {
+                var deps = schema.deps[params.objectId];
+                if (deps) {
+                    deps.names.forEach(function(dep) {
+                        delete schema.source[dep];
+                    });
+                    queries.push({
+                        fileName: params.fileName,
+                        objectName: params.objectName + ' drop dependencies',
+                        objectId: params.objectId,
+                        content: deps.drop.join('\r\n')
+                    });
+                }
+                queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: getAlterStatement(params.fileContent)});
+            }
+        }
+    }
+
+    function getObjectName(fileName) {
+        return fileName.replace(/\.sql$/i, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+    }
+
+    function shouldCreateTT(tableName) {
+        if (self.config.createTT === true || self.config.tableToType[tableName] === true) {
+            return true;
+        }
+        return false;
     }
 
     var self = this;
@@ -216,30 +273,21 @@ SqlPort.prototype.updateSchema = function(schema) {
                 } else {
                     var queries = [];
                     files = files.sort();
+                    var objectIds = files.reduce(function(prev, cur) {
+                        prev[getObjectName(cur).toLowerCase()] = true;
+                        return prev;
+                    }, {});
                     files.forEach(function(file) {
-                        var objectName = file.replace(/\.sql/i, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                        var objectName = getObjectName(file);
                         var objectId = objectName.toLowerCase();
                         schemaConfig.linkSP && prev.push(objectId);
                         var fileName = schemaConfig.path + '/' + file;
                         var fileContent = fs.readFileSync(fileName).toString();
-                        var createStatement = getCreateStatement(fileContent);
-                        if (schema.source[objectId] === undefined) {
-                            queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: createStatement});
-                        } else {
-                            if (schema.source[objectId].length && (getSource(fileContent) !== schema.source[objectId])) {
-                                var deps = schema.deps[objectId];
-                                if (deps) {
-                                    deps.names.forEach(function(dep) {
-                                        delete schema.source[dep];
-                                    });
-                                    queries.push({
-                                        fileName: fileName,
-                                        objectName: objectName + ' drop dependencies',
-                                        objectId: objectId,
-                                        content: deps.drop.join('\r\n')
-                                    });
-                                }
-                                queries.push({fileName: fileName, objectName: objectName, objectId: objectId, content: getAlterStatement(fileContent)});
+                        addQuery(queries, {fileName: fileName, objectName: objectName, objectId: objectId, fileContent: fileContent, createStatement: getCreateStatement(fileContent)});
+                        if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                            var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                            if (tt) {
+                                addQuery(queries, {fileName: fileName, objectName: objectName + 'TableType', objectId: objectId + 'tt', fileContent: tt, createStatement: tt});
                             }
                         }
                     });

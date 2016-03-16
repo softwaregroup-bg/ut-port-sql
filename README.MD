@@ -266,3 +266,36 @@ Note the mandatory camelCase naming convention for procedure, parameter and resu
      SET IDENTITY_INSERT tableName OFF --in case of presence of identity columns
    END
    ```
+
+### **Automatic creation of user defined table types** ###
+
+The SQL port has a configuration property named ‘createTT’. This property can be set to boolean or an array of strings, specifying whether user defined table types matching the tables' structure should be automatically created. There are several scenarios: 
+
+ - If the property is set to **true** then user defined table types will
+   be automatically created for all tables. e.g
+   
+```js
+   module.exports = {
+        type: 'sql',
+        createTT: true
+        ...
+    }
+```
+
+ - If the property is set to an array of strings it means that user defined table types will be created for those tables only.
+
+```js
+ 
+    module.exports = {
+        type: 'sql',
+        createTT: ['schema1.tableName1', 'schema2.tableName2']
+        ...
+    }
+```
+ - if the property is omitted or set to **false** then no user defined table types will be created.
+
+The user defined table types that get automatically created will have their names equal to the their corresponding tables' names followed by '**TT**'
+
+E.g. if table's name is **schema.name** then it's corresponding user defined type's name would be **schema.nameTT**
+
+In case a user defined table type with the same name is manually defined in the schema folder then it will have a priority over the automatic one upon schema initialization/upgrade.

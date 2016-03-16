@@ -1,14 +1,48 @@
-create = procedure / tableValue
+create = procedure / tableValue / table
 
 procedure
-  = ws CREATE ws1 PROCEDURE ws1 name:fullname params:params? ws1 AS ws1 body {return {type:'procedure', name:name, params:params}}
+  = ws CREATE ws1 PROCEDURE ws1 name:fullname params:params? ws1 AS ws1 body {
+      return {
+          type:'procedure',
+            name:name,
+            params:params
+        }
+    }
 
 tableValue
-  = ws CREATE ws1 TYPE ws1 name:fullname ws1 AS ws1 TABLE ws lparen ws fields:fields ws rparen {return {type:'table type', name:name, fields:fields}}
+  = ws CREATE ws1 TYPE ws1 name:fullname ws1 AS ws1 TABLE ws lparen ws fields:fields ws rparen ws{
+      return {
+          type:'table type',
+            name:name, fields:fields
+        }
+    }
+
+table
+  = ws CREATE ws1 TABLE ws1 name:fullname ws lparen ws fc:fields_and_constraints ws rparen ws{
+      return {
+          type: 'table',
+            name: name,
+            fields: fc.filter(function(x){return x.isField}),
+            constraints: fc.filter(function(x){return x.isConstraint})
+        }
+    }
 
 name =
   "[" str:$[^\]]+ "]" {return str} / 
   $[A-Za-z0-9_$]+
+  
+names = (ws n:name ws o:order? m:(ws comma ws n:name ws o:order? {
+          return {
+              name: n,
+              order: o
+            }
+        })*) {
+          m.unshift({
+              name: n,
+                order: o
+            });
+            return m
+        }
 
 namespace = name:name "." {return '['+name+'].'}
 
@@ -16,17 +50,72 @@ fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
   (ws1 p:param q:(ws comma ws r:param {return r})*) {q.unshift(p); return q}
+
+fields_and_constraints = p:field_or_constraint q:(ws comma ws r:field_or_constraint {return r})* {q.unshift(p); return q}
   
+field_or_constraint = constraint / field
+
 fields =
   (p:field q:(ws comma ws r:field {return r})*) {q.unshift(p); return q}
 
 param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
-field = n:name ws1 t:param_type {return {column:n, type:t.type, length:Array.isArray(t.size)?t.size[0]:t.size,scale:Array.isArray(t.size)?t.size[1]:null}}
+field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? {
+  var identity = !!i;
+    var result = {
+      column:n,
+      type:t.type,
+      nullable:!not_nullable,
+      length:Array.isArray(t.size) ? t.size[0] : t.size,
+      scale:Array.isArray(t.size) ? t.size[1] : null,
+      identity: i || false,
+      isField:true
+    }
+    return result
+}
+
+constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint) {
+  c.isConstraint = true;
+  c.name = n;
+  return c
+}
+
+pk_constraint
+  = "PRIMARY KEY"i ws c:clustered? ws lparen ws n:names ws o:order? ws rparen {
+      return {
+          type: "PRIMARY KEY",
+            clustered: !!c && c.toLowerCase() === "clustered",
+            columns: n,
+            order: o
+        }
+    }
+    
+clustered = "CLUSTERED"i / "NONCLUSTERED"i
+order = "ASC"i / "DESC"i
+
+fk_constraint
+  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws1 "REFERENCES" ws1 t:fullname ws lparen c:name ws rparen ws {
+      return {
+          type: "FOREIGN KEY",
+            referenceTable: t,
+            referenceColumn: c
+        }
+    }
+
+unique_constraint
+   = "UNIQUE"i ws lparen ws n:names ws rparen {
+        return {
+          type: "UNIQUE",
+            columns: n
+        }
+   }
 
 param_type = table_type / scalar_type
 
+not_nullable = ws1 x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
+identity = ws1 "IDENTITY" a:identity_arguments? {return a || {}}
+identity_arguments = ws lparen ws s:signed_number ws comma ws i:signed_number ws rparen {return {seed: s, increment: i}}
 table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
 
 scalar_type = ( n:name )
