@@ -6,7 +6,7 @@ var when = require('when');
 var errors = require('./errors');
 var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
-const AUDIT_LOG = /^\/\/ut-audit-params$/m;
+const AUDIT_LOG = /^--ut-audit-params$/m;
 
 function SqlPort() {
     Port.call(this);
