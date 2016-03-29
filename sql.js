@@ -161,5 +161,19 @@ module.exports = {
         DEALLOCATE view_cursor
 
         SET NOCOUNT OFF;`;
+    },
+    auditLog: function(statement) {
+        if (!statement.params) return;
+        var sql = `    DECLARE @proc_name nvarchar(max) = Object_name(@@procid) DECLARE @proc_params XML = ( SELECT `;
+        statement.params.map(function(param) {
+            if (param.def.type === 'table') {
+                sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) ${param.name}, `;
+            } else {
+                sql += `@${param.name} ${param.name}, `;
+            }
+        });
+        sql = sql.replace(/,\s$/, ' ');
+        sql += `FOR XML RAW('params'),TYPE) EXEC core.audit_call @proc_name = @proc_name, @proc_params=@proc_params`;
+        return sql;
     }
 };

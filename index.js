@@ -6,6 +6,7 @@ var when = require('when');
 var errors = require('./errors');
 var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
+const AUDIT_LOG = /^\/\/ut-audit-params$/m;
 
 function SqlPort() {
     Port.call(this);
@@ -188,11 +189,20 @@ SqlPort.prototype.updateSchema = function(schema) {
     this.checkConnection();
 
     function getAlterStatement(statement) {
+        if (statement.match(AUDIT_LOG)) {
+            statement = replaceAuditLog(statement);
+        }
         if (statement.trim().match(/^CREATE\s+TYPE/i)) {
             return statement.trim();
         } else {
             return statement.trim().replace(/^CREATE /i, 'ALTER ');
         }
+    }
+
+    function replaceAuditLog(statement) {
+        var parserSP = require('./parsers/mssqlSP');
+        var binding = parserSP.parse(statement);
+        return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
     }
 
     function tableToType(statement) {
@@ -212,10 +222,16 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function getCreateStatement(statement) {
+        if (statement.match(AUDIT_LOG)) {
+            statement = replaceAuditLog(statement);
+        }
         return statement.trim().replace(/^ALTER /i, 'CREATE ');
     }
 
     function getSource(statement) {
+        if (statement.match(AUDIT_LOG)) {
+            statement = replaceAuditLog(statement);
+        }
         if (statement.trim().match(/^CREATE\s+TYPE/i)) {
             var parserSP = require('./parsers/mssqlSP');
             var binding = parserSP.parse(statement);
