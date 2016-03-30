@@ -1,10 +1,11 @@
 create = procedure / tableValue / table
 
 procedure
-  = ws CREATE ws1 PROCEDURE ws1 name:fullname params:params? ws1 AS ws1 body {
+  = ws CREATE ws1 PROCEDURE ws1 name:fullname ws:ws1 params:params? AS ws1 body {
       return {
           type:'procedure',
             name:name,
+            doc: ws.length && ws[0] ? ws[0].single : '',
             params:params
         }
     }
@@ -49,15 +50,41 @@ namespace = name:name "." {return '['+name+'].'}
 fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
-  (ws1 p:param q:(ws comma ws r:param {return r})*) {q.unshift(p); return q}
+  p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 { 
 
-fields_and_constraints = p:field_or_constraint q:(ws comma ws r:field_or_constraint {return r})* {q.unshift(p); return q}
+  var x=[p];
+  q.forEach(function(pp){
+    x.push(pp[0]);
+    x.push(pp[1]);
+  });
+  x.push(e)
+  var lastParam;
+  var lastComment;
+  var y = [];
+  x.forEach(function(pp, i){
+    if (i % 2 === 0) {
+       lastParam = pp;
+       lastComment && (pp.doc = lastComment) && (lastComment=null);
+       y.push(pp);
+    } else {
+       if (pp.length && pp[0]){
+         pp[0].single && !lastComment && (lastParam.doc = pp[0].single);
+         lastComment = pp[pp.length-1].multi;
+         pp[0].multi && (lastComment = pp[0].multi);
+       }
+    }
+  });
+  return y
+  
+}
+
+fields_and_constraints = p:field_or_constraint q:(ws comma ws:ws r:field_or_constraint { return r})* {q.unshift(p); return q}
   
 field_or_constraint = constraint / field
 
 fields =
   (p:field q:(ws comma ws r:field {return r})*) {q.unshift(p); return q}
-
+comment1 = " -- " c:name {return c}
 param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
@@ -138,8 +165,8 @@ digit = [0-9]
 quote = "'"
 decimal_point = "."
 E = "E"
-ws = (WhiteSpace / LineTerminatorSequence / Comment)*
-ws1 = (WhiteSpace / LineTerminatorSequence / Comment)+
+ws = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)* {return ws.filter(function(x){return x})}
+ws1 = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)+ {return ws.filter(function(x){return x})}
 CREATE =  "CREATE"i
 TYPE = "TYPE"i
 PROCEDURE = "PROCEDURE"i
@@ -177,12 +204,16 @@ LineTerminatorSequence "end of line"
 Comment "comment"
   = MultiLineComment
   / SingleLineComment
-
+  
+MultiLineCommentBody = 
+  (!"*/" SourceCharacter)*{return {multi:text()}}
+  
 MultiLineComment
-  = "/*" (!"*/" SourceCharacter)* "*/"
+  = "/*" x:MultiLineCommentBody "*/" {return x}
 
 MultiLineCommentNoLineTerminator
   = "/*" (!("*/" / LineTerminator) SourceCharacter)* "*/"
 
+SingleLineCommentBody = (!LineTerminator SourceCharacter)* {return {single:text()}}
 SingleLineComment
-  = "--" (!LineTerminator SourceCharacter)*
+  = "--" x:SingleLineCommentBody {return x}
