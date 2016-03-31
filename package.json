@@ -3,9 +3,9 @@
   "version": "5.3.39",
   "main": "./index.js",
   "dependencies": {
-    "mssql": "~2.3.1",
+    "mssql": "2.3.2",
     "ut-error": "~5.3.2",
-    "when": "~3.7.2"
+    "when": "3.7.7"
   },
   "devDependencies": {
     "ut-tools": "^5.3.1"
