@@ -4,7 +4,7 @@
   "main": "./index.js",
   "dependencies": {
     "mssql": "2.3.2",
-    "ut-error": "~5.3.2",
+    "ut-error": "^5.3.10",
     "when": "3.7.7"
   },
   "devDependencies": {
