@@ -299,3 +299,37 @@ The user defined table types that get automatically created will have their name
 E.g. if table's name is **schema.name** then it's corresponding user defined type's name would be **schema.nameTT**
 
 In case a user defined table type with the same name is manually defined in the schema folder then it will have a priority over the automatic one upon schema initialization/upgrade.
+
+### **Table and column comments** ###
+
+Table and column comments are parsed and inserted as description in MSSQL. Single line comment '**--**' after every parameter, field, column or constraint will be added as description for itself. 
+
+Multiline comments between **/*** and ***/** are added as description for the next param.
+
+If both single line comment and multiline comment exist, only multiline comment will be saved.
+
+```sql
+CREATE PROCEDURE [test].[db.method] -- Procedure description
+    @param1 int, -- param1 descrition
+    /* multiline description
+       related to param2 */
+    @param2 nvarchar(20)
+    @param3 test.tableValue2 READONLY -- param3 description
+AS
+    SELECT * from @param1
+    IF @error=1 RAISERROR('test.error',11,0)
+```
+In case of table or type, the table description is at the same line as create statement after the opening bracket. 
+```sql
+CREATE TABLE [schema].[table] ( -- Table description
+    /* multiline description 
+       related to column1 */
+    [column1] varchar(200) NOT NULL, -- this single line description will be omitted, because multiline description for the same column already exist
+    [column2] [bigint] NOT NULL, -- single line description related to column2
+    [column3] varchar(50) NOT NULL
+    CONSTRAINT [pk1] PRIMARY KEY NONCLUSTERED (sessionId), -- description for constraint are also parsed
+    /* multiline is suppoted 
+       for constraints too */
+    CONSTRAINT [fkSession_User] FOREIGN KEY([actorId]) REFERENCES [user].[user](actorId)
+)
+```

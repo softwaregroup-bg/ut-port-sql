@@ -1,28 +1,37 @@
 create = procedure / tableValue / table
 
 procedure
-  = ws CREATE ws1 PROCEDURE ws1 name:fullname ws:ws1 params:params? AS ws1 body {
+  = ws CREATE ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body {
       return {
           type:'procedure',
-            name:name,
-            doc: ws.length && ws[0] ? ws[0].single : '',
+            name: '['+schema+'].['+table+']',
+            schema: schema,
+            table: table,
+            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
             params:params
         }
     }
 
 tableValue
-  = ws CREATE ws1 TYPE ws1 name:fullname ws1 AS ws1 TABLE ws lparen ws fields:fields ws rparen ws{
+  = ws CREATE ws1 TYPE ws1 schema:schema table:name ws1 AS ws1 TABLE ws lparen doc:WhitespaceSingleLineComment? fields:fields ws rparen ws{
       return {
           type:'table type',
-            name:name, fields:fields
+            name: '['+schema+'].['+table+']',
+            schema: schema,
+            table: table,
+            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+            fields:fields
         }
     }
 
 table
-  = ws CREATE ws1 TABLE ws1 name:fullname ws lparen ws fc:fields_and_constraints ws rparen ws{
+  = ws CREATE ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen ws{
       return {
           type: 'table',
-            name: name,
+            name: '['+schema+'].['+table+']',
+            schema: schema,
+            table: table,
+            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
             fields: fc.filter(function(x){return x.isField}),
             constraints: fc.filter(function(x){return x.isConstraint})
         }
@@ -45,12 +54,13 @@ names = (ws n:name ws o:order? m:(ws comma ws n:name ws o:order? {
             return m
         }
 
+schema = name:name "." {return name}
 namespace = name:name "." {return '['+name+'].'}
 
 fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
-  p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 { 
+  f:ws1 p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 { 
 
   var x=[p];
   q.forEach(function(pp){
@@ -59,16 +69,16 @@ params =
   });
   x.push(e)
   var lastParam;
-  var lastComment;
+  var lastComment=f[0] && f[f.length-1].multi;
   var y = [];
   x.forEach(function(pp, i){
     if (i % 2 === 0) {
        lastParam = pp;
-       lastComment && (pp.doc = lastComment) && (lastComment=null);
+       lastComment && (pp.doc = lastComment.replace(/^\s+/, '').replace(/\s+$/, '')) && (lastComment=null);
        y.push(pp);
     } else {
        if (pp.length && pp[0]){
-         pp[0].single && !lastComment && (lastParam.doc = pp[0].single);
+         pp[0].single && !lastParam.doc && (lastParam.doc = pp[0].single.replace(/^\s+/, '').replace(/\s+$/, ''));
          lastComment = pp[pp.length-1].multi;
          pp[0].multi && (lastComment = pp[0].multi);
        }
@@ -76,15 +86,68 @@ params =
   });
   return y
   
-}
+} / ws1
 
-fields_and_constraints = p:field_or_constraint q:(ws comma ws:ws r:field_or_constraint { return r})* {q.unshift(p); return q}
+fields_and_constraints = f:ws p:field_or_constraint q:(ws comma ws:ws r:field_or_constraint { return [ws, r]})* e:ws1 {
+
+  var x=[p];
+  q.forEach(function(pp){
+    x.push(pp[0]);
+    x.push(pp[1]);
+  });
+  x.push(e)
+  var lastParam;
+  var lastComment=f[0] && f[f.length-1].multi;
+  var y = [];
+  x.forEach(function(pp, i){
+    if (i % 2 === 0) {
+       lastParam = pp;
+       lastComment && (pp.doc = lastComment.replace(/^\s+/, '').replace(/\s+$/, '')) && (lastComment=null);
+       y.push(pp);
+    } else {
+       if (pp.length && pp[0]){
+         pp[0].single && !lastParam.doc && (lastParam.doc = pp[0].single.replace(/^\s+/, '').replace(/\s+$/, ''));
+         lastComment = pp[pp.length-1].multi;
+         pp[0].multi && (lastComment = pp[0].multi);
+       }
+    }
+  });
+  return y
+  
+
+}
   
 field_or_constraint = constraint / field
 
+
 fields =
-  (p:field q:(ws comma ws r:field {return r})*) {q.unshift(p); return q}
-comment1 = " -- " c:name {return c}
+  f:ws p:field q:(ws comma ws:ws r:field {return [ws, r]})* e:ws {
+  var x=[p];
+  q.forEach(function(pp){
+    x.push(pp[0]);
+    x.push(pp[1]);
+  });
+  x.push(e)
+  var lastParam;
+  var lastComment=f[0] && f[f.length-1].multi;
+  var y = [];
+  x.forEach(function(pp, i){
+    if (i % 2 === 0) {
+       lastParam = pp;
+       lastComment && (pp.doc = lastComment.replace(/^\s+/, '').replace(/\s+$/, '')) && (lastComment=null);
+       y.push(pp);
+    } else {
+       if (pp.length && pp[0]){
+         pp[0].single && !lastParam.doc && (lastParam.doc = pp[0].single.replace(/^\s+/, '').replace(/\s+$/, ''));
+         lastComment = pp[pp.length-1].multi;
+         pp[0].multi && (lastComment = pp[0].multi);
+       }
+    }
+  });
+  return y
+  
+  }
+
 param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
@@ -122,7 +185,7 @@ clustered = "CLUSTERED"i / "NONCLUSTERED"i
 order = "ASC"i / "DESC"i
 
 fk_constraint
-  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws1 "REFERENCES" ws1 t:fullname ws lparen c:name ws rparen ws {
+  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws1 "REFERENCES" ws1 t:fullname ws lparen c:name ws rparen {
       return {
           type: "FOREIGN KEY",
             referenceTable: t,
@@ -217,3 +280,4 @@ MultiLineCommentNoLineTerminator
 SingleLineCommentBody = (!LineTerminator SourceCharacter)* {return {single:text()}}
 SingleLineComment
   = "--" x:SingleLineCommentBody {return x}
+WhitespaceSingleLineComment = WhiteSpace? "--" x:SingleLineCommentBody {return x}

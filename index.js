@@ -45,6 +45,7 @@ SqlPort.prototype.connect = function connect() {
         .then(this.updateSchema.bind(this))
         .then(this.refreshView.bind(this, false))
         .then(this.linkSP.bind(this))
+        .then(this.doc(this))
         .then(function(v) { self.connectionReady = true; return v; })
         .catch(function(err) {
             try { this.connection.close(); } catch (e) {};
@@ -619,6 +620,61 @@ SqlPort.prototype.refreshView = function(drop, data) {
         } else {
             return data;
         }
+    });
+};
+
+SqlPort.prototype.doc = function() {
+    this.checkConnection();
+    var self = this;
+    var schemas = this.getSchema();
+    var parserSP = require('./parsers/mssqlSP');
+    return when.reduce(schemas, function(prev, schemaConfig) { // visit each schema folder
+        return when.promise(function(resolve, reject) {
+            fs.readdir(schemaConfig.path, function(err, files) {
+                if (err) {
+                    reject(err);
+                } else {
+                    files = files.sort();
+                    files.forEach(function(file) {
+                        var fileName = schemaConfig.path + '/' + file;
+                        var fileContent = fs.readFileSync(fileName).toString();
+                        if (fileContent.trim().match(/^CREATE\s+PROCEDURE/i) || fileContent.trim().match(/^CREATE\s+TABLE/i)) {
+                            var binding = parserSP.parse(fileContent);
+                            var fields = fileContent.trim().match(/^CREATE\s+PROCEDURE/i) ? binding.params : binding.fields;
+                            fields.map((field) => {
+                                if (field.doc) {
+                                    var doc = {
+                                        type0: 'schema', name0: binding.schema,
+                                        type1: 'table', name1: binding.table,
+                                        type2: 'column', name2: field.name || field.column,
+                                        doc: field.doc
+                                    };
+                                    prev.push(doc);
+                                }
+                            });
+                        }
+                    });
+                    resolve(prev);
+                }
+            });
+        }, []);
+    }, [])
+    .then(function(docList) {
+        var request = self.getRequest();
+        request.multiple = true;
+        var docListParam = new mssql.Table('core.documentationTT');
+        docListParam.columns.add('type0', mssql.VarChar(128));
+        docListParam.columns.add('name0', mssql.NVarChar(128));
+        docListParam.columns.add('type1', mssql.VarChar(128));
+        docListParam.columns.add('name1', mssql.NVarChar(128));
+        docListParam.columns.add('type2', mssql.VarChar(128));
+        docListParam.columns.add('name2', mssql.NVarChar(128));
+        docListParam.columns.add('doc', mssql.NVarChar(2000));
+        docList.forEach(function(doc) {
+            docListParam.rows.add(doc.type0, doc.name0, doc.type1, doc.name1, doc.type2, doc.name2, doc.doc);
+        });
+        request.input('docList', docListParam);
+        return request.execute('core.documentation');
     });
 };
 
