@@ -6,7 +6,7 @@ var when = require('when');
 var errors = require('./errors');
 var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
-const AUDIT_LOG = /^--ut-audit-params$/m;
+const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 
 function SqlPort() {
     Port.call(this);
@@ -222,6 +222,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function getCreateStatement(statement) {
+        console.log(statement);
         if (statement.match(AUDIT_LOG)) {
             statement = replaceAuditLog(statement);
         }
