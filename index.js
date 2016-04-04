@@ -45,7 +45,6 @@ SqlPort.prototype.connect = function connect() {
         .then(this.updateSchema.bind(this))
         .then(this.refreshView.bind(this, false))
         .then(this.linkSP.bind(this))
-        .then(this.doc(this))
         .then(function(v) { self.connectionReady = true; return v; })
         .catch(function(err) {
             try { this.connection.close(); } catch (e) {};
@@ -638,9 +637,9 @@ SqlPort.prototype.doc = function() {
                     files.forEach(function(file) {
                         var fileName = schemaConfig.path + '/' + file;
                         var fileContent = fs.readFileSync(fileName).toString();
-                        if (fileContent.trim().match(/^CREATE\s+PROCEDURE/i) || fileContent.trim().match(/^CREATE\s+TABLE/i)) {
+                        if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
                             var binding = parserSP.parse(fileContent);
-                            var fields = fileContent.trim().match(/^CREATE\s+PROCEDURE/i) ? binding.params : binding.fields;
+                            var fields = binding.type === 'procedure' ? binding.params : binding.fields;
                             fields.map((field) => {
                                 if (field.doc) {
                                     var doc = {

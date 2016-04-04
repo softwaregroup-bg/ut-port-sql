@@ -1,7 +1,9 @@
 create = procedure / tableValue / table
 
+createoralter = "ALTER"i / "CREATE"i
+
 procedure
-  = ws CREATE ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body {
+  = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body {
       return {
           type:'procedure',
             name: '['+schema+'].['+table+']',
@@ -13,7 +15,7 @@ procedure
     }
 
 tableValue
-  = ws CREATE ws1 TYPE ws1 schema:schema table:name ws1 AS ws1 TABLE ws lparen doc:WhitespaceSingleLineComment? fields:fields ws rparen ws{
+  = ws createoralter ws1 TYPE ws1 schema:schema table:name ws1 AS ws1 TABLE ws lparen doc:WhitespaceSingleLineComment? fields:fields ws rparen ws{
       return {
           type:'table type',
             name: '['+schema+'].['+table+']',
@@ -25,7 +27,7 @@ tableValue
     }
 
 table
-  = ws CREATE ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen ws{
+  = ws createoralter ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen ws{
       return {
           type: 'table',
             name: '['+schema+'].['+table+']',
