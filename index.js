@@ -222,7 +222,6 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function getCreateStatement(statement) {
-        console.log(statement);
         if (statement.match(AUDIT_LOG)) {
             statement = replaceAuditLog(statement);
         }
