@@ -71,7 +71,7 @@ SqlPort.prototype.start = function start() {
 
 SqlPort.prototype.stop = function stop() {
     clearTimeout(this.retryTimeout);
-    this.queue.push();
+    // this.queue.push();
     this.connectionReady = false;
     this.connection.close();
     Port.prototype.stop.apply(this, Array.prototype.slice.call(arguments));
@@ -259,7 +259,12 @@ SqlPort.prototype.updateSchema = function(schema) {
                         content: deps.drop.join('\r\n')
                     });
                 }
-                queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: getAlterStatement(params.fileContent)});
+                queries.push({
+                    fileName: params.fileName,
+                    objectName: params.objectName,
+                    objectId: params.objectId,
+                    content: getAlterStatement(params.fileContent)
+                });
             }
         }
     }
@@ -299,11 +304,23 @@ SqlPort.prototype.updateSchema = function(schema) {
                         schemaConfig.linkSP && prev.push(objectId);
                         var fileName = schemaConfig.path + '/' + file;
                         var fileContent = fs.readFileSync(fileName).toString();
-                        addQuery(queries, {fileName: fileName, objectName: objectName, objectId: objectId, fileContent: fileContent, createStatement: getCreateStatement(fileContent)});
+                        addQuery(queries, {
+                            fileName: fileName,
+                            objectName: objectName,
+                            objectId: objectId,
+                            fileContent: fileContent,
+                            createStatement: getCreateStatement(fileContent)
+                        });
                         if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
                             var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
                             if (tt) {
-                                addQuery(queries, {fileName: fileName, objectName: objectName + 'TableType', objectId: objectId + 'tt', fileContent: tt, createStatement: tt});
+                                addQuery(queries, {
+                                    fileName: fileName,
+                                    objectName: objectName + 'TableType',
+                                    objectId: objectId + 'tt',
+                                    fileContent: tt,
+                                    createStatement: tt
+                                });
                             }
                         }
                     });
@@ -322,6 +339,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                     })
                     .catch(function(error) {
                         error.fileName = currentFileName;
+                        error.message = error.message + ' (' + currentFileName + ':' + (error.lineNumber || 1) + ':1)';
                         reject(error);
                     });
                 }
