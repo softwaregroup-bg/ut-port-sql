@@ -1,3 +1,13 @@
+<a name="5.3.43"></a>
+## [5.3.43](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.42...v5.3.43) (2016-04-05)
+
+
+### Features
+
+* report error location in file ([1f60345](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/1f60345))
+
+
+
 <a name="5.3.42"></a>
 ## [5.3.42](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.41...v5.3.42) (2016-04-05)
 
