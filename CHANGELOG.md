@@ -1,3 +1,13 @@
+<a name="5.3.44"></a>
+## [5.3.44](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.43...v5.3.44) (2016-04-15)
+
+
+### Features
+
+* add Gitlab-ci and Jenkins scripts ([4591399](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/4591399))
+
+
+
 <a name="5.3.43"></a>
 ## [5.3.43](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.42...v5.3.43) (2016-04-05)
 
