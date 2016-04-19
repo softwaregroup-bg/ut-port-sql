@@ -1,3 +1,13 @@
+<a name="5.3.45"></a>
+## [5.3.45](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.44...v5.3.45) (2016-04-19)
+
+
+### Bug Fixes
+
+* fix naming convention for auditCall ([edbec62](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/edbec62))
+
+
+
 <a name="5.3.44"></a>
 ## [5.3.44](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.43...v5.3.44) (2016-04-15)
 
