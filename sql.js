@@ -175,7 +175,7 @@ module.exports = {
             }
         });
         sql = sql.replace(/,\s$/, ' ');
-        sql += 'FOR XML RAW(\'params\'),TYPE) EXEC core.audit_call @proc_name = @proc_name, @proc_params=@proc_params';
+        sql += 'FOR XML RAW(\'params\'),TYPE) EXEC core.auditCall @name = @proc_name, @params=@proc_params';
         return sql;
     }
 };
