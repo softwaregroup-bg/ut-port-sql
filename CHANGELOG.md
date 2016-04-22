@@ -1,3 +1,13 @@
+<a name="5.3.46"></a>
+## [5.3.46](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.45...v5.3.46) (2016-04-22)
+
+
+### Features
+
+* add support for creating database ([04ab4fb](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/04ab4fb))
+
+
+
 <a name="5.3.45"></a>
 ## [5.3.45](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.44...v5.3.45) (2016-04-19)
 
