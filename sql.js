@@ -177,5 +177,25 @@ module.exports = {
         sql = sql.replace(/,\s$/, ' ');
         sql += 'FOR XML RAW(\'params\'),TYPE) EXEC core.auditCall @name = @proc_name, @params=@proc_params';
         return sql;
+    },
+    createDatabase: function(name, user) {
+        return `
+        IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${name}')
+        BEGIN
+          CREATE DATABASE [${name}]
+        END`;
+    },
+    createUser: function(name, user, password) {
+        return `
+        IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '${user}')
+        BEGIN
+            CREATE LOGIN [${user}] WITH PASSWORD = N'${password}', CHECK_POLICY = OFF
+        END
+        USE [${name}]
+        IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = '${user}')
+        BEGIN
+            CREATE USER [${user}] FOR LOGIN [${user}]
+        END
+        EXEC sp_addrolemember 'db_owner', '${user}'`;
     }
 };

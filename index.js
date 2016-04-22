@@ -38,8 +38,8 @@ SqlPort.prototype.connect = function connect() {
     this.connection && this.connection.close();
     this.connectionReady = false;
     var self = this;
-    this.connection = new mssql.Connection(this.config.db);
-    return this.connection.connect()
+
+    return this.tryConnect()
         .then(this.refreshView.bind(this, true))
         .then(this.loadSchema.bind(this, null))
         .then(this.updateSchema.bind(this))
@@ -693,6 +693,28 @@ SqlPort.prototype.doc = function() {
         request.input('docList', docListParam);
         return request.execute('core.documentation');
     });
+};
+
+SqlPort.prototype.tryConnect = function() {
+    this.connection = new mssql.Connection(this.config.db);
+    if (this.config.create) {
+        var conCreate = new mssql.Connection({
+            server: this.config.db.server,
+            user: this.config.create.user,
+            password: this.config.create.password
+        });
+        return conCreate.connect()
+        .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
+        .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password)))
+        .then(() => conCreate.close())
+        .then(() => this.connection.connect())
+        .catch((err) => {
+            try { this.conCreate.close(); } catch (e) {};
+            throw err;
+        });
+    } else {
+        return this.connection.connect();
+    }
 };
 
 module.exports = SqlPort;
