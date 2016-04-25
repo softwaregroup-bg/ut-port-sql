@@ -1,3 +1,13 @@
+<a name="5.3.47"></a>
+## [5.3.47](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.46...v5.3.47) (2016-04-25)
+
+
+### Features
+
+* allow retry to be configured and fail when retry is disabled ([55783de](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/55783de))
+
+
+
 <a name="5.3.46"></a>
 ## [5.3.46](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.45...v5.3.46) (2016-04-22)
 
