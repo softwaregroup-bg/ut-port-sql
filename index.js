@@ -15,6 +15,7 @@ function SqlPort() {
         logLevel: '',
         type: 'sql',
         createTT: false,
+        retry: 10000,
         tableToType: {}
     };
     this.super = {};
@@ -46,11 +47,15 @@ SqlPort.prototype.connect = function connect() {
         .then(this.refreshView.bind(this, false))
         .then(this.linkSP.bind(this))
         .then(function(v) { self.connectionReady = true; return v; })
-        .catch(function(err) {
+        .catch((err) => {
             try { this.connection.close(); } catch (e) {};
-            this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
-            this.log.error && this.log.error(err);
-        }.bind(this));
+            if (this.config.retry) {
+                this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
+                this.log.error && this.log.error(err);
+            } else {
+                return Promise.reject(err);
+            }
+        });
 };
 
 SqlPort.prototype.start = function start() {
