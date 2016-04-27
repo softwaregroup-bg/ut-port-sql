@@ -1,3 +1,8 @@
+<a name="5.3.48"></a>
+## [5.3.48](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.47...v5.3.48) (2016-04-27)
+
+
+
 <a name="5.3.47"></a>
 ## [5.3.47](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.46...v5.3.47) (2016-04-25)
 
