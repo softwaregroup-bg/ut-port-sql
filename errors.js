@@ -8,6 +8,9 @@ var NotImplemented = create('NotImplemented', PortSQL);
 var UnexpectedType = create('UnexpectedType', PortSQL);
 var UnexpectedColumnType = create('UnexpectedColumnType', PortSQL);
 var InvalidView = create('InvalidView', PortSQL);
+var InvalidResultSetOrder = create('InvalidResultSetOrder', PortSQL);
+var DuplicateResultSetName = create('DuplicateResultSetName', PortSQL);
+var SingleResultExpected = create('SingleResultExpected', PortSQL);
 
 module.exports = {
     sql: function(cause) {
@@ -33,5 +36,14 @@ module.exports = {
     },
     invalidView: function(params) {
         return new InvalidView({message: 'Invalid view', params: params});
+    },
+    invalidResultSetOrder: function(params) {
+        return new InvalidResultSetOrder({message: 'Invalid resultset order', params: params});
+    },
+    duplicateResultSetName: function(params) {
+        return new DuplicateResultSetName({mssage: 'Duplicate resultset name', params: params});
+    },
+    singleResultExpected: function(params) {
+        return new SingleResultExpected({mssage: 'Expected single or no result', params: params});
     }
 };

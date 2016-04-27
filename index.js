@@ -504,14 +504,70 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
             }
         });
         return request.execute(name)
-            .then(function(result) {
+            .then(function(resultsets) {
+                function isNamingResultSet(element) {
+                    return Array.isArray(element) &&
+                        element.length === 1 &&
+                        element[0].hasOwnProperty('resultSetName') &&
+                        typeof element[0].resultSetName === 'string';
+                }
+
+                if (resultsets.length > 0 && isNamingResultSet(resultsets[0])) {
+                    var namedSet = {};
+                    var name = null;
+                    var single = false;
+                    for (var i = 0; i < resultsets.length; ++i) {
+                        if (name == null) {
+                            if (!isNamingResultSet(resultsets[i])) {
+                                throw errors.invalidResultSetOrder({
+                                    expectName: true
+                                });
+                            } else {
+                                name = resultsets[i][0].resultSetName;
+                                single = !!resultsets[i][0].single;
+                            }
+                        } else {
+                            if (isNamingResultSet(resultsets[i])) {
+                                throw errors.invalidResultSetOrder({
+                                    expectName: false
+                                });
+                            }
+                            if (namedSet.hasOwnProperty(name)) {
+                                throw errors.duplicateResultSetName({
+                                    name: name
+                                });
+                            }
+                            if (single) {
+                                if (resultsets[i].length === 0) {
+                                    namedSet[name] = null;
+                                } else if (resultsets[i].length === 1) {
+                                    namedSet[name] = resultsets[i][0];
+                                } else {
+                                    throw errors.singleResultExpected({
+                                        count: resultsets[i].length
+                                    });
+                                }
+                            } else {
+                                namedSet[name] = resultsets[i];
+                            }
+                            name = null;
+                            single = false;
+                        }
+                    }
+                    if (name != null) {
+                        throw errors.invalidResultSetOrder({
+                            expectName: false
+                        });
+                    }
+                    return namedSet;
+                }
                 if (outParams.length) {
-                    result.push([outParams.reduce(function(prev, curr) {
+                    resultsets.push([outParams.reduce(function(prev, curr) {
                         prev[curr] = request.parameters[curr].value;
                         return prev;
                     }, {})]);
                 }
-                return result;
+                return resultsets;
             })
             .catch(function(err) {
                 debug && (err.storedProcedure = name);
