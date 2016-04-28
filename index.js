@@ -470,6 +470,7 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
         request.multiple = true;
         params && params.forEach(function(param) {
             var value = param.update ? (data[param.name] || data.hasOwnProperty(param.update)) : data[param.name];
+            var hasValue = value !== void 0;
             var type = sqlType(param.def);
             debug && (debugParams[param.name] = value);
             if (param.out) {
@@ -499,7 +500,9 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                     }
                     request.input(param.name, type);
                 } else {
-                    request.input(param.name, type, value);
+                    if (!param.default || hasValue) {
+                        request.input(param.name, type, value);
+                    }
                 }
             }
         });
