@@ -16,7 +16,8 @@ function SqlPort() {
         type: 'sql',
         createTT: false,
         retry: 10000,
-        tableToType: {}
+        tableToType: {},
+        paramsOutName: 'out'
     };
     this.super = {};
     this.connection = null;
@@ -517,6 +518,12 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
 
                 if (resultsets.length > 0 && isNamingResultSet(resultsets[0])) {
                     var namedSet = {};
+                    if (outParams.length) {
+                        namedSet[self.config.paramsOutName] = outParams.reduce(function(prev, curr) {
+                            prev[curr] = request.parameters[curr].value;
+                            return prev;
+                        }, {});
+                    }
                     var name = null;
                     var single = false;
                     for (var i = 0; i < resultsets.length; ++i) {
