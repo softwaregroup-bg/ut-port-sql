@@ -1,3 +1,18 @@
+<a name="5.3.49"></a>
+## [5.3.49](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.48...v5.3.49) (2016-04-28)
+
+
+### Bug Fixes
+
+* **call-sp:** Default parameters should not be overridden with NULL when properties not specified.([55c7ef9](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/55c7ef9))
+
+
+### Features
+
+* **resultsets-order:** Include output parameters with predefined key when using naming resultsets.([25914da](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/25914da))
+
+
+
 <a name="5.3.48"></a>
 ## [5.3.48](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.47...v5.3.48) (2016-04-27)
 
