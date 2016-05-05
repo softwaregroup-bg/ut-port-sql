@@ -227,6 +227,22 @@ SqlPort.prototype.updateSchema = function(schema) {
         return result;
     }
 
+    function tableToTTU(statement) {
+        var result = '';
+        if (statement.match(/^CREATE\s+TABLE/i)) {
+            var parserSP = require('./parsers/mssqlSP');
+            var binding = parserSP.parse(statement);
+            if (binding.type === 'table') {
+                var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
+                var columns = binding.fields.map(function(field) {
+                    return ('[' + field.column + '] [' + field.type + ']' + (field.length ? '(' + field.length + ')' : '') + ',\r\n' + field.column + 'Updated bit');
+                });
+                result = 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
+            }
+        }
+        return result;
+    }
+
     function getCreateStatement(statement) {
         if (statement.match(AUDIT_LOG)) {
             statement = replaceAuditLog(statement);
@@ -322,10 +338,20 @@ SqlPort.prototype.updateSchema = function(schema) {
                             if (tt) {
                                 addQuery(queries, {
                                     fileName: fileName,
-                                    objectName: objectName + 'TableType',
+                                    objectName: objectName + 'TT',
                                     objectId: objectId + 'tt',
                                     fileContent: tt,
                                     createStatement: tt
+                                });
+                            }
+                            var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                            if (ttu) {
+                                addQuery(queries, {
+                                    fileName: fileName,
+                                    objectName: objectName + 'TTU',
+                                    objectId: objectId + 'ttu',
+                                    fileContent: ttu,
+                                    createStatement: ttu
                                 });
                             }
                         }
