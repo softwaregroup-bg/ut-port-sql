@@ -1,3 +1,13 @@
+<a name="5.3.50"></a>
+## [5.3.50](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.49...v5.3.50) (2016-05-06)
+
+
+### Features
+
+* generate TTU automatically for all tables based on their structure([0c769cb](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/0c769cb))
+
+
+
 <a name="5.3.49"></a>
 ## [5.3.49](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.48...v5.3.49) (2016-04-28)
 
