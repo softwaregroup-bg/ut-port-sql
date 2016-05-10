@@ -1,3 +1,13 @@
+<a name="5.3.51"></a>
+## [5.3.51](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.50...v5.3.51) (2016-05-10)
+
+
+### Features
+
+* support passing $meta and using . in parameter/column names([706fe1f](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/706fe1f))
+
+
+
 <a name="5.3.50"></a>
 ## [5.3.50](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.49...v5.3.50) (2016-05-06)
 
