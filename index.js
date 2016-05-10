@@ -235,7 +235,8 @@ SqlPort.prototype.updateSchema = function(schema) {
             if (binding.type === 'table') {
                 var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
                 var columns = binding.fields.map(function(field) {
-                    return ('[' + field.column + '] [' + field.type + ']' + (field.length ? '(' + field.length + ')' : '') + ',\r\n' + field.column + 'Updated bit');
+                    return ('[' + field.column + '] [' + field.type + ']' +
+                        (field.length ? '(' + field.length + ')' : '') + ',\r\n' + field.column + 'Updated bit');
                 });
                 result = 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
             }
@@ -452,7 +453,10 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
         return type;
     }
 
-    function flattenMessage(data) {
+    function flattenMessage(data, delimiter) {
+        if (!delimiter) {
+            return data;
+        }
         var result = {};
         function recurse(cur, prop) {
             if (Object(cur) !== cur) {
@@ -469,7 +473,7 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                 var isEmpty = true;
                 for (var p in cur) {
                     isEmpty = false;
-                    recurse(cur[p], prop ? prop + '_' + p : p);
+                    recurse(cur[p], prop ? prop + delimiter + p : p);
                 }
                 if (isEmpty && prop) {
                     result[prop] = {};
@@ -479,7 +483,10 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
         recurse(data, '');
         return result;
     }
-    function getValue(column, value) {
+    function getValue(column, value, updated) {
+        if (updated) {
+            return updated;
+        }
         if (value) {
             if (column.type.declaration.startsWith('date')) {
                 // set a javascript date for 'date', 'datetime' and 'datetime2'
@@ -488,15 +495,22 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
         }
         return value;
     }
-    return function callLinkedSP(msg) {
+    return function callLinkedSP(msg, $meta) {
         self.checkConnection(true);
         var request = self.getRequest();
-        var data = flatten ? flattenMessage(msg) : msg;
+        var data = flattenMessage(msg, flatten);
         var debug = this.isDebug();
         var debugParams = {};
         request.multiple = true;
         params && params.forEach(function(param) {
-            var value = param.update ? (data[param.name] || data.hasOwnProperty(param.update)) : data[param.name];
+            var value;
+            if (param.name === 'meta') {
+                value = $meta;
+            } else if (param.update) {
+                value = data[param.name] || data.hasOwnProperty(param.update);
+            } else {
+                value = data[param.name];
+            }
             var hasValue = value !== void 0;
             var type = sqlType(param.def);
             debug && (debugParams[param.name] = value);
@@ -507,22 +521,25 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                     if (value) {
                         if (Array.isArray(value)) {
                             value.forEach(function(row) {
+                                row = flattenMessage(row, param.flatten);
                                 if (typeof row === 'object') {
                                     type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                        prev.push(getValue(type.columns[i], row[cur]));
+                                        prev.push(getValue(type.columns[i], row[cur.column], cur.update && row.hasOwnProperty(cur.update)));
                                         return prev;
                                     }, []));
                                 } else {
-                                    type.rows.add.apply(type.rows, [getValue(type.columns[0], row)].concat(new Array(param.columns.length - 1)));
+                                    type.rows.add.apply(type.rows, [getValue(type.columns[0], row, false)].concat(new Array(param.columns.length - 1)));
                                 }
                             });
                         } else if (typeof value === 'object') {
+                            value = flattenMessage(value, param.flatten);
                             type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                prev.push(getValue(type.columns[i], value[cur]));
+                                prev.push(getValue(type.columns[i], value[cur.column], cur.update && value.hasOwnProperty(cur.update)));
                                 return prev;
                             }, []));
                         } else {
-                            type.rows.add.apply(type.rows, [getValue(type.columns[0], value)].concat(new Array(param.columns.length - 1)));
+                            value = flattenMessage(value, param.flatten);
+                            type.rows.add.apply(type.rows, [getValue(type.columns[0], value, false)].concat(new Array(param.columns.length - 1)));
                         }
                     }
                     request.input(param.name, type);
@@ -626,8 +643,10 @@ SqlPort.prototype.linkSP = function(schema) {
                 binding.params && binding.params.forEach(function(param) {
                     update.push(param.name + '$update');
                     // flatten in case a parameter's name have at least one underscore character surrounded by non underscore characters
-                    if (!flatten && param.name.match(/[^_]_[^_]/)) {
-                        flatten = true;
+                    if (!flatten && param.name.match(/\./)) {
+                        flatten = '.';
+                    } else if (!flatten && param.name.match(/[^_]_[^_]/)) {
+                        flatten = '_';
                     }
                 });
                 binding.params && binding.params.forEach(function(param) {
@@ -635,8 +654,15 @@ SqlPort.prototype.linkSP = function(schema) {
                     if (param.def && param.def.type === 'table') {
                         var columns = schema.types[param.def.typeName.toLowerCase()];
                         param.columns = [];
+                        param.flatten = false;
                         columns.forEach(function(column) {
-                            param.columns.push(column.column);
+                            if (column.column.match(/Updated$/)) {
+                                column.update = column.column.replace(/Updated$/, '');
+                            }
+                            param.columns.push(column);
+                            if (column.column.match(/\./)) {
+                                param.flatten = '.';
+                            }
                         });
                         param.def.create = function() {
                             var table = new mssql.Table(param.def.typeName.toLowerCase());
