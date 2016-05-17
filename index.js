@@ -639,15 +639,19 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                 return resultsets;
             })
             .catch(function(err) {
+                var errorLines = err.message && err.message.split('\n');
+                err.message = errorLines.shift();
+                var error = uterror.get(err.message) || errors.sql;
+                var errToThrow = error(err);
                 if (debug) {
                     err.storedProcedure = name;
                     err.params = debugParams;
                     err.fileName = fileName + ':1:1';
-                    err.stackInfo = err.message && err.message.split('\n');
-                    err.message = err.stackInfo.shift();
+                    var stack = errToThrow.stack.split('\n');
+                    stack.splice.apply(stack, [1, 0].concat(errorLines));
+                    errToThrow.stack = stack.join('\n');
                 }
-                var error = uterror.get(err.message && err.message.split('\n').shift()) || errors.sql;
-                throw error(err);
+                throw errToThrow;
             });
     };
 };
