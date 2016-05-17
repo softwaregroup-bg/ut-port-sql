@@ -1,3 +1,13 @@
+<a name="5.3.52"></a>
+## [5.3.52](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.51...v5.3.52) (2016-05-17)
+
+
+### Features
+
+* improve error logging ([6e7e6ee](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/6e7e6ee))
+
+
+
 <a name="5.3.51"></a>
 ## [5.3.51](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.50...v5.3.51) (2016-05-10)
 
