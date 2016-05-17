@@ -7,6 +7,7 @@ var errors = require('./errors');
 var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
+const CORE_ERROR = /^[\s+]{0,}EXEC \[core\]\.\[error\]$/m;
 
 function SqlPort() {
     Port.call(this);
@@ -143,7 +144,7 @@ SqlPort.prototype.exec = function(message) {
             // todo record execution time
             if (err) {
                 debug && (err.query = message.query);
-                var error = uterror.get(err.message) || errors.sql;
+                var error = uterror.get(err.message && err.message.split('\n').shift()) || errors.sql;
                 reject(error(err));
             } else {
                 $meta.mtid = 'response';
@@ -194,21 +195,40 @@ SqlPort.prototype.getSchema = function() {
 SqlPort.prototype.updateSchema = function(schema) {
     this.checkConnection();
 
-    function getAlterStatement(statement) {
+    function replaceAuditLog(statement) {
+        var parserSP = require('./parsers/mssqlSP');
+        var binding = parserSP.parse(statement);
+        return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
+    }
+
+    function replaceCoreError(statement, fileName, objectName) {
+        return statement
+            .split('\n')
+            .map((line, index) => (line.replace(CORE_ERROR,
+                `DECLARE @CORE_ERROR_PROC sysname='${objectName.replace(/'/g, '\'\'')}' ` +
+                `DECLARE @CORE_ERROR_FILE sysname='${fileName.replace(/'/g, '\'\'')}' ` +
+                `DECLARE @CORE_ERROR_LINE int='${index + 1}' ` +
+                'EXEC [core].[errorStack] @proc=@CORE_ERROR_PROC, @file=@CORE_ERROR_FILE, @fileLine=@CORE_ERROR_LINE')))
+            .join('\n');
+    }
+
+    function preProcess(statement, fileName, objectName) {
         if (statement.match(AUDIT_LOG)) {
             statement = replaceAuditLog(statement);
         }
+        if (statement.match(CORE_ERROR)) {
+            statement = replaceCoreError(statement, fileName, objectName);
+        }
+        return statement;
+    }
+
+    function getAlterStatement(statement, fileName, objectName) {
+        statement = preProcess(statement, fileName, objectName);
         if (statement.trim().match(/^CREATE\s+TYPE/i)) {
             return statement.trim();
         } else {
             return statement.trim().replace(/^CREATE /i, 'ALTER ');
         }
-    }
-
-    function replaceAuditLog(statement) {
-        var parserSP = require('./parsers/mssqlSP');
-        var binding = parserSP.parse(statement);
-        return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
     }
 
     function tableToType(statement) {
@@ -244,17 +264,12 @@ SqlPort.prototype.updateSchema = function(schema) {
         return result;
     }
 
-    function getCreateStatement(statement) {
-        if (statement.match(AUDIT_LOG)) {
-            statement = replaceAuditLog(statement);
-        }
-        return statement.trim().replace(/^ALTER /i, 'CREATE ');
+    function getCreateStatement(statement, fileName, objectName) {
+        return preProcess(statement, fileName, objectName).trim().replace(/^ALTER /i, 'CREATE ');
     }
 
-    function getSource(statement) {
-        if (statement.match(AUDIT_LOG)) {
-            statement = replaceAuditLog(statement);
-        }
+    function getSource(statement, fileName, objectName) {
+        statement = preProcess(statement, fileName, objectName);
         if (statement.trim().match(/^CREATE\s+TYPE/i)) {
             var parserSP = require('./parsers/mssqlSP');
             var binding = parserSP.parse(statement);
@@ -269,7 +284,8 @@ SqlPort.prototype.updateSchema = function(schema) {
         if (schema.source[params.objectId] === undefined) {
             queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: params.createStatement});
         } else {
-            if (schema.source[params.objectId].length && (getSource(params.fileContent) !== schema.source[params.objectId])) {
+            if (schema.source[params.objectId].length &&
+                (getSource(params.fileContent, params.fileName, params.objectName) !== schema.source[params.objectId])) {
                 var deps = schema.deps[params.objectId];
                 if (deps) {
                     deps.names.forEach(function(dep) {
@@ -286,7 +302,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                     fileName: params.fileName,
                     objectName: params.objectName,
                     objectId: params.objectId,
-                    content: getAlterStatement(params.fileContent)
+                    content: getAlterStatement(params.fileContent, params.fileName, params.objectName)
                 });
             }
         }
@@ -324,15 +340,15 @@ SqlPort.prototype.updateSchema = function(schema) {
                     files.forEach(function(file) {
                         var objectName = getObjectName(file);
                         var objectId = objectName.toLowerCase();
-                        schemaConfig.linkSP && prev.push(objectId);
                         var fileName = schemaConfig.path + '/' + file;
+                        schemaConfig.linkSP && (prev[objectId] = fileName);
                         var fileContent = fs.readFileSync(fileName).toString();
                         addQuery(queries, {
                             fileName: fileName,
                             objectName: objectName,
                             objectId: objectId,
                             fileContent: fileContent,
-                            createStatement: getCreateStatement(fileContent)
+                            createStatement: getCreateStatement(fileContent, fileName, objectName)
                         });
                         if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
                             var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
@@ -428,7 +444,7 @@ SqlPort.prototype.getRequest = function() {
     return new mssql.Request(this.connection);
 };
 
-SqlPort.prototype.callSP = function(name, params, flatten) {
+SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
     var self = this;
     var outParams = [];
 
@@ -623,9 +639,14 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
                 return resultsets;
             })
             .catch(function(err) {
-                debug && (err.storedProcedure = name);
-                debug && (err.params = debugParams);
-                var error = uterror.get(err.message) || errors.sql;
+                if (debug) {
+                    err.storedProcedure = name;
+                    err.params = debugParams;
+                    err.fileName = fileName + ':1:1';
+                    err.stackInfo = err.message && err.message.split('\n');
+                    err.message = err.stackInfo.shift();
+                }
+                var error = uterror.get(err.message && err.message.split('\n').shift()) || errors.sql;
                 throw error(err);
             });
     };
@@ -634,8 +655,8 @@ SqlPort.prototype.callSP = function(name, params, flatten) {
 SqlPort.prototype.linkSP = function(schema) {
     if (schema.parseList.length) {
         var parserSP = require('./parsers/mssqlSP');
-        schema.parseList.forEach(function(source) {
-            var binding = parserSP.parse(source);
+        schema.parseList.forEach(function(procedure) {
+            var binding = parserSP.parse(procedure.source);
             var flatName = binding.name.replace(/[\[\]]/g, '');
             if (binding && binding.type === 'procedure') {
                 var update = [];
@@ -684,7 +705,7 @@ SqlPort.prototype.linkSP = function(schema) {
                         };
                     }
                 });
-                this.super[flatName] = this.callSP(binding.name, binding.params, flatten).bind(this);
+                this.super[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
                 if (!this.config[flatName]) {
                     this.config[flatName] = this.super[flatName];
                 }
@@ -717,8 +738,8 @@ SqlPort.prototype.loadSchema = function(objectList) {
             } else {
                 prev.source[cur.namespace] = '';
             }
-            if ((cur.type === 'P') && (cur.colid === 1) && (self.config.linkSP || (objectList && objectList.indexOf(cur.full) >= 0))) {
-                prev.parseList.push(cur.source);
+            if ((cur.type === 'P') && (cur.colid === 1) && (self.config.linkSP || (objectList && objectList[cur.full]))) {
+                prev.parseList.push({source: cur.source, fileName: objectList && objectList[cur.full]});
             }
             return prev;
         }, schema);
