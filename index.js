@@ -6,6 +6,8 @@ var when = require('when');
 var errors = require('./errors');
 var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
+var xml2js = require('xml2js');
+var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[core\]\.\[error\]$/m;
 
@@ -567,6 +569,39 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
             }
         });
         return request.execute(name)
+            .then(function(resultsets) {
+                return when.map(resultsets, function(resultset) {
+                    var xmlColumns = Object.keys(resultset.columns).reduce(function(columns, column) {
+                        if (resultset.columns[column].type.declaration === 'xml') {
+                            columns[column] = 1;
+                        }
+                        return columns;
+                    }, {});
+                    if (Object.keys(xmlColumns).length) {
+                        return when.map(resultset, function(record) {
+                            return when.map(Object.keys(record), function(key) {
+                                if (xmlColumns[key] && record[key]) {
+                                    return when.promise(function(resolve, reject) {
+                                        xmlParser.parseString(record[key], function(err, result) {
+                                            if (err) {
+                                                throw errors.wrongXmlFormat({
+                                                    xml: record[key]
+                                                });
+                                            } else {
+                                                record[key] = result;
+                                                resolve();
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                        });
+                    }
+                })
+                .then(function() {
+                    return resultsets;
+                });
+            })
             .then(function(resultsets) {
                 function isNamingResultSet(element) {
                     return Array.isArray(element) &&

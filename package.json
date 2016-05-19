@@ -5,7 +5,8 @@
   "dependencies": {
     "mssql": "2.3.2",
     "ut-error": "^5.3.10",
-    "when": "3.7.7"
+    "when": "3.7.7",
+    "xml2js": "0.4.16"
   },
   "devDependencies": {
     "ut-tools": "^5.3.13"

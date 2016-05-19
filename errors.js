@@ -11,6 +11,7 @@ var InvalidView = create('InvalidView', PortSQL);
 var InvalidResultSetOrder = create('InvalidResultSetOrder', PortSQL);
 var DuplicateResultSetName = create('DuplicateResultSetName', PortSQL);
 var SingleResultExpected = create('SingleResultExpected', PortSQL);
+var WrongXmlFormat = create('WrongXmlFormat', PortSQL);
 
 module.exports = {
     sql: function(cause) {
@@ -45,5 +46,8 @@ module.exports = {
     },
     singleResultExpected: function(params) {
         return new SingleResultExpected({mssage: 'Expected single or no result', params: params});
+    },
+    wrongXmlFormat: function(params) {
+        return new WrongXmlFormat({mssage: 'Wrong XML format', params: params});
     }
 };
