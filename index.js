@@ -573,14 +573,14 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                 return when.map(resultsets, function(resultset) {
                     var xmlColumns = Object.keys(resultset.columns).reduce(function(columns, column) {
                         if (resultset.columns[column].type.declaration === 'xml') {
-                            columns[column] = 1;
+                            columns.push(column);
                         }
                         return columns;
-                    }, {});
-                    if (Object.keys(xmlColumns).length) {
+                    }, []);
+                    if (xmlColumns.length) {
                         return when.map(resultset, function(record) {
-                            return when.map(Object.keys(record), function(key) {
-                                if (xmlColumns[key] && record[key]) {
+                            return when.map(xmlColumns, function(key) {
+                                if (record[key]) { // value is not null
                                     return when.promise(function(resolve, reject) {
                                         xmlParser.parseString(record[key], function(err, result) {
                                             if (err) {
