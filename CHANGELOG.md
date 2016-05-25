@@ -1,3 +1,18 @@
+<a name="5.3.54"></a>
+## [5.3.54](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.53...v5.3.54) (2016-05-25)
+
+
+### Bug Fixes
+
+* improve itteration algorithm ([74e04bb](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/74e04bb))
+
+
+### Features
+
+* XML parsing functionality ([76b4630](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/76b4630))
+
+
+
 <a name="5.3.53"></a>
 ## [5.3.53](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.52...v5.3.53) (2016-05-17)
 
