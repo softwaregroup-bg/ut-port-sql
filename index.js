@@ -513,7 +513,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
             } else if (column.type.declaration === 'xml') {
                 var obj = {};
                 obj[column.name] = value;
-                return xmlBuilder.buildObject(JSON.parse(JSON.stringify(obj))); // (stringify -> parse) to remove the keys with undefined values
+                return xmlBuilder.buildObject(obj); // (stringify -> parse) to remove the keys with undefined values
             }
         }
         return value;
