@@ -8,6 +8,7 @@ var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
 var xml2js = require('xml2js');
 var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
+var xmlBuilder = new xml2js.Builder();
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[core\]\.\[error\]$/m;
 
@@ -508,7 +509,11 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         if (value) {
             if (column.type.declaration.startsWith('date')) {
                 // set a javascript date for 'date', 'datetime' and 'datetime2'
-                value = new Date(value);
+                return new Date(value);
+            } else if (column.type.declaration === 'xml') {
+                var obj = {};
+                obj[column.name] = value;
+                return xmlBuilder.buildObject(JSON.parse(JSON.stringify(obj))); // (stringify -> parse) to remove the keys with undefined values
             }
         }
         return value;
