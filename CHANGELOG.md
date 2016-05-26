@@ -1,3 +1,19 @@
+<a name="5.3.55"></a>
+## [5.3.55](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.54...v5.3.55) (2016-05-26)
+
+
+### Bug Fixes
+
+* remove comment ([f47d03d](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/f47d03d))
+* remove fields filtration by default and handle in implementation ([1fc3223](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/1fc3223))
+
+
+### Features
+
+* add automatig XML building from JSON ([744f517](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/744f517))
+
+
+
 <a name="5.3.54"></a>
 ## [5.3.54](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.53...v5.3.54) (2016-05-25)
 
