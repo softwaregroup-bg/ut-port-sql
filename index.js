@@ -126,6 +126,10 @@ SqlPort.prototype.exec = function(message) {
     var methodName = ($meta && $meta.method);
     if (methodName) {
         var method = this.config[methodName];
+        if (!method) {
+            methodName = methodName.split('/', 2);
+            method = methodName.length === 2 && this.config[methodName[1]];
+        }
         if (method instanceof Function) {
             return when.lift(method).apply(this, Array.prototype.slice.call(arguments));
         }
