@@ -1,3 +1,13 @@
+<a name="5.3.56"></a>
+## [5.3.56](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.55...v5.3.56) (2016-05-30)
+
+
+### Features
+
+* add support for endpoint/method syntax ([4a5d41f](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/4a5d41f))
+
+
+
 <a name="5.3.55"></a>
 ## [5.3.55](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.54...v5.3.55) (2016-05-26)
 
