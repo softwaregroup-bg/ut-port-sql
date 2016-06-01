@@ -1,3 +1,13 @@
+<a name="5.3.57"></a>
+## [5.3.57](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.56...v5.3.57) (2016-06-01)
+
+
+### Features
+
+* add support capturing parameters in [@callParams](https://github.com/callParams) ([d116c43](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/d116c43))
+
+
+
 <a name="5.3.56"></a>
 ## [5.3.56](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.55...v5.3.56) (2016-05-30)
 
