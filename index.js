@@ -10,7 +10,8 @@ var xml2js = require('xml2js');
 var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 var xmlBuilder = new xml2js.Builder();
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
-const CORE_ERROR = /^[\s+]{0,}EXEC \[core\]\.\[error\]$/m;
+const CORE_ERROR = /^[\s+]{0,}EXEC \[?core\]?\.\[?error\]?$/m;
+const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 
 function SqlPort() {
     Port.call(this);
@@ -208,14 +209,20 @@ SqlPort.prototype.updateSchema = function(schema) {
         return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
     }
 
-    function replaceCoreError(statement, fileName, objectName) {
+    function replaceCallParams(statement) {
+        var parserSP = require('./parsers/mssqlSP');
+        var binding = parserSP.parse(statement);
+        return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding));
+    }
+
+    function replaceCoreError(statement, fileName, objectName, params) {
         return statement
             .split('\n')
             .map((line, index) => (line.replace(CORE_ERROR,
                 `DECLARE @CORE_ERROR_PROC sysname='${objectName.replace(/'/g, '\'\'')}' ` +
                 `DECLARE @CORE_ERROR_FILE sysname='${fileName.replace(/'/g, '\'\'')}' ` +
                 `DECLARE @CORE_ERROR_LINE int='${index + 1}' ` +
-                'EXEC [core].[errorStack] @proc=@CORE_ERROR_PROC, @file=@CORE_ERROR_FILE, @fileLine=@CORE_ERROR_LINE')))
+                `EXEC [core].[errorStack] @proc=@CORE_ERROR_PROC, @file=@CORE_ERROR_FILE, @fileLine=@CORE_ERROR_LINE, @params = ${params}`)))
             .join('\n');
     }
 
@@ -223,8 +230,13 @@ SqlPort.prototype.updateSchema = function(schema) {
         if (statement.match(AUDIT_LOG)) {
             statement = replaceAuditLog(statement);
         }
+        var params = 'NULL';
+        if (statement.match(CALL_PARAMS)) {
+            statement = replaceCallParams(statement);
+            params = '@callParams';
+        }
         if (statement.match(CORE_ERROR)) {
-            statement = replaceCoreError(statement, fileName, objectName);
+            statement = replaceCoreError(statement, fileName, objectName, params);
         }
         return statement;
     }

@@ -178,6 +178,22 @@ module.exports = {
         sql += 'FOR XML RAW(\'params\'),TYPE) EXEC core.auditCall @name = @proc_name, @params=@proc_params';
         return sql;
     },
+    callParams: function(statement) {
+        if (!statement.params) {
+            return;
+        }
+        var sql = 'DECLARE @callParams XML = ( SELECT ';
+        statement.params.map(function(param) {
+            if (param.def.type === 'table') {
+                sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) ${param.name}, `;
+            } else {
+                sql += `@${param.name} ${param.name}, `;
+            }
+        });
+        sql = sql.replace(/,\s$/, ' ');
+        sql += 'FOR XML RAW(\'params\'),TYPE)';
+        return sql;
+    },
     createDatabase: function(name, user) {
         return `
         IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${name}')
