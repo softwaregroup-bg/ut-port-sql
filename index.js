@@ -219,10 +219,9 @@ SqlPort.prototype.updateSchema = function(schema) {
         return statement
             .split('\n')
             .map((line, index) => (line.replace(CORE_ERROR,
-                `DECLARE @CORE_ERROR_PROC sysname='${objectName.replace(/'/g, '\'\'')}' ` +
                 `DECLARE @CORE_ERROR_FILE sysname='${fileName.replace(/'/g, '\'\'')}' ` +
                 `DECLARE @CORE_ERROR_LINE int='${index + 1}' ` +
-                `EXEC [core].[errorStack] @proc=@CORE_ERROR_PROC, @file=@CORE_ERROR_FILE, @fileLine=@CORE_ERROR_LINE, @params = ${params}`)))
+                `EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE, @fileLine=@CORE_ERROR_LINE, @params = ${params}`)))
             .join('\n');
     }
 
