@@ -250,19 +250,22 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function tableToType(statement) {
-        var result = '';
         if (statement.match(/^CREATE\s+TABLE/i)) {
             var parserSP = require('./parsers/mssqlSP');
             var binding = parserSP.parse(statement);
             if (binding.type === 'table') {
                 var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
                 var columns = binding.fields.map(function(field) {
-                    return ('[' + field.column + '] [' + field.type + ']' + (field.length ? '(' + field.length + ')' : ''));
+                    return `[${field.column}] [${field.type}]` +
+                        (field.length && field.scale ? `(${field.length},${field.scale})` : '') +
+                        (field.length && !field.scale ? `(${field.length})` : '') +
+                        (typeof field.default === 'number' ? ` DEFAULT(${field.default})` : '') +
+                        (typeof field.default === 'string' ? ` DEFAULT('${field.default.replace(/'/g, '\'\'')}')` : '');
                 });
-                result = 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
+                return 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
             }
         }
-        return result;
+        return '';
     }
 
     function tableToTTU(statement) {
@@ -517,11 +520,13 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         recurse(data, '');
         return result;
     }
-    function getValue(column, value, updated) {
+    function getValue(column, value, def, updated) {
         if (updated) {
             return updated;
         }
-        if (value) {
+        if (value === undefined) {
+            return def;
+        } else if (value) {
             if (column.type.declaration.startsWith('date')) {
                 // set a javascript date for 'date', 'datetime' and 'datetime2'
                 return new Date(value);
@@ -562,22 +567,24 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                                 row = flattenMessage(row, param.flatten);
                                 if (typeof row === 'object') {
                                     type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                        prev.push(getValue(type.columns[i], row[cur.column], cur.update && row.hasOwnProperty(cur.update)));
+                                        prev.push(getValue(type.columns[i], row[cur.column], cur.default, cur.update && row.hasOwnProperty(cur.update)));
                                         return prev;
                                     }, []));
                                 } else {
-                                    type.rows.add.apply(type.rows, [getValue(type.columns[0], row, false)].concat(new Array(param.columns.length - 1)));
+                                    type.rows.add.apply(type.rows, [getValue(type.columns[0], row, param.columns[0].default, false)]
+                                        .concat(new Array(param.columns.length - 1)));
                                 }
                             });
                         } else if (typeof value === 'object') {
                             value = flattenMessage(value, param.flatten);
                             type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                prev.push(getValue(type.columns[i], value[cur.column], cur.update && value.hasOwnProperty(cur.update)));
+                                prev.push(getValue(type.columns[i], value[cur.column], cur.default, cur.update && value.hasOwnProperty(cur.update)));
                                 return prev;
                             }, []));
                         } else {
                             value = flattenMessage(value, param.flatten);
-                            type.rows.add.apply(type.rows, [getValue(type.columns[0], value, false)].concat(new Array(param.columns.length - 1)));
+                            type.rows.add.apply(type.rows, [getValue(type.columns[0], value, param.columns[0].default, false)]
+                                .concat(new Array(param.columns.length - 1)));
                         }
                     }
                     request.input(param.name, type);
@@ -757,7 +764,7 @@ SqlPort.prototype.linkSP = function(schema) {
                                 if (typeof column.length === 'string' && column.length.match(/^max$/i)) {
                                     table.columns.add(column.column, type(mssql.MAX));
                                 } else {
-                                    table.columns.add(column.column, type(column.length, column.scale));
+                                    table.columns.add(column.column, type(column.length ? Number.parseInt(column.length) : column.length, column.scale));
                                 }
                             });
                             return table;
@@ -803,6 +810,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
             return prev;
         }, schema);
         result[1].reduce(function(prev, cur) { // extract columns of user defined table types
+            var parserDefault = require('./parsers/mssqlDefault');
             if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
                 throw errors.unexpectedColumnType({
                     type: cur.type,
@@ -810,6 +818,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
                 });
             }
             cur.name = cur.name && cur.name.toLowerCase();
+            cur.default && (cur.default = parserDefault.parse(cur.default));
             var type = prev[cur.name] || (prev[cur.name] = []);
             type.push(cur);
             return prev;
