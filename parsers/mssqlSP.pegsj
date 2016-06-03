@@ -40,9 +40,9 @@ table
     }
 
 name =
-  "[" str:$[^\]]+ "]" {return str} / 
+  "[" str:$[^\]]+ "]" {return str} /
   $[A-Za-z0-9_$]+
-  
+
 names = (ws n:name ws o:order? m:(ws comma ws n:name ws o:order? {
           return {
               name: n,
@@ -62,7 +62,7 @@ namespace = name:name "." {return '['+name+'].'}
 fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
-  f:ws1 p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 { 
+  f:ws1 p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 {
 
   var x=[p];
   q.forEach(function(pp){
@@ -87,7 +87,7 @@ params =
     }
   });
   return y
-  
+
 } / ws1
 
 fields_and_constraints = f:ws p:field_or_constraint q:(ws comma ws:ws r:field_or_constraint { return [ws, r]})* e:ws1 {
@@ -115,10 +115,10 @@ fields_and_constraints = f:ws p:field_or_constraint q:(ws comma ws:ws r:field_or
     }
   });
   return y
-  
+
 
 }
-  
+
 field_or_constraint = constraint / field
 
 
@@ -147,13 +147,13 @@ fields =
     }
   });
   return y
-  
+
   }
 
 param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
-field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? {
+field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default? {
   var identity = !!i;
     var result = {
       column:n,
@@ -162,10 +162,15 @@ field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? {
       length:Array.isArray(t.size) ? t.size[0] : t.size,
       scale:Array.isArray(t.size) ? t.size[1] : null,
       identity: i || false,
-      isField:true
+      isField:true,
+      default:d
     }
     return result
 }
+
+default = ws "DEFAULT"i ws lparen ws v:default_value ws rparen {return v}
+
+default_value = signed_number / string_literal
 
 constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint) {
   c.isConstraint = true;
@@ -182,7 +187,7 @@ pk_constraint
             order: o
         }
     }
-    
+
 clustered = "CLUSTERED"i / "NONCLUSTERED"i
 order = "ASC"i / "DESC"i
 
@@ -219,7 +224,9 @@ signed_number =
 
 value = numeric_literal / string_literal / "NULL"i
 
-string_literal = quote (!quote !LineTerminatorSequence . / quote quote)* quote
+string_literal = quote s:([^'\r\n] / qq)* quote {return s.join('')}
+
+qq = quote quote {return '\''}
 
 numeric_literal =
   digits:( ( ( ( digit )+ ( decimal_point ( digit )+ )? )
@@ -229,7 +236,7 @@ numeric_literal =
 digit = [0-9]
 quote = "'"
 decimal_point = "."
-E = "E"
+E = "E"i
 ws = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)* {return ws.filter(function(x){return x})}
 ws1 = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)+ {return ws.filter(function(x){return x})}
 CREATE =  "CREATE"i
@@ -269,10 +276,10 @@ LineTerminatorSequence "end of line"
 Comment "comment"
   = MultiLineComment
   / SingleLineComment
-  
-MultiLineCommentBody = 
+
+MultiLineCommentBody =
   (!"*/" SourceCharacter)*{return {multi:text()}}
-  
+
 MultiLineComment
   = "/*" x:MultiLineCommentBody "*/" {return x}
 
