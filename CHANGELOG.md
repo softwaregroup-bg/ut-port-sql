@@ -1,3 +1,16 @@
+<a name="5.3.60"></a>
+## [5.3.60](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.59...v5.3.60) (2016-06-03)
+
+
+### Features
+
+* add parser for default expression ([a6d5450](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/a6d5450))
+* add support for default values and datetime2 precision in TVP ([5475910](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/5475910))
+* support parsing default values for table columns ([abdaa51](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/abdaa51))
+* support sending default values in TVP and fix datetime2 handling ([83a407b](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/83a407b))
+
+
+
 <a name="5.3.59"></a>
 ## [5.3.59](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.58...v5.3.59) (2016-06-02)
 
