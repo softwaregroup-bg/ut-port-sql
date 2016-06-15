@@ -462,7 +462,11 @@ SqlPort.prototype.execTemplateRows = function(template, params) {
 };
 
 SqlPort.prototype.getRequest = function() {
-    return new mssql.Request(this.connection);
+    var request = new mssql.Request(this.connection);
+    request.on('info', (info) => {
+        this.log.info && this.log.info(info);
+    });
+    return request;
 };
 
 SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
