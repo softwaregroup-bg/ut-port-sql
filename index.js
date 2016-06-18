@@ -31,7 +31,7 @@ function SqlPort() {
 }
 
 function fieldSource(column) {
-    return (column.column + '\t' + column.type + '\t' + (column.length || '') + '\t' + (column.scale || '')).toLowerCase();
+    return (column.column + '\t' + column.type + '\t' + (column.length === null ? '' : column.length) + '\t' + (column.scale === null ? '' : column.scale)).toLowerCase();
 }
 
 util.inherits(SqlPort, Port);
@@ -257,8 +257,8 @@ SqlPort.prototype.updateSchema = function(schema) {
                 var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
                 var columns = binding.fields.map(function(field) {
                     return `[${field.column}] [${field.type}]` +
-                        (field.length && field.scale ? `(${field.length},${field.scale})` : '') +
-                        (field.length && !field.scale ? `(${field.length})` : '') +
+                        (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
+                        (field.length !== null && field.scale === null ? `(${field.length})` : '') +
                         (typeof field.default === 'number' ? ` DEFAULT(${field.default})` : '') +
                         (typeof field.default === 'string' ? ` DEFAULT('${field.default.replace(/'/g, '\'\'')}')` : '');
                 });
@@ -277,7 +277,9 @@ SqlPort.prototype.updateSchema = function(schema) {
                 var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
                 var columns = binding.fields.map(function(field) {
                     return ('[' + field.column + '] [' + field.type + ']' +
-                        (field.length ? '(' + field.length + ')' : '') + ',\r\n' + field.column + 'Updated bit');
+                        (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
+                        (field.length !== null && field.scale === null ? `(${field.length})` : '') +
+                        ',\r\n' + field.column + 'Updated bit');
                 });
                 result = 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
             }
@@ -768,7 +770,7 @@ SqlPort.prototype.linkSP = function(schema) {
                                 if (typeof column.length === 'string' && column.length.match(/^max$/i)) {
                                     table.columns.add(column.column, type(mssql.MAX));
                                 } else {
-                                    table.columns.add(column.column, type(column.length ? Number.parseInt(column.length) : column.length, column.scale));
+                                    table.columns.add(column.column, type(column.length !== null ? Number.parseInt(column.length) : column.length, column.scale));
                                 }
                             });
                             return table;
