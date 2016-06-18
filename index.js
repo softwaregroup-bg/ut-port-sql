@@ -531,12 +531,9 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         if (value === undefined) {
             return def;
         } else if (value) {
-            if (column.type.declaration.startsWith('date')) {
-                // set a javascript date for 'date', 'datetime' and 'datetime2'
-                return new Date(value);
-            } else if (column.type.declaration === 'time') {
-                // set a javascript date for 'time (new Date(year, month[, day[, hour[, minutes[, seconds[, milliseconds]]]]]))
-                return new (Function.prototype.bind.apply(Date, [null, null, null, null].concat(value.split(':'))));
+            if (/^(date.*|smalldate.*|time)$/.test(column.type.declaration)) {
+                // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime' and 'time'
+                return new Date();
             } else if (column.type.declaration === 'xml') {
                 var obj = {};
                 obj[column.name] = value;
