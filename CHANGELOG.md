@@ -1,3 +1,13 @@
+<a name="5.3.63"></a>
+## [5.3.63](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.62...v5.3.63) (2016-06-20)
+
+
+### Features
+
+* add support for time columns in a table type ([9652a77](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/9652a77))
+
+
+
 <a name="5.3.62"></a>
 ## [5.3.62](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.61...v5.3.62) (2016-06-16)
 
