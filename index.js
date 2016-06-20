@@ -533,9 +533,11 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         if (value === undefined) {
             return def;
         } else if (value) {
-            if (/^(date.*|smalldate.*|time)$/.test(column.type.declaration)) {
+            if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
                 // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime' and 'time'
-                return new Date();
+                return new Date(value);
+            } else if (column.type.declaration === 'time') {
+                return new Date('1970-01-01T' + value);
             } else if (column.type.declaration === 'xml') {
                 var obj = {};
                 obj[column.name] = value;
@@ -563,6 +565,9 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
             var hasValue = value !== void 0;
             var type = sqlType(param.def);
             debug && (debugParams[param.name] = value);
+            if (param.def && param.def.type === 'time') {
+                value = new Date('1970-01-01T' + value);
+            }
             if (param.out) {
                 request.output(param.name, type, value);
             } else {

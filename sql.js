@@ -45,7 +45,7 @@ module.exports = {
             st.name type,
             CASE
                 WHEN st.name in ('decimal','numeric') then CAST(c.[precision] AS VARCHAR)
-                WHEN st.name in ('datetime2') then CAST(c.[scale] AS VARCHAR)
+                WHEN st.name in ('datetime2','time','datetimeoffset') then CAST(c.[scale] AS VARCHAR)
                 WHEN st.name in ('varchar','varbinary') AND c.max_length>=0 THEN CAST(c.max_length as VARCHAR)
                 WHEN st.name in ('nvarchar','nvarbinary') AND c.max_length>=0 THEN CAST(c.max_length/2 as VARCHAR)
                 WHEN st.name in ('varchar','nvarchar','varbinary','nvarbinary') AND c.max_length<0 THEN 'max'
