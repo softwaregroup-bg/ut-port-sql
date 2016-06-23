@@ -1,3 +1,13 @@
+<a name="5.3.65"></a>
+## [5.3.65](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.64...v5.3.65) (2016-06-23)
+
+
+### Features
+
+* add support for saving documentation when doc=true in the config ([0f090fa](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/0f090fa))
+
+
+
 <a name="5.3.64"></a>
 ## [5.3.64](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.3.63...v5.3.64) (2016-06-20)
 
