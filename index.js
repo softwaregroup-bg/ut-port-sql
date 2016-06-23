@@ -22,7 +22,8 @@ function SqlPort() {
         createTT: false,
         retry: 10000,
         tableToType: {},
-        paramsOutName: 'out'
+        paramsOutName: 'out',
+        doc: false
     };
     this.super = {};
     this.connection = null;
@@ -52,6 +53,7 @@ SqlPort.prototype.connect = function connect() {
         .then(this.updateSchema.bind(this))
         .then(this.refreshView.bind(this, false))
         .then(this.linkSP.bind(this))
+        .then(this.doc.bind(this))
         .then(function(v) { self.connectionReady = true; return v; })
         .catch((err) => {
             try { this.connection.close(); } catch (e) {};
@@ -863,7 +865,10 @@ SqlPort.prototype.refreshView = function(drop, data) {
     });
 };
 
-SqlPort.prototype.doc = function() {
+SqlPort.prototype.doc = function(schema) {
+    if (!this.config.doc) {
+        return schema;
+    }
     this.checkConnection();
     var self = this;
     var schemas = this.getSchema();
@@ -880,18 +885,35 @@ SqlPort.prototype.doc = function() {
                         var fileContent = fs.readFileSync(fileName).toString();
                         if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
                             var binding = parserSP.parse(fileContent);
-                            var fields = binding.type === 'procedure' ? binding.params : binding.fields;
-                            fields.map((field) => {
-                                if (field.doc) {
-                                    var doc = {
-                                        type0: 'schema', name0: binding.schema,
-                                        type1: 'table', name1: binding.table,
-                                        type2: 'column', name2: field.name || field.column,
-                                        doc: field.doc
-                                    };
-                                    prev.push(doc);
-                                }
-                            });
+                            if (binding.type === 'procedure') {
+                                binding.params.forEach((param) => {
+                                    if (param.doc) {
+                                        prev.push({
+                                            type0: 'SCHEMA',
+                                            name0: binding.schema,
+                                            type1: 'PROCEDURE',
+                                            name1: binding.table,
+                                            type2: 'PARAMETER',
+                                            name2: '@' + param.name,
+                                            doc: param.doc
+                                        });
+                                    }
+                                });
+                            } else {
+                                binding.fields.forEach((field) => {
+                                    if (field.doc) {
+                                        prev.push({
+                                            type0: 'SCHEMA',
+                                            name0: binding.schema,
+                                            type1: 'TABLE',
+                                            name1: binding.table,
+                                            type2: 'COLUMN',
+                                            name2: field.column,
+                                            doc: field.doc
+                                        });
+                                    }
+                                });
+                            }
                         }
                     });
                     resolve(prev);
@@ -914,7 +936,10 @@ SqlPort.prototype.doc = function() {
             docListParam.rows.add(doc.type0, doc.name0, doc.type1, doc.name1, doc.type2, doc.name2, doc.doc);
         });
         request.input('docList', docListParam);
-        return request.execute('core.documentation');
+        return request.execute('core.documentation')
+            .then(function() {
+                return schema;
+            });
     });
 };
 
