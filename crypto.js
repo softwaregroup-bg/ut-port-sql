@@ -1,9 +1,9 @@
-const crypto = require('crypto');
-let defPassword = 'some password';
+var crypto = require('crypto');
+var defPassword = 'some password';
 
 module.exports = {
     encrypt: (text, algorithm, password) => {
-        const cipher = crypto.createCipher(algorithm, password || defPassword);
+        var cipher = crypto.createCipher(algorithm, password || defPassword);
 
         return new Promise((resolve, reject) => {
             var encrypted = '';
@@ -22,7 +22,7 @@ module.exports = {
         });
     },
     decrypt: (text, algorithm, password) => {
-        const decipher = crypto.createDecipher(algorithm, password || defPassword);
+        var decipher = crypto.createDecipher(algorithm, password || defPassword);
 
         return new Promise((resolve, reject) => {
             var decrypted = '';
