@@ -1,3 +1,13 @@
+<a name="5.4.3"></a>
+## [5.4.3](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.4.2...v5.4.3) (2016-07-26)
+
+
+### Bug Fixes
+
+* let, const (#2) ([f678e6c](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/f678e6c))
+
+
+
 <a name="5.4.2"></a>
 ## [5.4.2](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.4.1...v5.4.2) (2016-07-26)
 
