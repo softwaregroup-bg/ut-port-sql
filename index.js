@@ -4,6 +4,7 @@ var util = require('util');
 var fs = require('fs');
 var when = require('when');
 var errors = require('./errors');
+var crypto = require('./crypto');
 var uterror = require('ut-error');
 var mssqlQueries = require('./sql');
 var xml2js = require('xml2js');
@@ -45,16 +46,24 @@ SqlPort.prototype.init = function init() {
 SqlPort.prototype.connect = function connect() {
     this.connection && this.connection.close();
     this.connectionReady = false;
-    var self = this;
 
-    return this.tryConnect()
+    return Promise.resolve()
+        .then(() => {
+            if (this.config.db.cryptoAlgorithm) {
+                return crypto.decrypt(this.config.db.password, this.config.db.cryptoAlgorithm);
+            }
+        })
+        .then((r) => {
+            this.config.db.password = r || this.config.db.password;
+            return this.tryConnect();
+        })
         .then(this.refreshView.bind(this, true))
         .then(this.loadSchema.bind(this, null))
         .then(this.updateSchema.bind(this))
         .then(this.refreshView.bind(this, false))
         .then(this.linkSP.bind(this))
         .then(this.doc.bind(this))
-        .then(function(v) { self.connectionReady = true; return v; })
+        .then((v) => { this.connectionReady = true; return v; })
         .catch((err) => {
             try { this.connection.close(); } catch (e) {};
             if (this.config.retry) {
