@@ -15,6 +15,7 @@ In the UT5 implementations the SQL port is initialized in the following manner:
         db: {
             user: 'switch',
             password: 'switch',
+            cryptoAlgorithm: '...',
             server: 'DEVDB08',
             database: 'UTNetSystem_3_2',
             requestTimeout: 30000
@@ -333,3 +334,5 @@ CREATE TABLE [schema].[table] ( -- Table description
     CONSTRAINT [fkSession_User] FOREIGN KEY([actorId]) REFERENCES [user].[user](actorId)
 )
 ```
+
+### Crypto Algorithm or `cryptoAlgorithm` param in config will point how password is encrypted.
