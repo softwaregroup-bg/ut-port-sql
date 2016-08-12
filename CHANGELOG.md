@@ -1,3 +1,13 @@
+<a name="5.4.5"></a>
+## [5.4.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.4...v5.4.5) (2016-08-12)
+
+
+### Bug Fixes
+
+* publish to npm ([e9eaaf7](https://github.com/softwaregroup-bg/ut-port-sql/commit/e9eaaf7))
+
+
+
 <a name="5.4.4"></a>
 ## [5.4.4](https://git.softwaregroup-bg.com/ut5/ut-port-sql/compare/v5.4.3...v5.4.4) (2016-08-02)
 
