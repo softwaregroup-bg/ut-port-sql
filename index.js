@@ -966,7 +966,7 @@ SqlPort.prototype.tryConnect = function() {
         .then(() => conCreate.close())
         .then(() => this.connection.connect())
         .catch((err) => {
-            try { this.conCreate.close(); } catch (e) {};
+            try { conCreate.close(); } catch (e) {};
             throw err;
         });
     } else {
