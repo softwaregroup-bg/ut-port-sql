@@ -135,6 +135,7 @@ SqlPort.prototype.checkConnection = function(checkReady) {
  */
 SqlPort.prototype.exec = function(message) {
     var $meta = (arguments.length && arguments[arguments.length - 1]);
+    $meta.debug = !!this.bus.config.debug;
     var methodName = ($meta && $meta.method);
     if (methodName) {
         var method = this.config[methodName];
