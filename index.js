@@ -5,7 +5,7 @@ var fs = require('fs');
 var when = require('when');
 var errors = require('./errors');
 var crypto = require('./crypto');
-var uterror = require('ut-error');
+var utError = require('ut-error');
 var mssqlQueries = require('./sql');
 var xml2js = require('xml2js');
 var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
@@ -135,6 +135,7 @@ SqlPort.prototype.checkConnection = function(checkReady) {
  */
 SqlPort.prototype.exec = function(message) {
     var $meta = (arguments.length && arguments[arguments.length - 1]);
+    $meta.debug = !!this.bus.config.debug;
     var methodName = ($meta && $meta.method);
     if (methodName) {
         var method = this.config[methodName];
@@ -163,7 +164,7 @@ SqlPort.prototype.exec = function(message) {
             // todo record execution time
             if (err) {
                 debug && (err.query = message.query);
-                var error = uterror.get(err.message && err.message.split('\n').shift()) || errors.sql;
+                var error = utError.get(err.message && err.message.split('\n').shift()) || errors.sql;
                 reject(error(err));
             } else {
                 $meta.mtid = 'response';
@@ -618,8 +619,8 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
             }
         });
         return request.execute(name)
-            .then(function(resultsets) {
-                return when.map(resultsets, function(resultset) {
+            .then(function(resultSets) {
+                return when.map(resultSets, function(resultset) {
                     var xmlColumns = Object.keys(resultset.columns).reduce(function(columns, column) {
                         if (resultset.columns[column].type.declaration === 'xml') {
                             columns.push(column);
@@ -648,10 +649,10 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                     }
                 })
                 .then(function() {
-                    return resultsets;
+                    return resultSets;
                 });
             })
-            .then(function(resultsets) {
+            .then(function(resultSets) {
                 function isNamingResultSet(element) {
                     return Array.isArray(element) &&
                         element.length === 1 &&
@@ -659,7 +660,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                         typeof element[0].resultSetName === 'string';
                 }
 
-                if (resultsets.length > 0 && isNamingResultSet(resultsets[0])) {
+                if (resultSets.length > 0 && isNamingResultSet(resultSets[0])) {
                     var namedSet = {};
                     if (outParams.length) {
                         namedSet[self.config.paramsOutName] = outParams.reduce(function(prev, curr) {
@@ -669,18 +670,18 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                     }
                     var name = null;
                     var single = false;
-                    for (var i = 0; i < resultsets.length; ++i) {
+                    for (var i = 0; i < resultSets.length; ++i) {
                         if (name == null) {
-                            if (!isNamingResultSet(resultsets[i])) {
+                            if (!isNamingResultSet(resultSets[i])) {
                                 throw errors.invalidResultSetOrder({
                                     expectName: true
                                 });
                             } else {
-                                name = resultsets[i][0].resultSetName;
-                                single = !!resultsets[i][0].single;
+                                name = resultSets[i][0].resultSetName;
+                                single = !!resultSets[i][0].single;
                             }
                         } else {
-                            if (isNamingResultSet(resultsets[i])) {
+                            if (isNamingResultSet(resultSets[i])) {
                                 throw errors.invalidResultSetOrder({
                                     expectName: false
                                 });
@@ -691,17 +692,17 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                                 });
                             }
                             if (single) {
-                                if (resultsets[i].length === 0) {
+                                if (resultSets[i].length === 0) {
                                     namedSet[name] = null;
-                                } else if (resultsets[i].length === 1) {
-                                    namedSet[name] = resultsets[i][0];
+                                } else if (resultSets[i].length === 1) {
+                                    namedSet[name] = resultSets[i][0];
                                 } else {
                                     throw errors.singleResultExpected({
-                                        count: resultsets[i].length
+                                        count: resultSets[i].length
                                     });
                                 }
                             } else {
-                                namedSet[name] = resultsets[i];
+                                namedSet[name] = resultSets[i];
                             }
                             name = null;
                             single = false;
@@ -715,17 +716,17 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                     return namedSet;
                 }
                 if (outParams.length) {
-                    resultsets.push([outParams.reduce(function(prev, curr) {
+                    resultSets.push([outParams.reduce(function(prev, curr) {
                         prev[curr] = request.parameters[curr].value;
                         return prev;
                     }, {})]);
                 }
-                return resultsets;
+                return resultSets;
             })
             .catch(function(err) {
                 var errorLines = err.message && err.message.split('\n');
                 err.message = errorLines.shift();
-                var error = uterror.get(err.message) || errors.sql;
+                var error = utError.get(err.message) || errors.sql;
                 var errToThrow = error(err);
                 if (debug) {
                     err.storedProcedure = name;
@@ -751,7 +752,7 @@ SqlPort.prototype.linkSP = function(schema) {
                 var flatten = false;
                 binding.params && binding.params.forEach(function(param) {
                     update.push(param.name + '$update');
-                    // flatten in case a parameter's name have at least one underscore character surrounded by non underscore characters
+                    // flatten in case a parameters name have at least one underscore character surrounded by non underscore characters
                     if (!flatten && param.name.match(/\./)) {
                         flatten = '.';
                     } else if (!flatten && param.name.match(/[^_]_[^_]/)) {
