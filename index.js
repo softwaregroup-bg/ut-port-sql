@@ -355,29 +355,30 @@ SqlPort.prototype.updateSchema = function(schema) {
         return false;
     }
 
-    function retryFailedQueries(returnObjectList) {
+    function retryFailedQueries() {
         let newFailedQueue = [];
         let request = self.getRequest();
-        let errors = [];
-        console.log('1:-------------------%s', failedQueue.length);
+        let errCollection = [];
         return when.map(failedQueue, (schema) => {
             return request
                 .batch(schema.content)
+                .then((r) => {
+                    self.log.info && self.log.info({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
+                })
                 .catch((err) => {
-                    errors.push(err);
+                    self.log.error && self.log.error(err);
+                    errCollection.push(err);
                     newFailedQueue.push(schema);
                 });
         })
         .then((res) => {
-            console.log('2:-------------------%s', newFailedQueue.length);
-            console.log(newFailedQueue);
             if (newFailedQueue.length === 0) {
-                return returnObjectList;
+                return;
             } else if (newFailedQueue.length === failedQueue.length) {
-                return when.reject(errors.pop());
+                throw errors.retryFailedSchemas(errCollection);
             }
             failedQueue = newFailedQueue;
-            return retryFailedQueries(returnObjectList);
+            return retryFailedQueries();
         });
     }
 
@@ -459,7 +460,8 @@ SqlPort.prototype.updateSchema = function(schema) {
         if (!failedQueue) {
             return objectList;
         }
-        return retryFailedQueries(objectList);
+        return retryFailedQueries(objectList)
+            .then(() => (objectList));
     })
     .then(function(objectList) {
         return self.loadSchema(objectList);
