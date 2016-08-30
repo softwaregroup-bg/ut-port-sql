@@ -13,6 +13,7 @@ var xmlBuilder = new xml2js.Builder();
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core\]?\.\[?error\]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
+var failedQueue = [];
 
 function SqlPort() {
     Port.call(this);
@@ -354,12 +355,37 @@ SqlPort.prototype.updateSchema = function(schema) {
         return false;
     }
 
+    function retryFailedQueries(returnObjectList) {
+        let newFailedQueue = [];
+        let request = self.getRequest();
+        let errors = [];
+        console.log('1:-------------------%s', failedQueue.length);
+        return when.map(failedQueue, (schema) => {
+            return request
+                .batch(schema.content)
+                .catch((err) => {
+                    errors.push(err);
+                    newFailedQueue.push(schema);
+                });
+        })
+        .then((res) => {
+            console.log('2:-------------------%s', newFailedQueue.length);
+            console.log(newFailedQueue);
+            if (newFailedQueue.length === 0) {
+                return returnObjectList;
+            } else if (newFailedQueue.length === failedQueue.length) {
+                return when.reject(errors.pop());
+            }
+            failedQueue = newFailedQueue;
+            return retryFailedQueries(returnObjectList);
+        });
+    }
+
     var self = this;
     var schemas = this.getSchema();
     if (!schemas) {
         return schema;
     }
-
     return when.reduce(schemas, function(prev, schemaConfig) { // visit each schema folder
         return when.promise(function(resolve, reject) {
             fs.readdir(schemaConfig.path, function(err, files) {
@@ -410,26 +436,31 @@ SqlPort.prototype.updateSchema = function(schema) {
                     });
 
                     var request = self.getRequest();
-                    var currentFileName = '';
                     var updated = [];
                     when.reduce(queries, function(result, query) {
-                        updated.push(query.objectName);
-                        currentFileName = query.fileName;
-                        return request.batch(query.content);
+                        return request
+                            .batch(query.content)
+                            .then(() => {
+                                updated.push(query.objectName);
+                            })
+                            .catch(() => {
+                                failedQueue.push(query);
+                            });
                     }, [])
                     .then(function() {
                         updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
                         resolve(prev);
-                    })
-                    .catch(function(error) {
-                        error.fileName = currentFileName;
-                        error.message = error.message + ' (' + currentFileName + ':' + (error.lineNumber || 1) + ':1)';
-                        reject(error);
                     });
                 }
             });
         }, []);
     }, [])
+    .then((objectList) => {
+        if (!failedQueue) {
+            return objectList;
+        }
+        return retryFailedQueries(objectList);
+    })
     .then(function(objectList) {
         return self.loadSchema(objectList);
     });
