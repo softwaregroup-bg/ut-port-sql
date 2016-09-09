@@ -2,6 +2,7 @@ var create = require('ut-error').define;
 
 var PortSQL = create('PortSQL');
 var NoConnection = create('NoConnection', PortSQL);
+var Login = create('Login', PortSQL);
 var NotReady = create('NotReady', PortSQL);
 var MissingProcess = create('MissingProcess', PortSQL);
 var NotImplemented = create('NotImplemented', PortSQL);
@@ -42,12 +43,15 @@ module.exports = {
         return new InvalidResultSetOrder({message: 'Invalid resultset order', params: params});
     },
     duplicateResultSetName: function(params) {
-        return new DuplicateResultSetName({mssage: 'Duplicate resultset name', params: params});
+        return new DuplicateResultSetName({message: 'Duplicate resultset name', params: params});
     },
     singleResultExpected: function(params) {
-        return new SingleResultExpected({mssage: 'Expected single or no result', params: params});
+        return new SingleResultExpected({message: 'Expected single or no result', params: params});
     },
     wrongXmlFormat: function(params) {
-        return new WrongXmlFormat({mssage: 'Wrong XML format', params: params});
+        return new WrongXmlFormat({message: 'Wrong XML format', params: params});
+    },
+    login: function(params) {
+        return new Login({message: 'DB login', params: params});
     }
 };
