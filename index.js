@@ -728,6 +728,10 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                 err.message = errorLines.shift();
                 var error = utError.get(err.message) || errors.sql;
                 var errToThrow = error(err);
+                if (err.code && (err.code === 'ELOGIN')) {
+                    error = errors.login;
+                    errToThrow = error();
+                }
                 if (debug) {
                     err.storedProcedure = name;
                     err.params = debugParams;
