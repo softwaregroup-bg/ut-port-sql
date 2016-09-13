@@ -13,7 +13,6 @@ var xmlBuilder = new xml2js.Builder();
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core\]?\.\[?error\]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
-var failedQueue = [];
 
 function SqlPort() {
     Port.call(this);
@@ -355,10 +354,11 @@ SqlPort.prototype.updateSchema = function(schema) {
         return false;
     }
 
-    function retryFailedQueries() {
+    function retryFailedQueries(failedQueue) {
         let newFailedQueue = [];
         let request = self.getRequest();
         let errCollection = [];
+        self.log.info && self.log.info('Retrying failed TX');
         return when.map(failedQueue, (schema) => {
             return request
                 .batch(schema.content)
@@ -366,8 +366,11 @@ SqlPort.prototype.updateSchema = function(schema) {
                     self.log.info && self.log.info({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
                 })
                 .catch((err) => {
-                    self.log.error && self.log.error(err);
-                    errCollection.push(err);
+                    var newErr = err;
+                    newErr.fileName = schema.fileName;
+                    newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
+                    self.log.error && self.log.error(newErr);
+                    errCollection.push(newErr);
                     newFailedQueue.push(schema);
                 });
         })
@@ -377,13 +380,13 @@ SqlPort.prototype.updateSchema = function(schema) {
             } else if (newFailedQueue.length === failedQueue.length) {
                 throw errors.retryFailedSchemas(errCollection);
             }
-            failedQueue = newFailedQueue;
-            return retryFailedQueries();
+            return retryFailedQueries(newFailedQueue);
         });
     }
 
     var self = this;
     var schemas = this.getSchema();
+    var failedQueries = [];
     if (!schemas) {
         return schema;
     }
@@ -445,7 +448,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                                 updated.push(query.objectName);
                             })
                             .catch(() => {
-                                failedQueue.push(query);
+                                failedQueries.push(query);
                             });
                     }, [])
                     .then(function() {
@@ -457,10 +460,10 @@ SqlPort.prototype.updateSchema = function(schema) {
         }, []);
     }, [])
     .then((objectList) => {
-        if (!failedQueue) {
+        if (!failedQueries) {
             return objectList;
         }
-        return retryFailedQueries(objectList)
+        return retryFailedQueries(failedQueries)
             .then(() => (objectList));
     })
     .then(function(objectList) {
