@@ -1,3 +1,8 @@
+<a name="5.4.8"></a>
+## [5.4.8](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.7...v5.4.8) (2016-09-13)
+
+
+
 <a name="5.4.7"></a>
 ## [5.4.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.6...v5.4.7) (2016-08-24)
 
