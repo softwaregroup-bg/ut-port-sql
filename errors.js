@@ -12,6 +12,7 @@ var InvalidResultSetOrder = create('InvalidResultSetOrder', PortSQL);
 var DuplicateResultSetName = create('DuplicateResultSetName', PortSQL);
 var SingleResultExpected = create('SingleResultExpected', PortSQL);
 var WrongXmlFormat = create('WrongXmlFormat', PortSQL);
+var RetryFailedSchemas = create('RetryFailedSchemas', PortSQL);
 
 module.exports = {
     sql: function(cause) {
@@ -49,5 +50,8 @@ module.exports = {
     },
     wrongXmlFormat: function(params) {
         return new WrongXmlFormat({message: 'Wrong XML format', params: params});
+    },
+    retryFailedSchemas: function(params) {
+        return new RetryFailedSchemas({message: 'Retries exceeded for failed schemas', params: params});
     }
 };
