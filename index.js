@@ -354,12 +354,42 @@ SqlPort.prototype.updateSchema = function(schema) {
         return false;
     }
 
+    function retryFailedQueries(failedQueue) {
+        let newFailedQueue = [];
+        let request = self.getRequest();
+        let errCollection = [];
+        self.log.warn && self.log.warn('Retrying failed TX');
+        return when.map(failedQueue, (schema) => {
+            return request
+                .batch(schema.content)
+                .then((r) => {
+                    self.log.warn && self.log.warn({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
+                })
+                .catch((err) => {
+                    var newErr = err;
+                    newErr.fileName = schema.fileName;
+                    newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
+                    self.log.error && self.log.error(newErr);
+                    errCollection.push(newErr);
+                    newFailedQueue.push(schema);
+                });
+        })
+        .then((res) => {
+            if (newFailedQueue.length === 0) {
+                return;
+            } else if (newFailedQueue.length === failedQueue.length) {
+                throw errors.retryFailedSchemas(errCollection);
+            }
+            return retryFailedQueries(newFailedQueue);
+        });
+    }
+
     var self = this;
     var schemas = this.getSchema();
+    var failedQueries = [];
     if (!schemas) {
         return schema;
     }
-
     return when.reduce(schemas, function(prev, schemaConfig) { // visit each schema folder
         return when.promise(function(resolve, reject) {
             fs.readdir(schemaConfig.path, function(err, files) {
@@ -410,26 +440,32 @@ SqlPort.prototype.updateSchema = function(schema) {
                     });
 
                     var request = self.getRequest();
-                    var currentFileName = '';
                     var updated = [];
                     when.reduce(queries, function(result, query) {
-                        updated.push(query.objectName);
-                        currentFileName = query.fileName;
-                        return request.batch(query.content);
+                        return request
+                            .batch(query.content)
+                            .then(() => {
+                                updated.push(query.objectName);
+                            })
+                            .catch(() => {
+                                failedQueries.push(query);
+                            });
                     }, [])
                     .then(function() {
                         updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
                         resolve(prev);
-                    })
-                    .catch(function(error) {
-                        error.fileName = currentFileName;
-                        error.message = error.message + ' (' + currentFileName + ':' + (error.lineNumber || 1) + ':1)';
-                        reject(error);
                     });
                 }
             });
         }, []);
     }, [])
+    .then((objectList) => {
+        if (!failedQueries) {
+            return objectList;
+        }
+        return retryFailedQueries(failedQueries)
+            .then(() => (objectList));
+    })
     .then(function(objectList) {
         return self.loadSchema(objectList);
     });
