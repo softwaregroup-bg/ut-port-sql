@@ -358,12 +358,12 @@ SqlPort.prototype.updateSchema = function(schema) {
         let newFailedQueue = [];
         let request = self.getRequest();
         let errCollection = [];
-        self.log.info && self.log.info('Retrying failed TX');
+        self.log.warn && self.log.warn('Retrying failed TX');
         return when.map(failedQueue, (schema) => {
             return request
                 .batch(schema.content)
                 .then((r) => {
-                    self.log.info && self.log.info({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
+                    self.log.warn && self.log.warn({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
                 })
                 .catch((err) => {
                     var newErr = err;
