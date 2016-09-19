@@ -355,9 +355,9 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function retryFailedQueries(failedQueue) {
-        let newFailedQueue = [];
-        let request = self.getRequest();
-        let errCollection = [];
+        var newFailedQueue = [];
+        var request = self.getRequest();
+        var errCollection = [];
         self.log.warn && self.log.warn('Retrying failed TX');
         return when.map(failedQueue, (schema) => {
             return request
