@@ -1,3 +1,14 @@
+<a name="5.4.11"></a>
+## [5.4.11](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.10...v5.4.11) (2016-09-20)
+
+
+### Bug Fixes
+
+* MCTUNE-698 ([b900de7](https://github.com/softwaregroup-bg/ut-port-sql/commit/b900de7))
+* UIS-181 block scoped declarations ([#7](https://github.com/softwaregroup-bg/ut-port-sql/issues/7)) ([4343653](https://github.com/softwaregroup-bg/ut-port-sql/commit/4343653))
+
+
+
 <a name="5.4.10"></a>
 ## [5.4.10](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.9...v5.4.10) (2016-09-13)
 
