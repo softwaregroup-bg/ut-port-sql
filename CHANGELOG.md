@@ -1,3 +1,13 @@
+<a name="5.5.0"></a>
+# [5.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.12...v5.5.0) (2016-10-13)
+
+
+### Features
+
+* schema property as function ([cf472a5](https://github.com/softwaregroup-bg/ut-port-sql/commit/cf472a5))
+
+
+
 <a name="5.4.12"></a>
 ## [5.4.12](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.4.11...v5.4.12) (2016-09-20)
 
