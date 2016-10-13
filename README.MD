@@ -75,7 +75,7 @@ From the example above we see that we load the SQL from a template directory wit
 
 ### **Schema sync** ###
 
-The SQL port has a configuration property named 'schema'. This property can be set to an array of object, specifying folders that contain source code of database objects.
+The SQL port has a configuration property named 'schema'. This property can be set to an array of object, or function returning array of objects, specifying folders that contain source code of database objects.
 Here is example:
 
     ```js
@@ -89,9 +89,9 @@ Here is example:
     }
     ```
 
-This configuration will make the port scan the specified folders and synchronize database schema. In addition, procedures from the first folder will be automatically 
+This configuration will make the port scan the specified folders and synchronize database schema. In addition, procedures from the first folder will be automatically
 linked to the port, so that they can be executed directly, based on their schema name and procedure name. So for the following procedure:
-    
+
   ```sql
   CREATE PROCEDURE schemaName.storedProcedureName
     @param1 int,
@@ -100,7 +100,7 @@ linked to the port, so that they can be executed directly, based on their schema
   AS
     ...
   ```
-    
+
 The stored procedure can be called using this:
 
   ```js
@@ -108,7 +108,7 @@ The stored procedure can be called using this:
   ```
 
 The schema sync algorithm matches database objects to files in the file system and updates the database objects if differences are detected.
-The file names in the file system are supposed to follow the following naming: `xxx$schemaName.objectName.sql` , where xxx are numbers, that control the order of execution. The below convention is recommended. 
+The file names in the file system are supposed to follow the following naming: `xxx$schemaName.objectName.sql` , where xxx are numbers, that control the order of execution. The below convention is recommended.
 Note the **camelCase** naming convention. File names, including extension are **case sensitive**.
 
  - `150$shemaName.sql` for **schema** creation:
@@ -117,7 +117,7 @@ Note the **camelCase** naming convention. File names, including extension are **
    CREATE SCHEMA [schemaName]
    ```
 
- - `250$schemaName.synonymName.sql` for **single synonym per file** creation. Following the below exact query format (i.e. using the [ and ] brackets and no extra spaces) and filename matches the `xxx$shema.object` pattern. Any deviation from the below query format will lead to pointless recreation of synonyms: 
+ - `250$schemaName.synonymName.sql` for **single synonym per file** creation. Following the below exact query format (i.e. using the [ and ] brackets and no extra spaces) and filename matches the `xxx$shema.object` pattern. Any deviation from the below query format will lead to pointless recreation of synonyms:
 
    ```sql
    DROP SYNONYM [schemaName].[synonymName] CREATE SYNONYM [schemaName].[synonymName] FOR [foreignDatabaseName].[foreignSchemaName].[foreignObjectName]
@@ -127,35 +127,35 @@ Note the **camelCase** naming convention. File names, including extension are **
 
    ```sql
    IF NOT EXISTS (
-     SELECT 
-       * 
-     FROM 
-       sys.synonyms sy 
-     JOIN 
-       sys.schemas s ON s.schema_id=sy.schema_id AND s.name='schemaName' 
-     WHERE 
+     SELECT
+       *
+     FROM
+       sys.synonyms sy
+     JOIN
+       sys.schemas s ON s.schema_id=sy.schema_id AND s.name='schemaName'
+     WHERE
        sy.base_objectName='[foreignDatabaseName].[foreignSchemaName].[foreignObjectName]' AND
        sy.type='SN' and sy.name='synonymName'
    )
    BEGIN
      IF EXISTS (
-     SELECT 
-       * 
-     FROM 
-       sys.synonyms sy 
-     JOIN 
-       sys.schemas s ON s.schema_id=sy.schema_id AND s.name='schemaName' 
-     WHERE 
+     SELECT
+       *
+     FROM
+       sys.synonyms sy
+     JOIN
+       sys.schemas s ON s.schema_id=sy.schema_id AND s.name='schemaName'
+     WHERE
        sy.type='SN' and sy.name='synonymName'
      ) DROP SYNONYM [schemaName].[synonymName]
      CREATE SYNONYM [schemaName].[synonymName] FOR [foreignDatabaseName].[foreignSchemaName].[foreignObjectName]
    END
    ```
 
- - `340$schemaName.typeName.sql` for **used defined table type**. 
- The script will be executed as is, only when the used defined table type does not exist. 
+ - `340$schemaName.typeName.sql` for **used defined table type**.
+ The script will be executed as is, only when the used defined table type does not exist.
  Altering user defined types is currently related to the complexity of other objects depending on the type,
- so currently there is no automatic way for modifying already existing type. 
+ so currently there is no automatic way for modifying already existing type.
 
    ```sql
    CREATE TYPE [schemaName].[typeName] AS TABLE(
@@ -201,51 +201,51 @@ and the use of underscore to separate the foreign table name. The script will be
      CONSTRAINT [fkTableName_yyyyForeignTableName] FOREIGN KEY([yyyForeignTableNameId]) REFERENCES [schemaName].[foreignTableName] ([foreignTableNameId])
    )
    ```
-   
+
  - `380$schemaName.alterTable.sql` for **altering tables** to add missing columns or modify existing columns that do not involve table recreation.
  This script will be executed on each reconnection to the database.
- 
+
    ```sql
      IF NOT EXISTS(SELECT * FROM sys.columns WHERE Name = N'fieldName' and Object_ID = Object_ID(N'tableName'))
      begin
        ALTER TABLE tableNAme ADD fieldName INT
-     end   
-   ```   
+     end
+   ```
 
  - `450$schemaName.functionName.sql` for **functions**. File content should start with CREATE or ALTER keyword.
 
    ```sql
    CREATE FUNCTION [schemaName].[functionName](
-     @parameterName1 INT, 
+     @parameterName1 INT,
      @parameterName2 INT
-   ) 
-   RETURNS type 
+   )
+   RETURNS type
    AS
    BEGIN
      ...
    END
    ```
 
- - `550$schemaName.tableNameInsert.sql` for INSERT **triggers**. File content should start with CREATE or ALTER keyword. Similar pattern can be used other triggers. 
+ - `550$schemaName.tableNameInsert.sql` for INSERT **triggers**. File content should start with CREATE or ALTER keyword. Similar pattern can be used other triggers.
 
    ```sql
-   CREATE TRIGGER [schemaName].[tableNameInsert] 
-   ON [schemaName].[tableName] 
+   CREATE TRIGGER [schemaName].[tableNameInsert]
+   ON [schemaName].[tableName]
    FOR INSERT
    AS
      ...
    ```
 
- - `650$schemaName.viewName.sql` for **views**. File content should start with CREATE or ALTER keyword. 
+ - `650$schemaName.viewName.sql` for **views**. File content should start with CREATE or ALTER keyword.
 
    ```sql
-   CREATE VIEW [schemaName].[viewName] 
+   CREATE VIEW [schemaName].[viewName]
    AS
      ...
    ```
 
- - `750$schemaName.procedureName.sql` for **stored procedures**. File content should start with CREATE or ALTER keyword. 
-Note the mandatory camelCase naming convention for procedure, parameter and result column names. 
+ - `750$schemaName.procedureName.sql` for **stored procedures**. File content should start with CREATE or ALTER keyword.
+Note the mandatory camelCase naming convention for procedure, parameter and result column names.
 
    ```sql
    CREATE PROCEDURE [schemaName].[procedureName]
@@ -270,11 +270,11 @@ Note the mandatory camelCase naming convention for procedure, parameter and resu
 
 ### **Automatic creation of user defined table types** ###
 
-The SQL port has a configuration property named ‘createTT’. This property can be set to boolean or an array of strings, specifying whether user defined table types matching the tables' structure should be automatically created. There are several scenarios: 
+The SQL port has a configuration property named ‘createTT’. This property can be set to boolean or an array of strings, specifying whether user defined table types matching the tables' structure should be automatically created. There are several scenarios:
 
  - If the property is set to **true** then user defined table types will
    be automatically created for all tables. e.g
-   
+
 ```js
    module.exports = {
         type: 'sql',
@@ -286,7 +286,7 @@ The SQL port has a configuration property named ‘createTT’. This property ca
  - If the property is set to an array of strings it means that user defined table types will be created for those tables only.
 
 ```js
- 
+
     module.exports = {
         type: 'sql',
         createTT: ['schema1.tableName1', 'schema2.tableName2']
@@ -303,7 +303,7 @@ In case a user defined table type with the same name is manually defined in the 
 
 ### **Table and column comments** ###
 
-Table and column comments are parsed and inserted as description in MSSQL. Single line comment '**--**' after every parameter, field, column or constraint will be added as description for itself. 
+Table and column comments are parsed and inserted as description in MSSQL. Single line comment '**--**' after every parameter, field, column or constraint will be added as description for itself.
 
 Multiline comments between **/*** and ***/** are added as description for the next param.
 
@@ -320,16 +320,16 @@ AS
     SELECT * from @param1
     IF @error=1 RAISERROR('test.error',11,0)
 ```
-In case of table or type, the table description is at the same line as create statement after the opening bracket. 
+In case of table or type, the table description is at the same line as create statement after the opening bracket.
 ```sql
 CREATE TABLE [schema].[table] ( -- Table description
-    /* multiline description 
+    /* multiline description
        related to column1 */
     [column1] varchar(200) NOT NULL, -- this single line description will be omitted, because multiline description for the same column already exist
     [column2] [bigint] NOT NULL, -- single line description related to column2
     [column3] varchar(50) NOT NULL
     CONSTRAINT [pk1] PRIMARY KEY NONCLUSTERED (sessionId), -- description for constraint are also parsed
-    /* multiline is suppoted 
+    /* multiline is suppoted
        for constraints too */
     CONSTRAINT [fkSession_User] FOREIGN KEY([actorId]) REFERENCES [user].[user](actorId)
 )

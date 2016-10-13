@@ -199,10 +199,16 @@ SqlPort.prototype.exec = function(message) {
 SqlPort.prototype.getSchema = function() {
     var result = [];
     if (this.config.schema) {
-        if (Array.isArray(this.config.schema)) {
-            result = this.config.schema.slice();
+        var schema;
+        if (typeof (this.config.schema) === 'function') {
+            schema = this.config.schema();
         } else {
-            result.push({path: this.config.schema});
+            schema = this.config.schema;
+        }
+        if (Array.isArray(schema)) {
+            result = schema.slice();
+        } else {
+            result.push({path: schema});
         }
     }
     this.config.imports && this.config.imports.forEach(function(imp) {
