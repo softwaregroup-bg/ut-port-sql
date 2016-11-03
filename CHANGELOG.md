@@ -1,3 +1,13 @@
+<a name="5.5.2"></a>
+## [5.5.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.1...v5.5.2) (2016-11-03)
+
+
+### Bug Fixes
+
+* should not try to read directory in the schema folder ([44c0b06](https://github.com/softwaregroup-bg/ut-port-sql/commit/44c0b06))
+
+
+
 <a name="5.5.1"></a>
 ## [5.5.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.0...v5.5.1) (2016-10-24)
 
