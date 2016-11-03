@@ -1,3 +1,13 @@
+<a name="5.5.3"></a>
+## [5.5.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.2...v5.5.3) (2016-11-03)
+
+
+### Bug Fixes
+
+* fix failed queries check ([75b04f9](https://github.com/softwaregroup-bg/ut-port-sql/commit/75b04f9))
+
+
+
 <a name="5.5.2"></a>
 ## [5.5.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.1...v5.5.2) (2016-11-03)
 
