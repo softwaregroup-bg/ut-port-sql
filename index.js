@@ -473,7 +473,7 @@ SqlPort.prototype.updateSchema = function(schema) {
         }, []);
     }, [])
     .then((objectList) => {
-        if (!failedQueries) {
+        if (!failedQueries.length) {
             return objectList;
         }
         return retryFailedQueries(failedQueries)
