@@ -414,45 +414,40 @@ SqlPort.prototype.updateSchema = function(schema) {
                         var objectName = getObjectName(file);
                         var objectId = objectName.toLowerCase();
                         var fileName = schemaConfig.path + '/' + file;
-                        fs.stat(fileName, (err, stats) => {
-                            if (err) {
-                                throw new Error(err);
-                            }
-                            if (stats.isDirectory()) {
-                                return;
-                            }
-                            schemaConfig.linkSP && (prev[objectId] = fileName);
-                            var fileContent = fs.readFileSync(fileName).toString();
-                            addQuery(queries, {
-                                fileName: fileName,
-                                objectName: objectName,
-                                objectId: objectId,
-                                fileContent: fileContent,
-                                createStatement: getCreateStatement(fileContent, fileName, objectName)
-                            });
-                            if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                                var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                if (tt) {
-                                    addQuery(queries, {
-                                        fileName: fileName,
-                                        objectName: objectName + 'TT',
-                                        objectId: objectId + 'tt',
-                                        fileContent: tt,
-                                        createStatement: tt
-                                    });
-                                }
-                                var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                if (ttu) {
-                                    addQuery(queries, {
-                                        fileName: fileName,
-                                        objectName: objectName + 'TTU',
-                                        objectId: objectId + 'ttu',
-                                        fileContent: ttu,
-                                        createStatement: ttu
-                                    });
-                                }
-                            }
+                        if (fs.statSync(fileName).isDirectory()) {
+                            return;
+                        }
+                        schemaConfig.linkSP && (prev[objectId] = fileName);
+                        var fileContent = fs.readFileSync(fileName).toString();
+                        addQuery(queries, {
+                            fileName: fileName,
+                            objectName: objectName,
+                            objectId: objectId,
+                            fileContent: fileContent,
+                            createStatement: getCreateStatement(fileContent, fileName, objectName)
                         });
+                        if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                            var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                            if (tt) {
+                                addQuery(queries, {
+                                    fileName: fileName,
+                                    objectName: objectName + 'TT',
+                                    objectId: objectId + 'tt',
+                                    fileContent: tt,
+                                    createStatement: tt
+                                });
+                            }
+                            var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                            if (ttu) {
+                                addQuery(queries, {
+                                    fileName: fileName,
+                                    objectName: objectName + 'TTU',
+                                    objectId: objectId + 'ttu',
+                                    fileContent: ttu,
+                                    createStatement: ttu
+                                });
+                            }
+                        }
                     });
 
                     var request = self.getRequest();
@@ -494,7 +489,10 @@ SqlPort.prototype.execTemplate = function(template, params) {
     return template.render(params).then(function(query) {
         return self.exec({query: query, process: 'json'})
             .then(function(result) {
-                return result && result.dataSet;
+                if (result) {
+                    return result.dataSet;
+                }
+                return;
             });
     });
 };
