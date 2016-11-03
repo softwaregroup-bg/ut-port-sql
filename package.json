@@ -3,7 +3,7 @@
   "version": "5.5.3",
   "main": "./index.js",
   "dependencies": {
-    "mssql": "3.3.0",
+    "mssql": "git://github.com/patriksimek/node-mssql",
     "ut-error": "^5.3.10",
     "when": "3.7.7",
     "xml2js": "0.4.17"
