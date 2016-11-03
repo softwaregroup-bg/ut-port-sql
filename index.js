@@ -489,7 +489,10 @@ SqlPort.prototype.execTemplate = function(template, params) {
     return template.render(params).then(function(query) {
         return self.exec({query: query, process: 'json'})
             .then(function(result) {
-                return result && result.dataSet;
+                if (result) {
+                    return result.dataSet;
+                }
+                return;
             });
     });
 };
