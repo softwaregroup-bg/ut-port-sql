@@ -52,6 +52,7 @@ SqlPort.prototype.connect = function connect() {
             if (this.config.db.cryptoAlgorithm) {
                 return crypto.decrypt(this.config.db.password, this.config.db.cryptoAlgorithm);
             }
+            return;
         })
         .then((r) => {
             this.config.db.password = r || this.config.db.password;
@@ -370,6 +371,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                 .batch(schema.content)
                 .then((r) => {
                     self.log.warn && self.log.warn({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
+                    return;
                 })
                 .catch((err) => {
                     var newErr = err;
@@ -412,37 +414,45 @@ SqlPort.prototype.updateSchema = function(schema) {
                         var objectName = getObjectName(file);
                         var objectId = objectName.toLowerCase();
                         var fileName = schemaConfig.path + '/' + file;
-                        schemaConfig.linkSP && (prev[objectId] = fileName);
-                        var fileContent = fs.readFileSync(fileName).toString();
-                        addQuery(queries, {
-                            fileName: fileName,
-                            objectName: objectName,
-                            objectId: objectId,
-                            fileContent: fileContent,
-                            createStatement: getCreateStatement(fileContent, fileName, objectName)
+                        fs.stat(fileName, (err, stats) => {
+                            if (err) {
+                                throw new Error(err);
+                            }
+                            if (stats.isDirectory()) {
+                                return;
+                            }
+                            schemaConfig.linkSP && (prev[objectId] = fileName);
+                            var fileContent = fs.readFileSync(fileName).toString();
+                            addQuery(queries, {
+                                fileName: fileName,
+                                objectName: objectName,
+                                objectId: objectId,
+                                fileContent: fileContent,
+                                createStatement: getCreateStatement(fileContent, fileName, objectName)
+                            });
+                            if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                                var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                if (tt) {
+                                    addQuery(queries, {
+                                        fileName: fileName,
+                                        objectName: objectName + 'TT',
+                                        objectId: objectId + 'tt',
+                                        fileContent: tt,
+                                        createStatement: tt
+                                    });
+                                }
+                                var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                if (ttu) {
+                                    addQuery(queries, {
+                                        fileName: fileName,
+                                        objectName: objectName + 'TTU',
+                                        objectId: objectId + 'ttu',
+                                        fileContent: ttu,
+                                        createStatement: ttu
+                                    });
+                                }
+                            }
                         });
-                        if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                            var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                            if (tt) {
-                                addQuery(queries, {
-                                    fileName: fileName,
-                                    objectName: objectName + 'TT',
-                                    objectId: objectId + 'tt',
-                                    fileContent: tt,
-                                    createStatement: tt
-                                });
-                            }
-                            var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                            if (ttu) {
-                                addQuery(queries, {
-                                    fileName: fileName,
-                                    objectName: objectName + 'TTU',
-                                    objectId: objectId + 'ttu',
-                                    fileContent: ttu,
-                                    createStatement: ttu
-                                });
-                            }
-                        }
                     });
 
                     var request = self.getRequest();
@@ -452,6 +462,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                             .batch(query.content)
                             .then(() => {
                                 updated.push(query.objectName);
+                                return;
                             })
                             .catch(() => {
                                 failedQueries.push(query);
@@ -460,6 +471,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                     .then(function() {
                         updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
                         resolve(prev);
+                        return;
                     });
                 }
             });
