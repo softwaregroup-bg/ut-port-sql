@@ -1,3 +1,13 @@
+<a name="5.5.7"></a>
+## [5.5.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.6...v5.5.7) (2016-11-04)
+
+
+### Bug Fixes
+
+* fix URL ([445cce2](https://github.com/softwaregroup-bg/ut-port-sql/commit/445cce2))
+
+
+
 <a name="5.5.6"></a>
 ## [5.5.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.5...v5.5.6) (2016-11-04)
 
