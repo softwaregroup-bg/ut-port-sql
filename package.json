@@ -3,8 +3,7 @@
   "version": "5.5.3",
   "main": "./index.js",
   "dependencies": {
-    "coffee-script": "^1.11.1",
-    "mssql": "git://github.com/patriksimek/node-mssql",
+    "mssql": "git@github.com:georgialexandrov/node-mssql.git",
     "ut-error": "^5.3.10",
     "when": "3.7.7",
     "xml2js": "0.4.17"
@@ -16,7 +15,6 @@
     "ut-bus": "~5.4.2"
   },
   "scripts": {
-    "postinstall": "./node_modules/.bin/coffee --compile --output ./node_modules/mssql/lib ./node_modules/mssql/src",
     "lint": "ut-lint .",
     "release": "ut-release",
     "genParser": "pegjs parsers/mssqlSP.pegjs",
