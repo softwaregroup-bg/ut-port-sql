@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "5.5.4",
+  "version": "5.5.5",
   "main": "./index.js",
   "dependencies": {
     "mssql": "git@github.com:georgialexandrov/node-mssql.git#6e8c0f3243e2c145795010013ed93db41b85dc84",
