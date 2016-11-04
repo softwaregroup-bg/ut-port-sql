@@ -1,3 +1,13 @@
+<a name="5.5.4"></a>
+## [5.5.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.3...v5.5.4) (2016-11-04)
+
+
+### Bug Fixes
+
+* fix issue with national characters in XML columns ([34dd4ae](https://github.com/softwaregroup-bg/ut-port-sql/commit/34dd4ae))
+
+
+
 <a name="5.5.3"></a>
 ## [5.5.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.2...v5.5.3) (2016-11-03)
 
