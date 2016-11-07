@@ -1,3 +1,33 @@
+<a name="5.5.7"></a>
+## [5.5.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.6...v5.5.7) (2016-11-04)
+
+
+### Bug Fixes
+
+* fix URL ([445cce2](https://github.com/softwaregroup-bg/ut-port-sql/commit/445cce2))
+
+
+
+<a name="5.5.6"></a>
+## [5.5.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.5...v5.5.6) (2016-11-04)
+
+
+
+<a name="5.5.5"></a>
+## [5.5.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.4...v5.5.5) (2016-11-04)
+
+
+
+<a name="5.5.4"></a>
+## [5.5.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.3...v5.5.4) (2016-11-04)
+
+
+### Bug Fixes
+
+* fix issue with national characters in XML columns ([34dd4ae](https://github.com/softwaregroup-bg/ut-port-sql/commit/34dd4ae))
+
+
+
 <a name="5.5.3"></a>
 ## [5.5.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.2...v5.5.3) (2016-11-03)
 
