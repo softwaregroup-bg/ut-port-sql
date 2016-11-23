@@ -4,15 +4,15 @@
   "main": "./index.js",
   "dependencies": {
     "mssql": "10.0.0",
-    "ut-error": "^5.3.10",
+    "ut-error": "^5.3.16",
     "when": "3.7.7",
     "xml2js": "0.4.17"
   },
   "devDependencies": {
-    "ut-tools": "^5.6.0"
+    "ut-tools": "^5.10.8"
   },
   "peerDependencies": {
-    "ut-bus": "~5.4.2"
+    "ut-bus": "~5.6.2"
   },
   "scripts": {
     "lint": "ut-lint .",
