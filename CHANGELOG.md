@@ -1,3 +1,13 @@
+<a name="5.5.9"></a>
+## [5.5.9](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.8...v5.5.9) (2016-11-23)
+
+
+### Bug Fixes
+
+* deps bump ([5949b07](https://github.com/softwaregroup-bg/ut-port-sql/commit/5949b07))
+
+
+
 <a name="5.5.8"></a>
 ## [5.5.8](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.7...v5.5.8) (2016-11-07)
 
