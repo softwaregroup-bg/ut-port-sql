@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "5.5.9",
+  "version": "5.5.10",
   "main": "./index.js",
   "dependencies": {
     "mssql": "10.0.0",
