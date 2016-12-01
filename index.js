@@ -464,7 +464,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                             });
                     }, [])
                     .then(function() {
-                        updated.length && self.log.info && self.log.info({message: updated, $meta: {opcode: 'updateSchema'}});
+                        updated.length && self.log.info && self.log.info({message: updated, $meta: {mtid: 'event', opcode: 'updateSchema'}});
                         resolve(prev);
                         return;
                     });
@@ -530,7 +530,7 @@ SqlPort.prototype.execTemplateRows = function(template, params) {
 SqlPort.prototype.getRequest = function() {
     var request = new mssql.Request(this.connection);
     request.on('info', (info) => {
-        this.log.info && this.log.info(info);
+        this.log.warn && this.log.warn({$meta: {mtid: 'event', opcode: 'message'}, message: info});
     });
     return request;
 };
