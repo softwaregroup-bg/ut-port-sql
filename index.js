@@ -11,7 +11,7 @@ var xml2js = require('xml2js');
 var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 var xmlBuilder = new xml2js.Builder({headless: true});
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
-const CORE_ERROR = /^[\s+]{0,}EXEC \[?core\]?\.\[?error\]?$/m;
+const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 
 function SqlPort() {
@@ -273,7 +273,7 @@ SqlPort.prototype.updateSchema = function(schema) {
             var parserSP = require('./parsers/mssqlSP');
             var binding = parserSP.parse(statement);
             if (binding.type === 'table') {
-                var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
+                var name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
                 var columns = binding.fields.map(function(field) {
                     return `[${field.column}] [${field.type}]` +
                         (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
@@ -293,7 +293,7 @@ SqlPort.prototype.updateSchema = function(schema) {
             var parserSP = require('./parsers/mssqlSP');
             var binding = parserSP.parse(statement);
             if (binding.type === 'table') {
-                var name = binding.name.match(/\]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
+                var name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
                 var columns = binding.fields.map(function(field) {
                     return ('[' + field.column + '] [' + field.type + ']' +
                         (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
@@ -351,7 +351,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function getObjectName(fileName) {
-        return fileName.replace(/\.sql$/i, '').replace(/^[^\$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+        return fileName.replace(/\.sql$/i, '').replace(/^[^$]*\$/, ''); // remove "prefix$" and ".sql" suffix
     }
 
     function shouldCreateTT(tableName) {
@@ -452,7 +452,7 @@ SqlPort.prototype.updateSchema = function(schema) {
 
                     var request = self.getRequest();
                     var updated = [];
-                    when.reduce(queries, function(result, query) {
+                    return when.reduce(queries, function(result, query) {
                         return request
                             .batch(query.content)
                             .then(() => {
@@ -461,6 +461,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                             })
                             .catch(() => {
                                 failedQueries.push(query);
+                                return;
                             });
                     }, [])
                     .then(function() {
@@ -502,10 +503,11 @@ SqlPort.prototype.execTemplateRow = function(template, params) {
         var result = (data && data[0]) || {};
         if (result._errorCode && parseInt(result._errorCode, 10) !== 0) {
             // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
-            throw errors.sql({
+            var error = errors.sql({
                 code: result._errorCode || -1,
                 message: result._errorMessage || 'sql error'
             });
+            throw error;
         } else {
             return result;
         }
@@ -517,10 +519,11 @@ SqlPort.prototype.execTemplateRows = function(template, params) {
         var result = data || [{}];
         if (result[0] && result[0]._errorCode && parseInt(result[0]._errorCode, 10) !== 0) {
             // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
-            throw errors.sql({
+            var error = errors.sql({
                 code: result[0]._errorCode || -1,
                 message: result[0]._errorMessage || 'sql error'
             });
+            throw error;
         } else {
             return result;
         }
@@ -798,7 +801,7 @@ SqlPort.prototype.linkSP = function(schema) {
         var parserSP = require('./parsers/mssqlSP');
         schema.parseList.forEach(function(procedure) {
             var binding = parserSP.parse(procedure.source);
-            var flatName = binding.name.replace(/[\[\]]/g, '');
+            var flatName = binding.name.replace(/[[\]]/g, '');
             if (binding && binding.type === 'procedure') {
                 var update = [];
                 var flatten = false;
