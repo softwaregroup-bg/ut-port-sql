@@ -1,3 +1,13 @@
+<a name="5.6.0"></a>
+# [5.6.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.10...v5.6.0) (2016-12-01)
+
+
+### Features
+
+* improve logging ([793462e](https://github.com/softwaregroup-bg/ut-port-sql/commit/793462e))
+
+
+
 <a name="5.5.10"></a>
 ## [5.5.10](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.9...v5.5.10) (2016-11-23)
 
