@@ -1,3 +1,13 @@
+<a name="5.6.1"></a>
+## [5.6.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.0...v5.6.1) (2016-12-01)
+
+
+### Bug Fixes
+
+* fix lint errors ([15842d8](https://github.com/softwaregroup-bg/ut-port-sql/commit/15842d8))
+
+
+
 <a name="5.6.0"></a>
 # [5.6.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.5.10...v5.6.0) (2016-12-01)
 
