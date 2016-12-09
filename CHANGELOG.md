@@ -1,3 +1,13 @@
+<a name="5.6.2"></a>
+## [5.6.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.1...v5.6.2) (2016-12-09)
+
+
+### Bug Fixes
+
+* do not flood with messages ([9490e2f](https://github.com/softwaregroup-bg/ut-port-sql/commit/9490e2f))
+
+
+
 <a name="5.6.1"></a>
 ## [5.6.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.0...v5.6.1) (2016-12-01)
 
