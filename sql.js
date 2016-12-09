@@ -129,7 +129,7 @@ module.exports = {
                     -- Refresh the view
                     EXEC sp_refreshview @ViewName;
 
-                    RAISERROR('%s', 10, 1, @ViewName) WITH NOWAIT;
+                    -- RAISERROR('%s', 10, 1, @ViewName) WITH NOWAIT;
 
                 END TRY
                 BEGIN CATCH
