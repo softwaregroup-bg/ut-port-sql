@@ -1,3 +1,13 @@
+<a name="5.6.3"></a>
+## [5.6.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.2...v5.6.3) (2016-12-19)
+
+
+### Bug Fixes
+
+* conversion for datetime and xml parameters ([#17](https://github.com/softwaregroup-bg/ut-port-sql/issues/17)) ([375255b](https://github.com/softwaregroup-bg/ut-port-sql/commit/375255b))
+
+
+
 <a name="5.6.2"></a>
 ## [5.6.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.1...v5.6.2) (2016-12-09)
 
