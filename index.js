@@ -634,7 +634,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
             debug && (debugParams[param.name] = value);
             if (param.def && param.def.type === 'time' && value != null) {
                 value = new Date('1970-01-01T' + value);
-            } else if (param.def && param.def.type === 'datetime' && value != null && !(value instanceof Date)) {
+            } else if (param.def && /datetime/.test(param.def.type) && value != null && !(value instanceof Date)) {
                 value = new Date(value);
             } else if (param.def && param.def.type === 'xml' && value != null) {
                 value = xmlBuilder.buildObject(value);
