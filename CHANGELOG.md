@@ -1,3 +1,13 @@
+<a name="5.7.0"></a>
+# [5.7.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.3...v5.7.0) (2016-12-19)
+
+
+### Features
+
+* add possibility to have multiple core.error procedure executions in different try catch blocks ([9ed280f](https://github.com/softwaregroup-bg/ut-port-sql/commit/9ed280f))
+
+
+
 <a name="5.6.3"></a>
 ## [5.6.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.2...v5.6.3) (2016-12-19)
 
