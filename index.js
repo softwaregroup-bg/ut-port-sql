@@ -459,8 +459,9 @@ SqlPort.prototype.updateSchema = function(schema) {
                                 updated.push(query.objectName);
                                 return;
                             })
-                            .catch(() => {
+                            .catch((e) => {
                                 failedQueries.push(query);
+                                self.log.error && self.log.error(e);
                                 return;
                             });
                     }, [])
