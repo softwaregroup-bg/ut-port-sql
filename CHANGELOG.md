@@ -1,3 +1,14 @@
+<a name="5.7.1"></a>
+## [5.7.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.0...v5.7.1) (2017-01-13)
+
+
+### Bug Fixes
+
+* added error loging before adding query to fail array ([fbc1f3e](https://github.com/softwaregroup-bg/ut-port-sql/commit/fbc1f3e))
+* from error to warn ([dd1950d](https://github.com/softwaregroup-bg/ut-port-sql/commit/dd1950d))
+
+
+
 <a name="5.7.0"></a>
 # [5.7.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.6.3...v5.7.0) (2016-12-19)
 
