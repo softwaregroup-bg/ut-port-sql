@@ -9,10 +9,10 @@
     "xml2js": "0.4.17"
   },
   "devDependencies": {
-    "ut-tools": "^5.10.8"
+    "ut-tools": "^5.11.1"
   },
   "peerDependencies": {
-    "ut-bus": "~5.6.2"
+    "ut-bus": "~5.8.1"
   },
   "scripts": {
     "lint": "ut-lint .",
