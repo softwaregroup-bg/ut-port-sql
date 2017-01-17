@@ -1,3 +1,13 @@
+<a name="5.7.2"></a>
+## [5.7.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.1...v5.7.2) (2017-01-17)
+
+
+### Bug Fixes
+
+* switch to ut-mssql ([c9e51ff](https://github.com/softwaregroup-bg/ut-port-sql/commit/c9e51ff))
+
+
+
 <a name="5.7.1"></a>
 ## [5.7.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.0...v5.7.1) (2017-01-13)
 
