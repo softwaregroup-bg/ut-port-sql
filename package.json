@@ -3,7 +3,7 @@
   "version": "5.7.1",
   "main": "./index.js",
   "dependencies": {
-    "mssql": "10.0.0",
+    "ut-mssql": "3.3.1",
     "ut-error": "^5.3.16",
     "when": "3.7.7",
     "xml2js": "0.4.17"

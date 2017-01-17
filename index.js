@@ -1,4 +1,4 @@
-var mssql = require('mssql');
+var mssql = require('ut-mssql');
 var Port = require('ut-bus/port');
 var util = require('util');
 var fs = require('fs');
