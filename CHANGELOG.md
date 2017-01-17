@@ -1,3 +1,13 @@
+<a name="5.7.3"></a>
+## [5.7.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.2...v5.7.3) (2017-01-17)
+
+
+### Bug Fixes
+
+* update dependencies ([2fd1134](https://github.com/softwaregroup-bg/ut-port-sql/commit/2fd1134))
+
+
+
 <a name="5.7.2"></a>
 ## [5.7.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.1...v5.7.2) (2017-01-17)
 
