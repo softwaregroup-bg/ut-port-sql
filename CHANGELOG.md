@@ -1,3 +1,13 @@
+<a name="5.8.0"></a>
+# [5.8.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.3...v5.8.0) (2017-02-03)
+
+
+### Features
+
+* support for expressions ([2c63a26](https://github.com/softwaregroup-bg/ut-port-sql/commit/2c63a26))
+
+
+
 <a name="5.7.3"></a>
 ## [5.7.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.2...v5.7.3) (2017-01-17)
 
