@@ -1023,7 +1023,12 @@ SqlPort.prototype.tryConnect = function() {
         });
         return conCreate.connect()
         .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
-        .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password)))
+        .then(() => {
+            if (this.config.create.user === this.config.db.user) {
+                return;
+            }
+            return (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password));
+        })
         .then(() => conCreate.close())
         .then(() => this.connection.connect())
         .catch((err) => {
