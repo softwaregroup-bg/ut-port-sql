@@ -13,6 +13,7 @@ var xmlBuilder = new xml2js.Builder({headless: true});
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
+const VAR = /\$\{([^}]*)\}/g;
 
 function SqlPort() {
     Port.call(this);
@@ -219,8 +220,31 @@ SqlPort.prototype.getSchema = function() {
     return result;
 };
 
+function flatten(data) {
+    var result = {};
+    function recurse(cur, prop) {
+        if (Object(cur) !== cur) {
+            result[prop] = cur;
+        } else if (Array.isArray(cur) || typeof cur === 'function') {
+            result[prop] = cur;
+        } else {
+            var isEmpty = true;
+            Object.keys(cur).forEach(function(p) {
+                isEmpty = false;
+                recurse(cur[p], prop ? prop + '.' + p : p);
+            });
+            if (isEmpty && prop) {
+                result[prop] = {};
+            }
+        }
+    }
+    recurse(data, '');
+    return result;
+}
+
 SqlPort.prototype.updateSchema = function(schema) {
     this.checkConnection();
+    var busConfig = flatten(this.bus.config);
 
     function replaceAuditLog(statement) {
         var parserSP = require('./parsers/mssqlSP');
@@ -245,6 +269,8 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function preProcess(statement, fileName, objectName) {
+        statement = statement.replace(VAR, (placeHolder, label) => busConfig[label] || placeHolder);
+
         if (statement.match(AUDIT_LOG)) {
             statement = replaceAuditLog(statement);
         }
