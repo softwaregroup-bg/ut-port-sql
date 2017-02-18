@@ -1,3 +1,13 @@
+<a name="5.8.2"></a>
+## [5.8.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.1...v5.8.2) (2017-02-18)
+
+
+### Bug Fixes
+
+* do not refresh views without schema ([ff3386b](https://github.com/softwaregroup-bg/ut-port-sql/commit/ff3386b))
+
+
+
 <a name="5.8.1"></a>
 ## [5.8.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.0...v5.8.1) (2017-02-10)
 
