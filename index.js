@@ -951,6 +951,10 @@ SqlPort.prototype.loadSchema = function(objectList) {
 
 SqlPort.prototype.refreshView = function(drop, data) {
     this.checkConnection();
+    var schema = this.getSchema();
+    if ((Array.isArray(schema) && !schema.length) || !schema) {
+        return data;
+    }
     var request = this.getRequest();
     return request.query(mssqlQueries.refreshView(drop)).then(function(result) {
         if (!drop && result && result.length) {
