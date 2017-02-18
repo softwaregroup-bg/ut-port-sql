@@ -1,3 +1,13 @@
+<a name="5.8.1"></a>
+## [5.8.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.0...v5.8.1) (2017-02-10)
+
+
+### Bug Fixes
+
+* don't try to create user twice if config.create.user = config.db.user ([aeed58e](https://github.com/softwaregroup-bg/ut-port-sql/commit/aeed58e))
+
+
+
 <a name="5.8.0"></a>
 # [5.8.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.7.3...v5.8.0) (2017-02-03)
 
