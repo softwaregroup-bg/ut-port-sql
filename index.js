@@ -745,7 +745,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                         element[0].hasOwnProperty('resultSetName') &&
                         typeof element[0].resultSetName === 'string';
                 }
-
+                var error;
                 if (resultSets.length > 0 && isNamingResultSet(resultSets[0])) {
                     var namedSet = {};
                     if (outParams.length) {
@@ -765,6 +765,12 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                             } else {
                                 name = resultSets[i][0].resultSetName;
                                 single = !!resultSets[i][0].single;
+                                if (name === 'ut-error') {
+                                    error = utError.get(resultSets[i][0] && resultSets[i][0].type) || errors.sql;
+                                    error = Object.assign(error(), resultSets[i][0]);
+                                    name = null;
+                                    single = false;
+                                }
                             }
                         } else {
                             if (isNamingResultSet(resultSets[i])) {
@@ -799,7 +805,12 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                             expectName: false
                         });
                     }
-                    return namedSet;
+                    if (error) {
+                        Object.assign(error, namedSet);
+                        throw error;
+                    } else {
+                        return namedSet;
+                    }
                 }
                 if (outParams.length) {
                     resultSets.push([outParams.reduce(function(prev, curr) {
