@@ -67,6 +67,7 @@ SqlPort.prototype.connect = function connect() {
         .then(this.doc.bind(this))
         .then((v) => { this.connectionReady = true; return v; })
         .catch((err) => {
+            err.portId = this.config.id;
             try { this.connection.close(); } catch (e) {};
             if (this.config.retry) {
                 this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
