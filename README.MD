@@ -349,12 +349,12 @@ SELECT * FROM module.someTable
 
 This procedure can be called in one of the following ways, handling the procedure's returned non error `result` (which is array of arrays of row objects) in different ways:
 
-* `bus.importMethod('module.entity.action')` - will resolve with `result`
-* `bus.importMethod('module.entity.action[^]')` - will resolve with `null` or throw error `portSQL.noRowsExpected` if procedure returned more than one resultset or procedure returned more than 0 rows in the first resultset
-* `bus.importMethod('module.entity.action[0]')` - will resolve with object containing the first row from the first resultset (`result[0][0]`) or throw `portSQL.oneRowExpected`, if what procedure returned is not exactly one resultset with exactly one row
-* `bus.importMethod('module.entity.action[?]')` - will resolve with `null` or object containing the first row from the first resultset (`result[0][0]`) or throw `portSQL.maxOneRowExpected`, if what procedure returned is not exactly one resultset with maximum one row
-* `bus.importMethod('module.entity.action[+]')` - will array holding first resultset rows (`result[0]`) or throw `portSQL.minOneRowExpected` if what procedure returned is not exactly one resultset with one or more rows
-* `bus.importMethod('module.entity.action[]')` - will resolve with array holding first resultset rows [{row}, ...] or throw error `portSQL.singleResultsetExpected` if more than one resultset is returned
+* `bus.importMethod('module.entity.action')(params)` - will resolve with `result`
+* `bus.importMethod('module.entity.action[^]')(params)` - will resolve with `null` or throw error `portSQL.noRowsExpected` if procedure returned more than one resultset or procedure returned more than 0 rows in the first resultset
+* `bus.importMethod('module.entity.action[0]')(params)` - will resolve with object containing the first row from the first resultset (`result[0][0]`) or throw `portSQL.oneRowExpected`, if what procedure returned is not exactly one resultset with exactly one row
+* `bus.importMethod('module.entity.action[?]')(params)` - will resolve with `null` or object containing the first row from the first resultset (`result[0][0]`) or throw `portSQL.maxOneRowExpected`, if what procedure returned is not exactly one resultset with maximum one row
+* `bus.importMethod('module.entity.action[+]')(params)` - will array holding first resultset rows (`result[0]`) or throw `portSQL.minOneRowExpected` if what procedure returned is not exactly one resultset with one or more rows
+* `bus.importMethod('module.entity.action[]')(params)` - will resolve with array holding first resultset rows [{row}, ...] or throw error `portSQL.singleResultsetExpected` if more than one resultset is returned
 
 #### Multiple resultset handling
 
@@ -371,6 +371,6 @@ SELECT 'result2' resultSetName
 SELECT * FROM module.someTable
 ```
 
-Calling `bus.importMethod('module.entity.action')` will resolve with `{result1:[], result2:[]}`
+Calling `bus.importMethod('module.entity.action')(params)` will resolve with `{result1:[], result2:[]}`
 
 ### Crypto Algorithm or `cryptoAlgorithm` param in config will point how password is encrypted.
