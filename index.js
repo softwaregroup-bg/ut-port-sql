@@ -72,6 +72,7 @@ SqlPort.prototype.connect = function connect() {
                 this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
                 this.log.error && this.log.error(err);
             } else {
+                this.log.fatal && this.log.fatal(err);
                 return Promise.reject(err);
             }
         });
