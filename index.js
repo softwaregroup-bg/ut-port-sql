@@ -67,12 +67,12 @@ SqlPort.prototype.connect = function connect() {
         .then(this.doc.bind(this))
         .then((v) => { this.connectionReady = true; return v; })
         .catch((err) => {
-            err.portId = this.config.id;
             try { this.connection.close(); } catch (e) {};
             if (this.config.retry) {
                 this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
                 this.log.error && this.log.error(err);
             } else {
+                this.log.fatal && this.log.fatal(err);
                 return Promise.reject(err);
             }
         });
