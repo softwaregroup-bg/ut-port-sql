@@ -374,3 +374,27 @@ SELECT * FROM module.someTable
 Calling `bus.importMethod('module.entity.action')(params)` will resolve with `{result1:[], result2:[]}`
 
 ### Crypto Algorithm or `cryptoAlgorithm` param in config will point how password is encrypted.
+
+### **Throwing errors with more data** ###
+
+In case simple error throwing through `RAISERROR` is not suitable, the following pattern can be used:
+
+```sql
+SELECT
+    'someData' resultSetName
+SELECT
+    *
+FROM
+    someData
+
+SELECT
+    'ut-error' resultSetName,
+    'someModule.someError' [type],
+    @@servername serverName,
+    @@version [version]
+
+```
+
+This will thow an error of type `someModule.someError`, which will also have properties set to the selected columns in the `ut-error` resultset plus additional properties named afer all the other resultsets.
+If the specified error type is known, an instance of that error will be thrown.
+Otherwise `PortSQL` error will be thrown, with its cause property set to the returned error.
