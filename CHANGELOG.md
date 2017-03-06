@@ -1,3 +1,19 @@
+<a name="6.0.0"></a>
+# [6.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.3...v6.0.0) (2017-03-06)
+
+
+### Features
+
+* allow call modifiers [], [^], [?], [0], [+] ([#22](https://github.com/softwaregroup-bg/ut-port-sql/issues/22)) ([9cbcae9](https://github.com/softwaregroup-bg/ut-port-sql/commit/9cbcae9))
+* throw errors containing data ([#23](https://github.com/softwaregroup-bg/ut-port-sql/issues/23)) ([b8eed61](https://github.com/softwaregroup-bg/ut-port-sql/commit/b8eed61))
+
+
+### BREAKING CHANGES
+
+* errors are now thrown using lowercase first letter
+
+
+
 <a name="5.8.3"></a>
 ## [5.8.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.2...v5.8.3) (2017-02-24)
 
