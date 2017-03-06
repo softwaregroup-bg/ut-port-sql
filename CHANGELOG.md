@@ -1,3 +1,13 @@
+<a name="5.8.3"></a>
+## [5.8.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.2...v5.8.3) (2017-02-24)
+
+
+### Bug Fixes
+
+* know which port fails on connect error ([#21](https://github.com/softwaregroup-bg/ut-port-sql/issues/21)) ([0eb6b34](https://github.com/softwaregroup-bg/ut-port-sql/commit/0eb6b34))
+
+
+
 <a name="5.8.2"></a>
 ## [5.8.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.1...v5.8.2) (2017-02-18)
 

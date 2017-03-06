@@ -1,18 +1,18 @@
 {
   "name": "ut-port-sql",
-  "version": "5.8.2",
+  "version": "5.8.3",
   "main": "./index.js",
   "dependencies": {
     "ut-mssql": "3.3.1",
-    "ut-error": "^5.3.16",
+    "ut-error": "^5.4.0",
     "when": "3.7.7",
     "xml2js": "0.4.17"
   },
   "devDependencies": {
-    "ut-tools": "^5.11.1"
+    "ut-tools": "^5.13.5"
   },
   "peerDependencies": {
-    "ut-bus": "~5.8.1"
+    "ut-bus": "^5.8.2"
   },
   "scripts": {
     "lint": "ut-lint .",
