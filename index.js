@@ -141,13 +141,55 @@ SqlPort.prototype.exec = function(message) {
     $meta.debug = !!this.bus.config.debug;
     var methodName = ($meta && $meta.method);
     if (methodName) {
+        var parts = methodName.match(/^([^[]*)(\[[0+?^]?])?$/);
+        var modifier;
+        if (parts) {
+            methodName = parts[1];
+            modifier = parts[2];
+        }
         var method = this.config[methodName];
         if (!method) {
             methodName = methodName.split('/', 2);
             method = methodName.length === 2 && this.config[methodName[1]];
         }
         if (method instanceof Function) {
-            return when.lift(method).apply(this, Array.prototype.slice.call(arguments));
+            return when.lift(method).apply(this, Array.prototype.slice.call(arguments))
+            .then(result => {
+                switch (modifier) {
+                    case '[]':
+                        if (result && result.length === 1) {
+                            return result[0];
+                        } else {
+                            throw errors.singleResultsetExpected();
+                        }
+                    case '[^]':
+                        if (result && result.length === 0) {
+                            return null;
+                        } else {
+                            throw errors.noRowsExpected();
+                        }
+                    case '[0]':
+                        if (result && result.length === 1 && result[0] && result[0].length === 1) {
+                            return result[0][0];
+                        } else {
+                            throw errors.oneRowExpected();
+                        }
+                    case '[?]':
+                        if (result && result.length === 1 && result[0] && result[0].length <= 1) {
+                            return result[0][0];
+                        } else {
+                            throw errors.maxOneRowExpected();
+                        }
+                    case '[+]':
+                        if (result && result.length === 1 && result[0] && result[0].length >= 1) {
+                            return result[0];
+                        } else {
+                            throw errors.minOneRowExpected();
+                        }
+                    default:
+                        return result;
+                }
+            });
         }
     }
 
