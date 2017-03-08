@@ -1,3 +1,13 @@
+<a name="6.0.1"></a>
+## [6.0.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.0.0...v6.0.1) (2017-03-08)
+
+
+### Bug Fixes
+
+* dependencies ([c0372a9](https://github.com/softwaregroup-bg/ut-port-sql/commit/c0372a9))
+
+
+
 <a name="6.0.0"></a>
 # [6.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v5.8.3...v6.0.0) (2017-03-06)
 
