@@ -12,7 +12,7 @@
     "ut-tools": "^5.13.5"
   },
   "peerDependencies": {
-    "ut-bus": "^5.8.2"
+    "ut-bus": "^5.9.0"
   },
   "scripts": {
     "lint": "ut-lint .",
