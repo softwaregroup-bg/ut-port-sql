@@ -54,7 +54,7 @@ SqlPort.prototype.connect = function connect() {
             if (this.config.db.cryptoAlgorithm) {
                 return crypto.decrypt(this.config.db.password, this.config.db.cryptoAlgorithm);
             }
-            return;
+            return false;
         })
         .then((r) => {
             this.config.db.password = r || this.config.db.password;
@@ -447,7 +447,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                 .batch(schema.content)
                 .then((r) => {
                     self.log.warn && self.log.warn({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
-                    return;
+                    return true;
                 })
                 .catch((err) => {
                     var newErr = err;
@@ -533,18 +533,18 @@ SqlPort.prototype.updateSchema = function(schema) {
                             .batch(query.content)
                             .then(() => {
                                 updated.push(query.objectName);
-                                return;
+                                return true;
                             })
                             .catch((e) => {
                                 failedQueries.push(query);
                                 self.log.warn && self.log.warn(e);
-                                return;
+                                return false;
                             });
                     }, [])
                     .then(function() {
                         updated.length && self.log.info && self.log.info({message: updated, $meta: {mtid: 'event', opcode: 'updateSchema'}});
                         resolve(prev);
-                        return;
+                        return true;
                     });
                 }
             });
@@ -566,12 +566,7 @@ SqlPort.prototype.execTemplate = function(template, params) {
     var self = this;
     return template.render(params).then(function(query) {
         return self.exec({query: query, process: 'json'})
-            .then(function(result) {
-                if (result) {
-                    return result.dataSet;
-                }
-                return;
-            });
+            .then(result => result && result.dataSet);
     });
 };
 
