@@ -43,12 +43,12 @@ name =
   "[" str:$[^\]]+ "]" {return str} /
   $[A-Za-z0-9_$]+
 
-names = (ws n:name ws o:order? m:(ws comma ws n:name ws o:order? {
+names = ws n:name ws o:order? m:(ws comma ws nn:name ws oo:order? {
           return {
-              name: n,
-              order: o
+              name: nn,
+              order: oo
             }
-        })*) {
+        })* {
           m.unshift({
               name: n,
                 order: o
@@ -172,7 +172,7 @@ default = ws "DEFAULT"i ws lparen ws v:default_value ws rparen {return v}
 
 default_value = signed_number / string_literal
 
-constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint) {
+constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint / check_constraint) {
   c.isConstraint = true;
   c.name = n;
   return c
@@ -208,6 +208,17 @@ unique_constraint
         }
    }
 
+check_constraint
+   = "CHECK"i ws lparen ws e:expression ws rparen {
+        return {
+          type: "CHECK",
+            expression: e
+        }
+   }
+
+expression = term (ws term ws)* {return text()}
+term = [^()]+ / "(" expression? ")"
+
 param_type = table_type / scalar_type
 
 not_nullable = ws1 x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
@@ -215,8 +226,8 @@ identity = ws1 "IDENTITY" a:identity_arguments? {return a || {}}
 identity_arguments = ws lparen ws s:signed_number ws comma ws i:signed_number ws rparen {return {seed: s, increment: i}}
 table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
 
-scalar_type = ( n:name )
-  size:( ( ws lparen ws s:(signed_number / "max"i) ws rparen  ) {return s}
+scalar_type =  n:name
+  size:( ( ws lparen ws s:(signed_number / "max"i) ws rparen {return s} )
   / ( ws lparen ws s1:signed_number ws comma ws s2:signed_number ws rparen){return [s1,s2]})? {return {type:n.toLowerCase(), size:size}}
 
 signed_number =
