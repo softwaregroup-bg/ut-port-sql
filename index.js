@@ -24,6 +24,7 @@ function SqlPort() {
         createTT: false,
         retry: 10000,
         tableToType: {},
+        skipTableType: [],
         paramsOutName: 'out',
         doc: false
     };
@@ -80,11 +81,18 @@ SqlPort.prototype.connect = function connect() {
 
 SqlPort.prototype.start = function start() {
     this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
+
+    this.config.imports && this.config.imports.forEach(imp => {
+        if (Array.isArray(this.config[imp + '.skipTableType'])) {
+            this.config.skipTableType = this.config.skipTableType.concat(this.config[imp + '.skipTableType']);
+        };
+    });
+
     if (Array.isArray(this.config.createTT)) {
-        this.config.tableToType = this.config.createTT.reduce(function(obj, tableName) {
+        Object.assign(this.config.tableToType, this.config.createTT.reduce(function(obj, tableName) {
             obj[tableName.toLowerCase()] = true;
             return obj;
-        }, {});
+        }, {}));
     }
     return Port.prototype.start.apply(this, Array.prototype.slice.call(arguments))
         .then(this.connect.bind(this))
@@ -424,10 +432,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function shouldCreateTT(tableName) {
-        if (self.config.createTT === true || self.config.tableToType[tableName] === true) {
-            return true;
-        }
-        return false;
+        return (self.config.createTT === true || self.config.tableToType[tableName] === true) && !self.config.skipTableType.includes(tableName);
     }
 
     function retryFailedQueries(failedQueue) {
