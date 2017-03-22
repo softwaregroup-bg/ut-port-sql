@@ -384,7 +384,9 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function getCreateStatement(statement, fileName, objectName) {
-        return preProcess(statement, fileName, objectName).trim().replace(/^ALTER /i, 'CREATE ');
+        return preProcess(statement, fileName, objectName).trim()
+            .replace(/^ALTER /i, 'CREATE ')
+            .replace(/^DROP SYNONYM .* CREATE SYNONYM/i, 'CREATE SYNONYM');
     }
 
     function getSource(statement, fileName, objectName) {
