@@ -46,9 +46,9 @@ module.exports = {
             CASE
                 WHEN st.name in ('decimal','numeric') then CAST(c.[precision] AS VARCHAR)
                 WHEN st.name in ('datetime2','time','datetimeoffset') then CAST(c.[scale] AS VARCHAR)
-                WHEN st.name in ('varchar','varbinary') AND c.max_length>=0 THEN CAST(c.max_length as VARCHAR)
-                WHEN st.name in ('nvarchar','nvarbinary') AND c.max_length>=0 THEN CAST(c.max_length/2 as VARCHAR)
-                WHEN st.name in ('varchar','nvarchar','varbinary','nvarbinary') AND c.max_length<0 THEN 'max'
+                WHEN st.name in ('varchar','varbinary','char','binary') AND c.max_length>=0 THEN CAST(c.max_length as VARCHAR)
+                WHEN st.name in ('nvarchar','nchar') AND c.max_length>=0 THEN CAST(c.max_length/2 as VARCHAR)
+                WHEN st.name in ('varchar','varbinary','char','binary','nvarchar','nchar') AND c.max_length<0 THEN 'max'
             END [length],
             CASE
                 WHEN st.name in ('decimal','numeric') then c.scale
@@ -68,7 +68,7 @@ module.exports = {
         SELECT
             1 sort,
             s.name + '.' + o.name [name],
-            'IF (OBJECT_ID(''[' + s.name + '].[' + o.name + ']'') IS NOT NULL) DROP PROCEDURE [' + s.name + '].[' + o.name + ']' [drop],
+            'IF (OBJECT_ID(''[' + s.name + '].[' + o.name + ']'') IS NOT NULL) DROP ' + CASE o.type WHEN 'FN' THEN 'FUNCTION' ELSE 'PROCEDURE' END + ' [' + s.name + '].[' + o.name + ']' [drop],
             p.name [param],
             SCHEMA_NAME(t.schema_id) + '.' + t.name [type]
         FROM
