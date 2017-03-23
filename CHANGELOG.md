@@ -1,3 +1,22 @@
+<a name="6.1.0"></a>
+# [6.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.0.1...v6.1.0) (2017-03-23)
+
+
+### Bug Fixes
+
+* dependencies ([ed33306](https://github.com/softwaregroup-bg/ut-port-sql/commit/ed33306))
+* lint ([4b7b507](https://github.com/softwaregroup-bg/ut-port-sql/commit/4b7b507))
+* schema loading ([fc8f8f5](https://github.com/softwaregroup-bg/ut-port-sql/commit/fc8f8f5))
+* skip synonym drop when not existing ([49d09e4](https://github.com/softwaregroup-bg/ut-port-sql/commit/49d09e4))
+
+
+### Features
+
+* enable parse of table check constraint ([0f55920](https://github.com/softwaregroup-bg/ut-port-sql/commit/0f55920))
+* skipping creation of individual table types ([80354e3](https://github.com/softwaregroup-bg/ut-port-sql/commit/80354e3))
+
+
+
 <a name="6.0.1"></a>
 ## [6.0.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.0.0...v6.0.1) (2017-03-08)
 
