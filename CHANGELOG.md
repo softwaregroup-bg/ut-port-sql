@@ -1,3 +1,13 @@
+<a name="6.1.1"></a>
+## [6.1.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.1.0...v6.1.1) (2017-03-27)
+
+
+### Bug Fixes
+
+* scalar type size parsing ([01ef232](https://github.com/softwaregroup-bg/ut-port-sql/commit/01ef232))
+
+
+
 <a name="6.1.0"></a>
 # [6.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.0.1...v6.1.0) (2017-03-23)
 
