@@ -24,7 +24,7 @@ function SqlPort() {
         createTT: false,
         retry: 10000,
         tableToType: {},
-        skipTableType: [],
+        skipTableType: null,
         paramsOutName: 'out',
         doc: false
     };
@@ -82,9 +82,9 @@ SqlPort.prototype.connect = function connect() {
 SqlPort.prototype.start = function start() {
     this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
 
-    this.config.imports && this.config.imports.forEach(imp => {
-        if (Array.isArray(this.config[imp + '.skipTableType'])) {
-            this.config.skipTableType = this.config.skipTableType.concat(this.config[imp + '.skipTableType']);
+    this.config.imports && this.config.imports.forEach(impl => {
+        if (Array.isArray(this.config[impl + '.skipTableType'])) {
+            this.config.skipTableType = this.config.skipTableType.concat(this.config[impl + '.skipTableType']);
         };
     });
 
@@ -266,7 +266,9 @@ SqlPort.prototype.getSchema = function() {
     }
     this.config.imports && this.config.imports.forEach(function(imp) {
         imp.match(/\.schema$/) && Array.prototype.push.apply(result, this.config[imp]);
-        this.config[imp + '.schema'] && Array.prototype.push.apply(result, this.config[imp + '.schema']);
+        if (this.includesConfig('updates', imp, true)) {
+            this.config[imp + '.schema'] && Array.prototype.push.apply(result, this.config[imp + '.schema']);
+        }
     }.bind(this));
     return result;
 };
@@ -434,7 +436,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     }
 
     function shouldCreateTT(tableName) {
-        return (self.config.createTT === true || self.config.tableToType[tableName] === true) && !self.config.skipTableType.includes(tableName);
+        return (self.config.createTT === true || self.includesConfig('tableToType', tableName, false)) && !self.includesConfig('skipTableType', tableName, false);
     }
 
     function retryFailedQueries(failedQueue) {
@@ -949,7 +951,7 @@ SqlPort.prototype.linkSP = function(schema) {
 SqlPort.prototype.loadSchema = function(objectList) {
     var self = this;
     var schema = this.getSchema();
-    if ((Array.isArray(schema) && !schema.length) || !schema) {
+    if (((Array.isArray(schema) && !schema.length) || !schema) && !this.config.linkSP) {
         return {source: {}, parseList: []};
     }
 
@@ -970,8 +972,13 @@ SqlPort.prototype.loadSchema = function(objectList) {
                 prev.source[cur.namespace] = '';
             }
             if ((cur.type === 'P') && (cur.colid === 1) && (self.config.linkSP || (objectList && objectList[cur.full]))) {
-                prev.parseList.push({source: cur.source, fileName: objectList && objectList[cur.full]});
-            }
+                if (self.includesConfig('linkSP', [cur.full, cur.namespace], true)) {
+                    prev.parseList.push({
+                        source: cur.source,
+                        fileName: objectList && objectList[cur.full]
+                    });
+                }
+            };
             return prev;
         }, schema);
         result[1].reduce(function(prev, cur) { // extract columns of user defined table types
