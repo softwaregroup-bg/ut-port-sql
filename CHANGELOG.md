@@ -1,3 +1,13 @@
+<a name="6.2.0"></a>
+# [6.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.1.1...v6.2.0) (2017-03-30)
+
+
+### Features
+
+* flexible SP linking and schema update ([d139fb4](https://github.com/softwaregroup-bg/ut-port-sql/commit/d139fb4))
+
+
+
 <a name="6.1.1"></a>
 ## [6.1.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.1.0...v6.1.1) (2017-03-27)
 
