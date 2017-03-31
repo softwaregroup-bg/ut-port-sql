@@ -24,7 +24,7 @@ function SqlPort() {
         createTT: false,
         retry: 10000,
         tableToType: {},
-        skipTableType: null,
+        skipTableType: [],
         paramsOutName: 'out',
         doc: false
     };
