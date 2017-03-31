@@ -1,3 +1,13 @@
+<a name="6.2.2"></a>
+## [6.2.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.2.1...v6.2.2) (2017-03-31)
+
+
+### Bug Fixes
+
+* tableToType ([5f1a9e9](https://github.com/softwaregroup-bg/ut-port-sql/commit/5f1a9e9))
+
+
+
 <a name="6.2.1"></a>
 ## [6.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.2.0...v6.2.1) (2017-03-30)
 
