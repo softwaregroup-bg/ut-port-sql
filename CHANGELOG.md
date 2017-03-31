@@ -1,3 +1,13 @@
+<a name="6.3.0"></a>
+# [6.3.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.2.2...v6.3.0) (2017-03-31)
+
+
+### Features
+
+* support timestamp and rowversion ([dd8e52b](https://github.com/softwaregroup-bg/ut-port-sql/commit/dd8e52b))
+
+
+
 <a name="6.2.2"></a>
 ## [6.2.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.2.1...v6.2.2) (2017-03-31)
 
