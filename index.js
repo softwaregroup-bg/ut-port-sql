@@ -921,6 +921,10 @@ SqlPort.prototype.linkSP = function(schema) {
                         param.def.create = function() {
                             var table = new mssql.Table(param.def.typeName.toLowerCase());
                             columns && columns.forEach(function(column) {
+                                if (column.type.toUpperCase() === 'TIMESTAMP' || column.type.toUpperCase() === 'ROWVERSION') {
+                                    column.type = 'BINARY';
+                                    column.length = 8;
+                                }
                                 var type = mssql[column.type.toUpperCase()];
                                 if (!(type instanceof Function)) {
                                     throw errors.unexpectedType({
@@ -983,6 +987,10 @@ SqlPort.prototype.loadSchema = function(objectList) {
         }, schema);
         result[1].reduce(function(prev, cur) { // extract columns of user defined table types
             var parserDefault = require('./parsers/mssqlDefault');
+            if (cur.type.toUpperCase() === 'TIMESTAMP' || cur.type.toUpperCase() === 'ROWVERSION') {
+                cur.type = 'BINARY';
+                cur.length = 8;
+            }
             if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
                 throw errors.unexpectedColumnType({
                     type: cur.type,
