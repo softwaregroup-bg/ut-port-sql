@@ -228,6 +228,12 @@ SqlPort.prototype.exec = function(message) {
                         });
                     }
                     resolve(message);
+                } else if (message.process === 'plain') {
+                    message.result = [];
+                    Object.keys(result).forEach(function(value) {
+                        message.result.push(result[value]);
+                    });
+                    resolve(message);
                 } else if (message.process === 'json') {
                     message.dataSet = result;
                     resolve(message);
