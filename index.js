@@ -270,7 +270,11 @@ SqlPort.prototype.getSchema = function() {
             this.config[imp + '.schema'] && Array.prototype.push.apply(result, this.config[imp + '.schema']);
         }
     }.bind(this));
-    return result;
+    return result.reduce((all, schema) => {
+        schema = (typeof schema === 'function') ? schema(this) : schema;
+        schema && all.push(schema);
+        return all;
+    }, []);
 };
 
 function flatten(data) {
