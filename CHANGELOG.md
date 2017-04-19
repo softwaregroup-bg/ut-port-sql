@@ -1,3 +1,13 @@
+<a name="6.3.1"></a>
+## [6.3.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.3.0...v6.3.1) (2017-04-19)
+
+
+### Bug Fixes
+
+* show failing file ([#25](https://github.com/softwaregroup-bg/ut-port-sql/issues/25)) ([4c8131f](https://github.com/softwaregroup-bg/ut-port-sql/commit/4c8131f))
+
+
+
 <a name="6.3.0"></a>
 # [6.3.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.2.2...v6.3.0) (2017-03-31)
 
