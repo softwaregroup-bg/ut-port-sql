@@ -1,3 +1,13 @@
+<a name="6.4.0"></a>
+# [6.4.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.3.1...v6.4.0) (2017-04-19)
+
+
+### Features
+
+* allow calling schema returning function ([92469c5](https://github.com/softwaregroup-bg/ut-port-sql/commit/92469c5))
+
+
+
 <a name="6.3.1"></a>
 ## [6.3.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.3.0...v6.3.1) (2017-04-19)
 
