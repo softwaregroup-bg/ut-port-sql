@@ -539,7 +539,10 @@ SqlPort.prototype.updateSchema = function(schema) {
                             })
                             .catch((e) => {
                                 failedQueries.push(query);
-                                self.log.warn && self.log.warn(e);
+                                if (self.log.warn) {
+                                    self.log.warn({'failing file': query.fileName});
+                                    self.log.warn(e);
+                                }
                                 return false;
                             });
                     }, [])
