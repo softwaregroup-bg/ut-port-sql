@@ -1029,7 +1029,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
         Object.keys(schema.types).forEach(function(type) { // extract pseudo source code of user defined table types
             schema.source[type] = schema.types[type].map(fieldSource).join('\r\n');
         });
-        if(self.config.updateSchema !== undefined) {
+        if (self.config.updateSchema !== undefined) {
             require('fs').writeFileSync('db/schema' + (objectList ? 1 : 0) + '.txt', JSON.stringify(schema));
         }
         return schema;
