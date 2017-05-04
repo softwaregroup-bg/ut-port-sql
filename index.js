@@ -496,7 +496,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                         var objectName = getObjectName(file);
                         var objectId = objectName.toLowerCase();
                         var fileName = schemaConfig.path + '/' + file;
-                        if (fs.statSync(fileName).isDirectory()) {
+                        if (!fs.statSync(fileName).isFile()) {
                             return;
                         }
                         schemaConfig.linkSP && (prev[objectId] = fileName);
@@ -1060,6 +1060,9 @@ SqlPort.prototype.doc = function(schema) {
                     files = files.sort();
                     files.forEach(function(file) {
                         var fileName = schemaConfig.path + '/' + file;
+                        if (!fs.statSync(fileName).isFile()) {
+                            return;
+                        }
                         var fileContent = fs.readFileSync(fileName).toString();
                         if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
                             var binding = parserSP.parse(fileContent);
