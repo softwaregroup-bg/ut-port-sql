@@ -631,6 +631,8 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         var type;
         if (def.type === 'table') {
             type = def.create();
+        } else if (def.type === 'rowversion') {
+            type = mssql['BINARY'](8);
         } else {
             type = mssql[def.type.toUpperCase()];
         }
@@ -719,6 +721,8 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                 value = new Date(value);
             } else if (param.def && param.def.type === 'xml' && value != null) {
                 value = xmlBuilder.buildObject(value);
+            } else if (param.def && param.def.type === 'rowversion' && value != null && !Buffer.isBuffer(value)) {
+                value = Buffer.from(value.data ? value.data : []);
             }
             if (param.out) {
                 request.output(param.name, type, value);
