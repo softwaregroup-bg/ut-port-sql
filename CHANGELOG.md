@@ -1,3 +1,13 @@
+<a name="6.4.3"></a>
+## [6.4.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.2...v6.4.3) (2017-05-05)
+
+
+### Bug Fixes
+
+* support default output params ([dc8c917](https://github.com/softwaregroup-bg/ut-port-sql/commit/dc8c917))
+
+
+
 <a name="6.4.2"></a>
 ## [6.4.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.1...v6.4.2) (2017-05-05)
 
