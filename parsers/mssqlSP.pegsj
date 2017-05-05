@@ -150,7 +150,7 @@ fields =
 
   }
 
-param = n:param_name ws1 t:param_type o:(ws1 "out"i)? d:(ws "=" ws v:value)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
+param = n:param_name ws1 t:param_type d:(ws "=" ws v:value)? o:(ws1 "out"i)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
 field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default? {
