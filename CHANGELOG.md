@@ -1,3 +1,13 @@
+<a name="6.4.2"></a>
+## [6.4.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.1...v6.4.2) (2017-05-05)
+
+
+### Bug Fixes
+
+* support for RowVersion columns ([#27](https://github.com/softwaregroup-bg/ut-port-sql/issues/27)) ([b97d0cb](https://github.com/softwaregroup-bg/ut-port-sql/commit/b97d0cb))
+
+
+
 <a name="6.4.1"></a>
 ## [6.4.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.0...v6.4.1) (2017-05-04)
 
