@@ -4,6 +4,7 @@ var PortSQL = create('portSQL');
 module.exports = {
     sql: PortSQL,
     noConnection: create('noConnection', PortSQL, 'No connection to SQL server'),
+    parserError: create('parserError', PortSQL, 'Sql parser error'),
     notReady: create('notReady', PortSQL, 'The connection is not ready'),
     missingProcess: create('missingProcess', PortSQL, 'Invalid or missing resultset processing mode'),
     notImplemented: create('notImplemented', PortSQL, 'Specified resultset processing mode is not implemented yet'),

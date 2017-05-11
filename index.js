@@ -1009,7 +1009,13 @@ SqlPort.prototype.loadSchema = function(objectList) {
                 });
             }
             cur.name = cur.name && cur.name.toLowerCase();
-            cur.default && (cur.default = parserDefault.parse(cur.default));
+            try {
+                cur.default && (cur.default = parserDefault.parse(cur.default));
+            } catch (err) {
+                err.type = cur.type;
+                err.userDefinedTableType = cur.name;
+                throw errors.parserError(err);
+            }
             var type = prev[cur.name] || (prev[cur.name] = []);
             type.push(cur);
             return prev;
