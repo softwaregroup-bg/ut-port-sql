@@ -996,7 +996,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
             };
             return prev;
         }, schema);
-        result[1].reduce(function(prev, cur) { // extract columns of user defined table types
+        result[1].reduce(function(prev, cur, idx) { // extract columns of user defined table types
             var parserDefault = require('./parsers/mssqlDefault');
             if (cur.type.toUpperCase() === 'TIMESTAMP' || cur.type.toUpperCase() === 'ROWVERSION') {
                 cur.type = 'BINARY';
@@ -1009,7 +1009,13 @@ SqlPort.prototype.loadSchema = function(objectList) {
                 });
             }
             cur.name = cur.name && cur.name.toLowerCase();
-            cur.default && (cur.default = parserDefault.parse(cur.default));
+            try {
+                cur.default && (cur.default = parserDefault.parse(cur.default));
+            } catch (err) {
+                err.type = cur.type;
+                err.userDefinedTableType = cur.name;
+                throw errors.parserError(err);
+            }
             var type = prev[cur.name] || (prev[cur.name] = []);
             type.push(cur);
             return prev;
