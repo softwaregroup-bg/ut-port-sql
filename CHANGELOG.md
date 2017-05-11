@@ -1,3 +1,13 @@
+<a name="6.4.4"></a>
+## [6.4.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.3...v6.4.4) (2017-05-11)
+
+
+### Bug Fixes
+
+* throw correct error when sql parser fails ([#28](https://github.com/softwaregroup-bg/ut-port-sql/issues/28)) ([8cfb82c](https://github.com/softwaregroup-bg/ut-port-sql/commit/8cfb82c))
+
+
+
 <a name="6.4.3"></a>
 ## [6.4.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.2...v6.4.3) (2017-05-05)
 
