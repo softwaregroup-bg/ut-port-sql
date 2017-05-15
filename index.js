@@ -57,7 +57,7 @@ SqlPort.prototype.connect = function connect() {
             return false;
         })
         .then((r) => {
-            this.config.db.password = r || this.config.db.password;
+            this.config.db.password = (r || this.config.db.password);
             return this.tryConnect();
         })
         .then(this.refreshView.bind(this, true))
@@ -1153,6 +1153,7 @@ SqlPort.prototype.tryConnect = function() {
         .then(() => conCreate.close())
         .then(() => this.connection.connect())
         .catch((err) => {
+            this.log && this.log.error && this.log.error({sourcePort: this.config.id, err});
             try { conCreate.close(); } catch (e) {};
             throw err;
         });
