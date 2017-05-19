@@ -8,6 +8,7 @@ var crypto = require('./crypto');
 var utError = require('ut-error');
 var mssqlQueries = require('./sql');
 var xml2js = require('xml2js');
+var uuid = require('uuid');
 var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 var xmlBuilder = new xml2js.Builder({headless: true});
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
@@ -703,6 +704,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         var debug = this.isDebug();
         var debugParams = {};
         request.multiple = true;
+        $meta.globalId = uuid.v1();
         params && params.forEach(function(param) {
             var value;
             if (param.name === 'meta') {
