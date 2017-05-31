@@ -760,6 +760,5 @@
 
 * ut-tools upgrade ([468bc52](https://git.softwaregroup-bg.com/ut5/ut-port-sql/commit/468bc52))
 
-### Features
 
-* add feature to create database diagram system tables when database is created. The feature can be enabled with parameter db.create.diagram=true
+
