@@ -354,7 +354,7 @@ In case of table or type, the table description is at the same line as create st
   
 ## **Database diagrams**
 
-Database diagrams are stored in system tables which are not created by defaul. This tables will be created if db.create.diagram param is set to true
+Database diagrams are stored in system tables which are not created by defaul. This tables will be created if create.diagram is set to true in the configuration
 
 ```js
 [db.create]
