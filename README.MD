@@ -351,14 +351,15 @@ In case of table or type, the table description is at the same line as create st
       CONSTRAINT [fkSession_User] FOREIGN KEY([actorId]) REFERENCES [user].[user](actorId)
   )
   ```
+  
 ## **Database diagrams**
 
 Database diagrams are stored in system tables which are not created by defaul. This tables will be created if db.create.diagram param is set to true
 
-```
+```js
 [db.create]
 diagram=true
-
+```
 
 ### Resultsets processing
 
