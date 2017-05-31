@@ -356,7 +356,7 @@ In case of table or type, the table description is at the same line as create st
 
 Database diagrams are stored in system tables which are not created by defaul. This tables will be created if create.diagram is set to true in the configuration
 
-```js
+```ini
 [<dbport>.create]
 diagram=true
 ```
