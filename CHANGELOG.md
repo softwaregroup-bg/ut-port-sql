@@ -1,3 +1,13 @@
+<a name="6.5.0"></a>
+# [6.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.11...v6.5.0) (2017-05-31)
+
+
+### Features
+
+* support DB diagrams ([a7825ec](https://github.com/softwaregroup-bg/ut-port-sql/commit/a7825ec))
+
+
+
 <a name="6.4.11"></a>
 ## [6.4.11](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.10...v6.4.11) (2017-05-31)
 
