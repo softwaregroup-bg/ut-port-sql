@@ -1,3 +1,13 @@
+<a name="6.4.11"></a>
+## [6.4.11](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.10...v6.4.11) (2017-05-31)
+
+
+### Bug Fixes
+
+* Change rowversion column type to binary for table-types ([#30](https://github.com/softwaregroup-bg/ut-port-sql/issues/30)) ([2725f6e](https://github.com/softwaregroup-bg/ut-port-sql/commit/2725f6e))
+
+
+
 <a name="6.4.10"></a>
 ## [6.4.10](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.9...v6.4.10) (2017-05-22)
 
