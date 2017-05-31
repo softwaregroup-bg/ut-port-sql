@@ -1144,6 +1144,7 @@ SqlPort.prototype.tryConnect = function() {
         });
         return conCreate.connect()
         .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
+        .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.db.database)))
         .then(() => {
             if (this.config.create.user === this.config.db.user) {
                 return;

@@ -218,8 +218,10 @@ module.exports = {
         END
         EXEC sp_addrolemember 'db_owner', '${user}'`;
     },
-    enableDatabaseDiagrams: function() {
+    enableDatabaseDiagrams: function(name) {
         return `
+        USE [${name}]
+
         IF OBJECT_ID(N'dbo.sp_upgraddiagrams') IS NULL and IS_MEMBER('db_owner') = 1
         BEGIN
             EXEC sp_executesql N'
@@ -742,8 +744,10 @@ module.exports = {
             end
         END`;
     },
-    disableDatabaseDiagrams: function() {
+    disableDatabaseDiagrams: function(name) {
         return `
+        USE [${name}]
+
         IF OBJECT_ID(N'dbo.fn_diagramobjects') IS NULL and IS_MEMBER('db_owner') = 1
             DROP FUNCTION dbo.fn_diagramobjects
 
