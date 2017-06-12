@@ -1,3 +1,48 @@
+<a name="6.5.0"></a>
+# [6.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.11...v6.5.0) (2017-05-31)
+
+
+### Features
+
+* support DB diagrams ([a7825ec](https://github.com/softwaregroup-bg/ut-port-sql/commit/a7825ec))
+
+
+
+<a name="6.4.11"></a>
+## [6.4.11](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.10...v6.4.11) (2017-05-31)
+
+
+### Bug Fixes
+
+* Change rowversion column type to binary for table-types ([#30](https://github.com/softwaregroup-bg/ut-port-sql/issues/30)) ([2725f6e](https://github.com/softwaregroup-bg/ut-port-sql/commit/2725f6e))
+
+
+
+<a name="6.4.10"></a>
+## [6.4.10](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.9...v6.4.10) (2017-05-22)
+
+
+
+<a name="6.4.9"></a>
+## [6.4.9](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.8...v6.4.9) (2017-05-22)
+
+
+
+<a name="6.4.8"></a>
+## [6.4.8](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.7...v6.4.8) (2017-05-22)
+
+
+
+<a name="6.4.7"></a>
+## [6.4.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.6...v6.4.7) (2017-05-22)
+
+
+
+<a name="6.4.6"></a>
+## [6.4.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.5...v6.4.6) (2017-05-22)
+
+
+
 <a name="6.4.5"></a>
 ## [6.4.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.4...v6.4.5) (2017-05-15)
 
