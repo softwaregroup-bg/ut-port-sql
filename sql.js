@@ -216,6 +216,8 @@ module.exports = {
         BEGIN
             CREATE USER [${user}] FOR LOGIN [${user}]
         END
-        EXEC sp_addrolemember 'db_owner', '${user}'`;
+        EXEC sp_addrolemember 'db_owner', '${user}'
+        USE [master]
+        GRANT VIEW SERVER STATE to [${user}]`;
     }
 };
