@@ -15,6 +15,14 @@ const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const VAR = /\$\{([^}]*)\}/g;
+const ROW_VERSION_INNER_TYPE = 'BINARY';
+
+function changeRowVersionType(field) {
+    if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
+        field.type = ROW_VERSION_INNER_TYPE;
+        field.length = 8;
+    }
+}
 
 function SqlPort() {
     Port.call(this);
@@ -359,6 +367,7 @@ SqlPort.prototype.updateSchema = function(schema) {
             if (binding.type === 'table') {
                 var name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
                 var columns = binding.fields.map(function(field) {
+                    changeRowVersionType(field);
                     return `[${field.column}] [${field.type}]` +
                         (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
                         (field.length !== null && field.scale === null ? `(${field.length})` : '') +
@@ -379,6 +388,7 @@ SqlPort.prototype.updateSchema = function(schema) {
             if (binding.type === 'table') {
                 var name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
                 var columns = binding.fields.map(function(field) {
+                    changeRowVersionType(field);
                     return ('[' + field.column + '] [' + field.type + ']' +
                         (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
                         (field.length !== null && field.scale === null ? `(${field.length})` : '') +
@@ -633,7 +643,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         if (def.type === 'table') {
             type = def.create();
         } else if (def.type === 'rowversion') {
-            type = mssql['BINARY'](8);
+            type = mssql[ROW_VERSION_INNER_TYPE](8);
         } else {
             type = mssql[def.type.toUpperCase()];
         }
@@ -693,6 +703,8 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                 var obj = {};
                 obj[column.name] = value;
                 return xmlBuilder.buildObject(obj);
+            } else if (value.type === 'Buffer') {
+                return Buffer.from(value.data);
             }
         }
         return value;
@@ -934,10 +946,7 @@ SqlPort.prototype.linkSP = function(schema) {
                         param.def.create = function() {
                             var table = new mssql.Table(param.def.typeName.toLowerCase());
                             columns && columns.forEach(function(column) {
-                                if (column.type.toUpperCase() === 'TIMESTAMP' || column.type.toUpperCase() === 'ROWVERSION') {
-                                    column.type = 'BINARY';
-                                    column.length = 8;
-                                }
+                                changeRowVersionType(column);
                                 var type = mssql[column.type.toUpperCase()];
                                 if (!(type instanceof Function)) {
                                     throw errors.unexpectedType({
@@ -1000,10 +1009,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
         }, schema);
         result[1].reduce(function(prev, cur) { // extract columns of user defined table types
             var parserDefault = require('./parsers/mssqlDefault');
-            if (cur.type.toUpperCase() === 'TIMESTAMP' || cur.type.toUpperCase() === 'ROWVERSION') {
-                cur.type = 'BINARY';
-                cur.length = 8;
-            }
+            changeRowVersionType(cur);
             if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
                 throw errors.unexpectedColumnType({
                     type: cur.type,
@@ -1146,6 +1152,7 @@ SqlPort.prototype.tryConnect = function() {
         });
         return conCreate.connect()
         .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
+        .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.db.database)))
         .then(() => {
             if (this.config.create.user === this.config.db.user) {
                 return;
