@@ -216,7 +216,9 @@ module.exports = {
         BEGIN
             CREATE USER [${user}] FOR LOGIN [${user}]
         END
-        EXEC sp_addrolemember 'db_owner', '${user}'`;
+        EXEC sp_addrolemember 'db_owner', '${user}'
+        USE [master]
+        GRANT VIEW SERVER STATE to [${user}]`;
     },
     enableDatabaseDiagrams: function(name) {
         return `
@@ -377,7 +379,7 @@ module.exports = {
             CREATE PROCEDURE dbo.sp_creatediagram
             (
                 @diagramname    sysname,
-                @owner_id       int = null,     
+                @owner_id       int = null,
                 @version        int,
                 @definition     varbinary(max)
             )
@@ -532,8 +534,8 @@ module.exports = {
                 end
             
                 execute as caller;
-                select @theId = DATABASE_PRINCIPAL_ID();     
-                select @IsDbo = IS_MEMBER(N''db_owner''); 
+                select @theId = DATABASE_PRINCIPAL_ID();
+                select @IsDbo = IS_MEMBER(N''db_owner'');
                 if(@owner_id is null)
                     select @owner_id = @theId;
                 revert;
@@ -751,7 +753,7 @@ module.exports = {
         IF OBJECT_ID(N'dbo.fn_diagramobjects') IS NULL and IS_MEMBER('db_owner') = 1
             DROP FUNCTION dbo.fn_diagramobjects
 
-        IF OBJECT_ID(N'dbo.sp_dropdiagram') IS NULL and IS_MEMBER('db_owner') = 1            
+        IF OBJECT_ID(N'dbo.sp_dropdiagram') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_dropdiagram
         
         IF OBJECT_ID(N'dbo.sp_alterdiagram') IS NULL and IS_MEMBER('db_owner') = 1
@@ -763,7 +765,7 @@ module.exports = {
         IF OBJECT_ID(N'dbo.sp_creatediagram') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_creatediagram
 
-        IF OBJECT_ID(N'dbo.sp_helpdiagramdefinition') IS NULL and IS_MEMBER('db_owner') = 1                    
+        IF OBJECT_ID(N'dbo.sp_helpdiagramdefinition') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_helpdiagramdefinition
         
         IF OBJECT_ID(N'dbo.sp_helpdiagrams') IS NULL and IS_MEMBER('db_owner') = 1
