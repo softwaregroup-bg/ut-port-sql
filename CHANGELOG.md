@@ -1,3 +1,13 @@
+<a name="6.6.0"></a>
+# [6.6.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.5.0...v6.6.0) (2017-06-20)
+
+
+### Features
+
+* grant server state  view permission to the db user, generate uuid in meta UIS-2550 ([f95967a](https://github.com/softwaregroup-bg/ut-port-sql/commit/f95967a))
+
+
+
 <a name="6.5.0"></a>
 # [6.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.4.11...v6.5.0) (2017-05-31)
 
