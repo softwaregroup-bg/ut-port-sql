@@ -1,3 +1,13 @@
+<a name="6.6.1"></a>
+## [6.6.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.0...v6.6.1) (2017-06-26)
+
+
+### Bug Fixes
+
+* proper name escape ([c05c1e8](https://github.com/softwaregroup-bg/ut-port-sql/commit/c05c1e8))
+
+
+
 <a name="6.6.0"></a>
 # [6.6.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.5.0...v6.6.0) (2017-06-20)
 
