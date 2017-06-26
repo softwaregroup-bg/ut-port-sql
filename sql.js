@@ -171,9 +171,9 @@ module.exports = {
         var sql = '    DECLARE @callParams XML = ( SELECT ';
         statement.params.map(function(param) {
             if (param.def.type === 'table') {
-                sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) ${param.name}, `;
+                sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) [${param.name}], `;
             } else {
-                sql += `@${param.name} ${param.name}, `;
+                sql += `@${param.name} [${param.name}], `;
             }
         });
         sql = sql.replace(/,\s$/, ' ');
@@ -187,9 +187,9 @@ module.exports = {
         var sql = 'DECLARE @callParams XML = ( SELECT ';
         statement.params.map(function(param) {
             if (param.def.type === 'table') {
-                sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) ${param.name}, `;
+                sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) [${param.name}], `;
             } else {
-                sql += `@${param.name} ${param.name}, `;
+                sql += `@${param.name} [${param.name}], `;
             }
         });
         sql = sql.replace(/,\s$/, ' ');
