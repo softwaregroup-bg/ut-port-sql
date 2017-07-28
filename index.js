@@ -543,6 +543,9 @@ SqlPort.prototype.updateSchema = function(schema) {
                         }
                     });
 
+                    if (self.config.updateSchema === false) {
+                        queries = [];
+                    }
                     var request = self.getRequest();
                     var updated = [];
                     return when.reduce(queries, function(result, query) {
@@ -985,6 +988,9 @@ SqlPort.prototype.loadSchema = function(objectList) {
     var request = this.getRequest();
     request.multiple = true;
 
+    if (self.config.updateSchema === false && fs.existsSync('db/schema' + (objectList ? 1 : 0) + '.txt')) {
+        return JSON.parse(require('fs').readFileSync('db/schema' + (objectList ? 1 : 0) + '.txt', {encoding: 'utf8'}));
+    }
     return request.query(mssqlQueries.loadSchema()).then(function(result) {
         var schema = {source: {}, parseList: [], types: {}, deps: {}};
         result[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
@@ -1041,6 +1047,9 @@ SqlPort.prototype.loadSchema = function(objectList) {
         Object.keys(schema.types).forEach(function(type) { // extract pseudo source code of user defined table types
             schema.source[type] = schema.types[type].map(fieldSource).join('\r\n');
         });
+        if (self.config.updateSchema !== undefined) {
+            require('fs').writeFileSync('db/schema' + (objectList ? 1 : 0) + '.txt', JSON.stringify(schema));
+        }
         return schema;
     });
 };
