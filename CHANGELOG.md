@@ -1,3 +1,13 @@
+<a name="6.6.2"></a>
+## [6.6.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.1...v6.6.2) (2017-07-28)
+
+
+### Bug Fixes
+
+* throw proper error from resultSet ([64a8107](https://github.com/softwaregroup-bg/ut-port-sql/commit/64a8107))
+
+
+
 <a name="6.6.1"></a>
 ## [6.6.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.0...v6.6.1) (2017-06-26)
 
