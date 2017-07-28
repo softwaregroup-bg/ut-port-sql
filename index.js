@@ -895,7 +895,7 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
             .catch(function(err) {
                 var errorLines = err.message && err.message.split('\n');
                 err.message = errorLines.shift();
-                var error = utError.get(err.message) || errors.sql;
+                var error = utError.get(err.type || err.message) || errors.sql;
                 var errToThrow = error(err);
                 if (debug) {
                     err.storedProcedure = name;
