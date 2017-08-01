@@ -351,7 +351,7 @@ In case of table or type, the table description is at the same line as create st
       CONSTRAINT [fkSession_User] FOREIGN KEY([actorId]) REFERENCES [user].[user](actorId)
   )
   ```
-  
+
 ## **Database diagrams**
 
 Database diagrams are stored in system tables which are not created by defaul. This tables will be created if create.diagram is set to true in the configuration
@@ -424,3 +424,4 @@ SELECT
 This will thow an error of type `someModule.someError`, which will also have properties set to the selected columns in the `ut-error` resultset plus additional properties named afer all the other resultsets.
 If the specified error type is known, an instance of that error will be thrown.
 Otherwise `PortSQL` error will be thrown, with its cause property set to the returned error.
+
