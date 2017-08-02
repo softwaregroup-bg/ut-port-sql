@@ -1,3 +1,13 @@
+<a name="6.6.3"></a>
+## [6.6.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.2...v6.6.3) (2017-08-02)
+
+
+### Bug Fixes
+
+* remove dependency to when ([65e14d8](https://github.com/softwaregroup-bg/ut-port-sql/commit/65e14d8))
+
+
+
 <a name="6.6.2"></a>
 ## [6.6.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.1...v6.6.2) (2017-07-28)
 
