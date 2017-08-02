@@ -2,7 +2,6 @@ var mssql = require('ut-mssql');
 var Port = require('ut-bus/port');
 var util = require('util');
 var fs = require('fs');
-var when = require('when');
 var errors = require('./errors');
 var crypto = require('./crypto');
 var utError = require('ut-error');
@@ -170,43 +169,44 @@ SqlPort.prototype.exec = function(message) {
             method = methodName.length === 2 && this.config[methodName[1]];
         }
         if (method instanceof Function) {
-            return when.lift(method).apply(this, Array.prototype.slice.call(arguments))
-            .then(result => {
-                switch (modifier) {
-                    case '[]':
-                        if (result && result.length === 1) {
-                            return result[0];
-                        } else {
-                            throw errors.singleResultsetExpected();
-                        }
-                    case '[^]':
-                        if (result && result.length === 0) {
-                            return null;
-                        } else {
-                            throw errors.noRowsExpected();
-                        }
-                    case '[0]':
-                        if (result && result.length === 1 && result[0] && result[0].length === 1) {
-                            return result[0][0];
-                        } else {
-                            throw errors.oneRowExpected();
-                        }
-                    case '[?]':
-                        if (result && result.length === 1 && result[0] && result[0].length <= 1) {
-                            return result[0][0];
-                        } else {
-                            throw errors.maxOneRowExpected();
-                        }
-                    case '[+]':
-                        if (result && result.length === 1 && result[0] && result[0].length >= 1) {
-                            return result[0];
-                        } else {
-                            throw errors.minOneRowExpected();
-                        }
-                    default:
-                        return result;
-                }
-            });
+            return Promise.resolve()
+                .then(() => method.apply(this, Array.prototype.slice.call(arguments)))
+                .then(result => {
+                    switch (modifier) {
+                        case '[]':
+                            if (result && result.length === 1) {
+                                return result[0];
+                            } else {
+                                throw errors.singleResultsetExpected();
+                            }
+                        case '[^]':
+                            if (result && result.length === 0) {
+                                return null;
+                            } else {
+                                throw errors.noRowsExpected();
+                            }
+                        case '[0]':
+                            if (result && result.length === 1 && result[0] && result[0].length === 1) {
+                                return result[0][0];
+                            } else {
+                                throw errors.oneRowExpected();
+                            }
+                        case '[?]':
+                            if (result && result.length === 1 && result[0] && result[0].length <= 1) {
+                                return result[0][0];
+                            } else {
+                                throw errors.maxOneRowExpected();
+                            }
+                        case '[+]':
+                            if (result && result.length === 1 && result[0] && result[0].length >= 1) {
+                                return result[0];
+                            } else {
+                                throw errors.minOneRowExpected();
+                            }
+                        default:
+                            return result;
+                    }
+                });
         }
     }
 
@@ -219,7 +219,7 @@ SqlPort.prototype.exec = function(message) {
     // var start = +new Date();
     var debug = this.isDebug();
     var request = this.getRequest();
-    return when.promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
         request.query(message.query, function(err, result) {
             // var end = +new Date();
             // var execTime = end - start;
@@ -459,30 +459,41 @@ SqlPort.prototype.updateSchema = function(schema) {
         var request = self.getRequest();
         var errCollection = [];
         self.log.warn && self.log.warn('Retrying failed TX');
-        return when.map(failedQueue, (schema) => {
-            return request
-                .batch(schema.content)
-                .then((r) => {
-                    self.log.warn && self.log.warn({message: schema.objectName, $meta: {opcode: 'updateFailedSchemas'}});
-                    return true;
-                })
-                .catch((err) => {
-                    var newErr = err;
-                    newErr.fileName = schema.fileName;
-                    newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
-                    self.log.error && self.log.error(newErr);
-                    errCollection.push(newErr);
-                    newFailedQueue.push(schema);
+        var promise = Promise.resolve();
+        failedQueue.forEach(function(schema) {
+            promise = promise
+                .then(function retryFailedQueueSchema() {
+                    return request
+                        .batch(schema.content)
+                        .then((r) => {
+                            self.log.warn && self.log.warn({
+                                message: schema.objectName,
+                                $meta: {
+                                    opcode: 'updateFailedSchemas'
+                                }
+                            });
+                            return true;
+                        })
+                        .catch((err) => {
+                            var newErr = err;
+                            newErr.fileName = schema.fileName;
+                            newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
+                            self.log.error && self.log.error(newErr);
+                            errCollection.push(newErr);
+                            newFailedQueue.push(schema);
+                            return false;
+                        });
                 });
-        })
-        .then((res) => {
-            if (newFailedQueue.length === 0) {
-                return;
-            } else if (newFailedQueue.length === failedQueue.length) {
-                throw errors.retryFailedSchemas(errCollection);
-            }
-            return retryFailedQueries(newFailedQueue);
         });
+        return promise
+            .then(() => {
+                if (newFailedQueue.length === 0) {
+                    return;
+                } else if (newFailedQueue.length === failedQueue.length) {
+                    throw errors.retryFailedSchemas(errCollection);
+                }
+                return retryFailedQueries(newFailedQueue);
+            });
     }
 
     var self = this;
@@ -491,85 +502,100 @@ SqlPort.prototype.updateSchema = function(schema) {
     if (!schemas) {
         return schema;
     }
-    return when.reduce(schemas, function(prev, schemaConfig) { // visit each schema folder
-        return when.promise(function(resolve, reject) {
-            fs.readdir(schemaConfig.path, function(err, files) {
-                if (err) {
-                    reject(err);
-                } else {
-                    var queries = [];
-                    files = files.sort();
-                    var objectIds = files.reduce(function(prev, cur) {
-                        prev[getObjectName(cur).toLowerCase()] = true;
-                        return prev;
-                    }, {});
-                    files.forEach(function(file) {
-                        var objectName = getObjectName(file);
-                        var objectId = objectName.toLowerCase();
-                        var fileName = schemaConfig.path + '/' + file;
-                        if (!fs.statSync(fileName).isFile()) {
-                            return;
-                        }
-                        schemaConfig.linkSP && (prev[objectId] = fileName);
-                        var fileContent = fs.readFileSync(fileName).toString();
-                        addQuery(queries, {
-                            fileName: fileName,
-                            objectName: objectName,
-                            objectId: objectId,
-                            fileContent: fileContent,
-                            createStatement: getCreateStatement(fileContent, fileName, objectName)
-                        });
-                        if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                            var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                            if (tt) {
-                                addQuery(queries, {
-                                    fileName: fileName,
-                                    objectName: objectName + 'TT',
-                                    objectId: objectId + 'tt',
-                                    fileContent: tt,
-                                    createStatement: tt
-                                });
+    return new Promise(function(resolve, reject) {
+        var objectList = [];
+        var promise = Promise.resolve();
+        schemas.forEach(function(schemaConfig) {
+            promise = promise
+                .then(function() {
+                    return new Promise(function(resolve, reject) {
+                        fs.readdir(schemaConfig.path, function(err, files) {
+                            if (err) {
+                                reject(err);
                             }
-                            var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                            if (ttu) {
-                                addQuery(queries, {
-                                    fileName: fileName,
-                                    objectName: objectName + 'TTU',
-                                    objectId: objectId + 'ttu',
-                                    fileContent: ttu,
-                                    createStatement: ttu
-                                });
-                            }
-                        }
-                    });
-
-                    var request = self.getRequest();
-                    var updated = [];
-                    return when.reduce(queries, function(result, query) {
-                        return request
-                            .batch(query.content)
-                            .then(() => {
-                                updated.push(query.objectName);
-                                return true;
-                            })
-                            .catch((e) => {
-                                failedQueries.push(query);
-                                if (self.log.warn) {
-                                    self.log.warn({'failing file': query.fileName});
-                                    self.log.warn(e);
+                            var queries = [];
+                            files = files.sort();
+                            var objectIds = files.reduce(function(prev, cur) {
+                                prev[getObjectName(cur).toLowerCase()] = true;
+                                return prev;
+                            }, {});
+                            files.forEach(function(file) {
+                                var objectName = getObjectName(file);
+                                var objectId = objectName.toLowerCase();
+                                var fileName = schemaConfig.path + '/' + file;
+                                if (!fs.statSync(fileName).isFile()) {
+                                    return;
                                 }
-                                return false;
+                                schemaConfig.linkSP && (objectList[objectId] = fileName);
+                                var fileContent = fs.readFileSync(fileName).toString();
+                                addQuery(queries, {
+                                    fileName: fileName,
+                                    objectName: objectName,
+                                    objectId: objectId,
+                                    fileContent: fileContent,
+                                    createStatement: getCreateStatement(fileContent, fileName, objectName)
+                                });
+                                if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                                    var tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                    if (tt) {
+                                        addQuery(queries, {
+                                            fileName: fileName,
+                                            objectName: objectName + 'TT',
+                                            objectId: objectId + 'tt',
+                                            fileContent: tt,
+                                            createStatement: tt
+                                        });
+                                    }
+                                    var ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                    if (ttu) {
+                                        addQuery(queries, {
+                                            fileName: fileName,
+                                            objectName: objectName + 'TTU',
+                                            objectId: objectId + 'ttu',
+                                            fileContent: ttu,
+                                            createStatement: ttu
+                                        });
+                                    }
+                                }
                             });
-                    }, [])
-                    .then(function() {
-                        updated.length && self.log.info && self.log.info({message: updated, $meta: {mtid: 'event', opcode: 'updateSchema'}});
-                        resolve(prev);
-                        return true;
+
+                            var request = self.getRequest();
+                            var updated = [];
+                            var promise = Promise.resolve();
+                            queries.forEach(function(query) {
+                                promise = promise.then(function() {
+                                    return request
+                                        .batch(query.content)
+                                        .then(() => updated.push(query.objectName))
+                                        .catch((e) => {
+                                            failedQueries.push(query);
+                                            if (self.log.warn) {
+                                                self.log.warn({'failing file': query.fileName});
+                                                self.log.warn(e);
+                                            }
+                                            return false;
+                                        });
+                                });
+                            });
+                            return promise
+                                .then(function() {
+                                    updated.length && self.log.info && self.log.info({
+                                        message: updated,
+                                        $meta: {
+                                            mtid: 'event',
+                                            opcode: 'updateSchema'
+                                        }
+                                    });
+                                    return resolve();
+                                });
+                        });
                     });
-                }
-            });
-        }, []);
-    }, [])
+                });
+        });
+        return promise
+            .then(() => resolve(objectList))
+            .catch(reject);
+    })
     .then((objectList) => {
         if (!failedQueries.length) {
             return objectList;
@@ -778,37 +804,40 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         });
         return request.execute(name)
             .then(function(resultSets) {
-                return when.map(resultSets, function(resultset) {
-                    var xmlColumns = Object.keys(resultset.columns).reduce(function(columns, column) {
-                        if (resultset.columns[column].type.declaration === 'xml') {
-                            columns.push(column);
-                        }
-                        return columns;
-                    }, []);
+                var promise = Promise.resolve();
+                resultSets.forEach(function(resultset) {
+                    var xmlColumns = Object.keys(resultset.columns)
+                        .reduce(function(columns, column) {
+                            if (resultset.columns[column].type.declaration === 'xml') {
+                                columns.push(column);
+                            }
+                            return columns;
+                        }, []);
                     if (xmlColumns.length) {
-                        return when.map(resultset, function(record) {
-                            return when.map(xmlColumns, function(key) {
+                        resultset.forEach(function(record) {
+                            xmlColumns.forEach(function(key) {
                                 if (record[key]) { // value is not null
-                                    return when.promise(function(resolve, reject) {
-                                        xmlParser.parseString(record[key], function(err, result) {
-                                            if (err) {
-                                                throw errors.wrongXmlFormat({
-                                                    xml: record[key]
+                                    promise = promise
+                                        .then(function() {
+                                            return new Promise(function(resolve, reject) {
+                                                xmlParser.parseString(record[key], function(err, result) {
+                                                    if (err) {
+                                                        reject(errors.wrongXmlFormat({
+                                                            xml: record[key]
+                                                        }));
+                                                    } else {
+                                                        record[key] = result;
+                                                        resolve();
+                                                    }
                                                 });
-                                            } else {
-                                                record[key] = result;
-                                                resolve();
-                                            }
+                                            });
                                         });
-                                    });
                                 }
                             });
                         });
                     }
-                })
-                .then(function() {
-                    return resultSets;
                 });
+                return promise.then(() => resultSets);
             })
             .then(function(resultSets) {
                 function isNamingResultSet(element) {
@@ -1051,14 +1080,14 @@ SqlPort.prototype.refreshView = function(drop, data) {
     if ((Array.isArray(schema) && !schema.length) || !schema) {
         return data;
     }
-    var request = this.getRequest();
-    return request.query(mssqlQueries.refreshView(drop)).then(function(result) {
-        if (!drop && result && result.length) {
-            throw errors.invalidView(result);
-        } else {
+    return this.getRequest()
+        .query(mssqlQueries.refreshView(drop))
+        .then(function(result) {
+            if (!drop && result && result.length) {
+                throw errors.invalidView(result);
+            }
             return data;
-        }
-    });
+        });
 };
 
 SqlPort.prototype.doc = function(schema) {
@@ -1069,57 +1098,66 @@ SqlPort.prototype.doc = function(schema) {
     var self = this;
     var schemas = this.getSchema();
     var parserSP = require('./parsers/mssqlSP');
-    return when.reduce(schemas, function(prev, schemaConfig) { // visit each schema folder
-        return when.promise(function(resolve, reject) {
-            fs.readdir(schemaConfig.path, function(err, files) {
-                if (err) {
-                    reject(err);
-                } else {
-                    files = files.sort();
-                    files.forEach(function(file) {
-                        var fileName = schemaConfig.path + '/' + file;
-                        if (!fs.statSync(fileName).isFile()) {
-                            return;
-                        }
-                        var fileContent = fs.readFileSync(fileName).toString();
-                        if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
-                            var binding = parserSP.parse(fileContent);
-                            if (binding.type === 'procedure') {
-                                binding.params.forEach((param) => {
-                                    if (param.doc) {
-                                        prev.push({
-                                            type0: 'SCHEMA',
-                                            name0: binding.schema,
-                                            type1: 'PROCEDURE',
-                                            name1: binding.table,
-                                            type2: 'PARAMETER',
-                                            name2: '@' + param.name,
-                                            doc: param.doc
-                                        });
-                                    }
-                                });
-                            } else {
-                                binding.fields.forEach((field) => {
-                                    if (field.doc) {
-                                        prev.push({
-                                            type0: 'SCHEMA',
-                                            name0: binding.schema,
-                                            type1: 'TABLE',
-                                            name1: binding.table,
-                                            type2: 'COLUMN',
-                                            name2: field.column,
-                                            doc: field.doc
-                                        });
-                                    }
-                                });
+    return new Promise(function(resolve, reject) {
+        var docList = [];
+        var promise = Promise.resolve();
+        schemas.forEach(function(schemaConfig) {
+            promise = promise
+                .then(function() {
+                    return new Promise(function(resolve, reject) {
+                        fs.readdir(schemaConfig.path, function(err, files) {
+                            if (err) {
+                                return reject(err);
                             }
-                        }
+                            files = files.sort();
+                            files.forEach(function(file) {
+                                var fileName = schemaConfig.path + '/' + file;
+                                if (!fs.statSync(fileName).isFile()) {
+                                    return;
+                                }
+                                var fileContent = fs.readFileSync(fileName).toString();
+                                if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
+                                    var binding = parserSP.parse(fileContent);
+                                    if (binding.type === 'procedure') {
+                                        binding.params.forEach((param) => {
+                                            if (param.doc) {
+                                                docList.push({
+                                                    type0: 'SCHEMA',
+                                                    name0: binding.schema,
+                                                    type1: 'PROCEDURE',
+                                                    name1: binding.table,
+                                                    type2: 'PARAMETER',
+                                                    name2: '@' + param.name,
+                                                    doc: param.doc
+                                                });
+                                            }
+                                        });
+                                    } else {
+                                        binding.fields.forEach((field) => {
+                                            if (field.doc) {
+                                                docList.push({
+                                                    type0: 'SCHEMA',
+                                                    name0: binding.schema,
+                                                    type1: 'TABLE',
+                                                    name1: binding.table,
+                                                    type2: 'COLUMN',
+                                                    name2: field.column,
+                                                    doc: field.doc
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                            resolve();
+                        });
                     });
-                    resolve(prev);
-                }
-            });
-        }, []);
-    }, [])
+                });
+        });
+        return promise
+            .then(() => resolve(docList))
+            .catch(reject);
+    })
     .then(function(docList) {
         var request = self.getRequest();
         request.multiple = true;
