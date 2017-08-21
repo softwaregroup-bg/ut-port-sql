@@ -1017,6 +1017,8 @@ SqlPort.prototype.loadSchema = function(objectList) {
     return request.query(mssqlQueries.loadSchema()).then(function(result) {
         var schema = {source: {}, parseList: [], types: {}, deps: {}};
         result[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
+            var full = cur.full;
+            var namespace = cur.namespace;
             cur.namespace = cur.namespace && cur.namespace.toLowerCase();
             cur.full = cur.full && cur.full.toLowerCase();
             if (cur.source) {
@@ -1027,7 +1029,7 @@ SqlPort.prototype.loadSchema = function(objectList) {
                 prev.source[cur.namespace] = '';
             }
             if ((cur.type === 'P') && (cur.colid === 1) && (self.config.linkSP || (objectList && objectList[cur.full]))) {
-                if (self.includesConfig('linkSP', [cur.full, cur.namespace], true)) {
+                if (self.includesConfig('linkSP', [full, namespace], true)) {
                     prev.parseList.push({
                         source: cur.source,
                         fileName: objectList && objectList[cur.full]
