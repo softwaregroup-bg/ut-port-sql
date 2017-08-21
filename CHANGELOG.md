@@ -1,3 +1,13 @@
+<a name="6.6.4"></a>
+## [6.6.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.3...v6.6.4) (2017-08-21)
+
+
+### Bug Fixes
+
+* case sensitivity ([9e4b6fd](https://github.com/softwaregroup-bg/ut-port-sql/commit/9e4b6fd))
+
+
+
 <a name="6.6.3"></a>
 ## [6.6.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.2...v6.6.3) (2017-08-02)
 
