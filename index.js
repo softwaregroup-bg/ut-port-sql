@@ -34,11 +34,19 @@ function SqlPort() {
         tableToType: {},
         skipTableType: [],
         paramsOutName: 'out',
-        doc: false
+        doc: false,
+        db: {
+            options: {
+                debug: {
+                    packet: true
+                }
+            }
+        }
     };
     this.super = {};
     this.connection = null;
     this.retryTimeout = null;
+    this.connectionAttempt = 0;
     return this;
 }
 
@@ -51,6 +59,8 @@ util.inherits(SqlPort, Port);
 SqlPort.prototype.init = function init() {
     Port.prototype.init.apply(this, arguments);
     this.latency = this.counter && this.counter('average', 'lt', 'Latency');
+    this.bytesSent = this.counter && this.counter('counter', 'bs', 'Bytes sent', 300);
+    this.bytesReceived = this.counter && this.counter('counter', 'br', 'Bytes received', 300);
 };
 
 SqlPort.prototype.connect = function connect() {
@@ -1181,6 +1191,73 @@ SqlPort.prototype.doc = function(schema) {
 };
 
 SqlPort.prototype.tryConnect = function() {
+    if (this.config.db) {
+        this.config.db.beforeConnect = c => {
+            if (c.debug) {
+                let id = (++this.connectionAttempt);
+                let created = new Date();
+                let context = {id, created};
+                let notify = (event, connection) => {
+                    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.' + event}, connection});
+                };
+                c.debug.packet = (direction, packet) => {
+                    if (direction === 'Sent') {
+                        let length = packet.length();
+                        this.bytesSent(length + 8);
+                        if (this.log.trace) {
+                            let id = packet.packetId();
+                            if (id === 255 || packet.isLast()) {
+                                this.log.trace({
+                                    $meta: {mtid: 'event', opcode: 'port.out'},
+                                    size: length + id * c.messageIo.packetSize(),
+                                    header: packet.headerToString()
+                                });
+                            }
+                        }
+                    }
+                    if (direction === 'Received') {
+                        let length = packet.length();
+                        this.bytesReceived(length + 8);
+                        if (this.log.trace) {
+                            let id = packet.packetId();
+                            if (id === 255 || packet.isLast()) {
+                                this.log.trace({
+                                    $meta: {mtid: 'event', opcode: 'port.in'},
+                                    size: length + id * c.messageIo.packetSize(),
+                                    header: packet.headerToString()
+                                });
+                            }
+                        }
+                    }
+                };
+                c.debug.log = msg => {
+                    if (this.log.debug && c.state && (c.state.name !== 'LoggedIn') && (c.state.name !== 'SentClientRequest')) {
+                        this.log.debug({$meta: {mtid: 'event', opcode: 'port.connection'}, message: msg, id, created});
+                    }
+                };
+                c.once('connect', err => {
+                    if (!err) {
+                        var stream = c.messageIo.socket;
+                        context = {
+                            id,
+                            created,
+                            localAddress: stream.localAddress,
+                            localPort: stream.localPort,
+                            remoteAddress: stream.remoteAddress,
+                            remotePort: stream.remotePort
+                        };
+                        notify('connected', context);
+                    }
+                });
+                c.once('end', err => {
+                    if (!err) {
+                        notify('disconnected', context);
+                    }
+                });
+            }
+        };
+    };
+
     this.connection = new mssql.Connection(this.config.db);
     if (this.config.create) {
         var conCreate = new mssql.Connection({
