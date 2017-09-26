@@ -509,7 +509,7 @@ SqlPort.prototype.updateSchema = function(schema) {
     var self = this;
     var schemas = this.getSchema();
     var failedQueries = [];
-    if (!schemas) {
+    if (!schemas || !schemas.length) {
         return schema;
     }
     return new Promise(function(resolve, reject) {
