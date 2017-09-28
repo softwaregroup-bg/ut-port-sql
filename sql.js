@@ -216,7 +216,7 @@ module.exports = {
         BEGIN
             CREATE USER [${user}] FOR LOGIN [${user}]
         END
-        IF (is_rolemember('db_owner', '${user}') IS NULL)
+        IF (is_rolemember('db_owner', '${user}') IS NULL OR is_rolemember('db_owner', '${user}') = 0)
         BEGIN
             EXEC sp_addrolemember 'db_owner', '${user}'
         END
