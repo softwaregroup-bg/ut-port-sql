@@ -1,3 +1,19 @@
+<a name="6.7.0"></a>
+# [6.7.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.4...v6.7.0) (2017-09-28)
+
+
+### Bug Fixes
+
+* deadlocked on parallel test caused by sp_addrolemember ([#37](https://github.com/softwaregroup-bg/ut-port-sql/issues/37)) ([0ae966c](https://github.com/softwaregroup-bg/ut-port-sql/commit/0ae966c))
+* optimize when no schemas to update ([bde3c93](https://github.com/softwaregroup-bg/ut-port-sql/commit/bde3c93))
+
+
+### Features
+
+* improve logging and performance metrics ([041af81](https://github.com/softwaregroup-bg/ut-port-sql/commit/041af81))
+
+
+
 <a name="6.6.4"></a>
 ## [6.6.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.3...v6.6.4) (2017-08-21)
 
