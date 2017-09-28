@@ -216,9 +216,18 @@ module.exports = {
         BEGIN
             CREATE USER [${user}] FOR LOGIN [${user}]
         END
-        EXEC sp_addrolemember 'db_owner', '${user}'
-        USE [master]
-        GRANT VIEW SERVER STATE to [${user}]`;
+        IF (is_rolemember('db_owner', '${user}') IS NULL)
+        BEGIN
+            EXEC sp_addrolemember 'db_owner', '${user}'
+        END
+        IF NOT EXISTS (SELECT 1 FROM sys.server_principals AS pr   
+            INNER JOIN sys.server_permissions AS pe ON pe.grantee_principal_id = pr.principal_id
+            WHERE permission_name = N'VIEW SERVER STATE' AND state = N'G' AND pr.name = N'${user}')
+        BEGIN         
+            USE [master]
+            GRANT VIEW SERVER STATE to [${user}]
+        END
+        `;
     },
     enableDatabaseDiagrams: function(name) {
         return `
