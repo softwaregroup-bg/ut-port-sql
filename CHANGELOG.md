@@ -1,3 +1,14 @@
+<a name="6.7.1"></a>
+## [6.7.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.7.0...v6.7.1) (2017-09-28)
+
+
+### Bug Fixes
+
+* additional check if user exist but is not a db_owner ([cea48cd](https://github.com/softwaregroup-bg/ut-port-sql/commit/cea48cd))
+* deadlocked on parallel test caused by sp_addrolemember ([c141540](https://github.com/softwaregroup-bg/ut-port-sql/commit/c141540))
+
+
+
 <a name="6.7.0"></a>
 # [6.7.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.6.4...v6.7.0) (2017-09-28)
 
