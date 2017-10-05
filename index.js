@@ -28,6 +28,7 @@ function SqlPort() {
     this.config = {
         id: null,
         logLevel: '',
+        retryFailedQueries: true,
         type: 'sql',
         createTT: false,
         retry: 10000,
@@ -512,14 +513,14 @@ SqlPort.prototype.updateSchema = function(schema) {
     if (!schemas || !schemas.length) {
         return schema;
     }
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         var objectList = [];
         var promise = Promise.resolve();
-        schemas.forEach(function(schemaConfig) {
+        schemas.forEach((schemaConfig) => {
             promise = promise
-                .then(function() {
-                    return new Promise(function(resolve, reject) {
-                        fs.readdir(schemaConfig.path, function(err, files) {
+                .then(() => {
+                    return new Promise((resolve, reject) => {
+                        fs.readdir(schemaConfig.path, (err, files) => {
                             if (err) {
                                 reject(err);
                             }
@@ -571,23 +572,31 @@ SqlPort.prototype.updateSchema = function(schema) {
 
                             var request = self.getRequest();
                             var updated = [];
-                            var promise = Promise.resolve();
-                            queries.forEach(function(query) {
-                                promise = promise.then(function() {
+                            var innerPromise = Promise.resolve();
+                            queries.forEach((query) => {
+                                innerPromise = innerPromise.then(() => {
                                     return request
                                         .batch(query.content)
                                         .then(() => updated.push(query.objectName))
-                                        .catch((e) => {
-                                            failedQueries.push(query);
-                                            if (self.log.warn) {
-                                                self.log.warn({'failing file': query.fileName});
-                                                self.log.warn(e);
+                                        .catch((err) => {
+                                            if (!this.config.retryFailedQueries) {
+                                                var newErr = err;
+                                                newErr.fileName = query.fileName;
+                                                newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
+                                                newErr.stack = newErr.stack.split('\n').shift();
+                                                throw newErr;
+                                            } else {
+                                                failedQueries.push(query);
+                                                if (self.log.warn) {
+                                                    self.log.warn({'failing file': query.fileName});
+                                                    self.log.warn(err);
+                                                }
+                                                return false;
                                             }
-                                            return false;
                                         });
                                 });
                             });
-                            return promise
+                            return innerPromise
                                 .then(function() {
                                     updated.length && self.log.info && self.log.info({
                                         message: updated,
@@ -597,7 +606,8 @@ SqlPort.prototype.updateSchema = function(schema) {
                                         }
                                     });
                                     return resolve();
-                                });
+                                })
+                                .catch(reject);
                         });
                     });
                 });
