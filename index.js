@@ -28,7 +28,7 @@ function SqlPort() {
     this.config = {
         id: null,
         logLevel: '',
-        retryFailedQueries: true,
+        retrySchemaUpdate: true,
         type: 'sql',
         createTT: false,
         retry: 10000,
@@ -465,7 +465,7 @@ SqlPort.prototype.updateSchema = function(schema) {
         return (self.config.createTT === true || self.includesConfig('tableToType', tableName, false)) && !self.includesConfig('skipTableType', tableName, false);
     }
 
-    function retryFailedQueries(failedQueue) {
+    function retrySchemaUpdate(failedQueue) {
         var newFailedQueue = [];
         var request = self.getRequest();
         var errCollection = [];
@@ -503,7 +503,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                 } else if (newFailedQueue.length === failedQueue.length) {
                     throw errors.retryFailedSchemas(errCollection);
                 }
-                return retryFailedQueries(newFailedQueue);
+                return retrySchemaUpdate(newFailedQueue);
             });
     }
 
@@ -579,7 +579,7 @@ SqlPort.prototype.updateSchema = function(schema) {
                                         .batch(query.content)
                                         .then(() => updated.push(query.objectName))
                                         .catch((err) => {
-                                            if (!this.config.retryFailedQueries) {
+                                            if (!this.config.retrySchemaUpdate) {
                                                 var newErr = err;
                                                 newErr.fileName = query.fileName;
                                                 newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
@@ -620,7 +620,7 @@ SqlPort.prototype.updateSchema = function(schema) {
         if (!failedQueries.length) {
             return objectList;
         }
-        return retryFailedQueries(failedQueries)
+        return retrySchemaUpdate(failedQueries)
             .then(() => (objectList));
     })
     .then(function(objectList) {

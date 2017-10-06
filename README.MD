@@ -14,7 +14,7 @@ In the UT5 implementations the SQL port is initialized in the following manner:
       type: 'sql',
       logLevel: 'trace',
       port: 8002,
-      retryFailedQueries: true, // stops retrying failed schemas. Defaults to true
+      retrySchemaUpdate: true, // stops retrying failed schemas. Defaults to true
       db: {
           user: 'switch',
           password: 'switch',
