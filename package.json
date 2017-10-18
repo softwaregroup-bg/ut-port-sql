@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "6.7.2-rc.1",
+  "version": "6.7.2-rc.2",
   "main": "./index.js",
   "dependencies": {
     "ut-error": "^5.4.0",
