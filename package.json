@@ -3,17 +3,15 @@
   "version": "6.7.2-rc.2",
   "main": "./index.js",
   "dependencies": {
-    "ut-error": "^5.4.0",
+    "lodash.merge": "4.6.0",
+    "ut-error": "^5.4.9",
     "ut-mssql": "3.4.1",
-    "uuid": "^3.0.1",
-    "xml2js": "0.4.17"
+    "uuid": "3.1.0",
+    "xml2js": "0.4.19"
   },
   "devDependencies": {
-    "ut-tools": "^5.15.0",
+    "ut-tools": "^5.23.2",
     "pegjs": "0.10.0"
-  },
-  "peerDependencies": {
-    "ut-bus": "^5.10.0"
   },
   "scripts": {
     "lint": "ut-lint .",

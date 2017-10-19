@@ -1,5 +1,6 @@
-var create = require('ut-error').define;
-var PortSQL = create('portSQL');
+'use strict';
+const create = require('ut-error').define;
+const PortSQL = create('portSQL');
 
 module.exports = {
     sql: PortSQL,
