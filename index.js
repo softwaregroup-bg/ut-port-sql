@@ -864,22 +864,17 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         if ($meta.saveAs) {
             var fileDir = path.dirname($meta.saveAs);
             return new Promise((resolve, reject) => {
-                fs.access(fileDir, (err) => {
-                    if (!err) {
+                fs.mkdir(fileDir, (e) => {
+                    if (!e || e.code === 'EEXIST') {
                         return resolve();
                     }
-                    fs.mkdir(fileDir, (e) => {
-                        if (!e) {
-                            return resolve();
-                        }
-                        reject(e);
-                    });
+                    return reject(e);
                 });
             }).then(function(resolve, reject) {
                 request.stream = true;
-                var ws = fs.createWriteStream(fileName);
-                request.execute(name);
+                var ws = fs.createWriteStream($meta.saveAs);
                 transform(request).pipe(ws);
+                request.execute(name);
                 return new Promise(function(resolve, reject) {
                     ws.on('finish', function() {
                         return resolve({fileName: $meta.saveAs});
@@ -888,6 +883,8 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                         return reject(err);
                     });
                 });
+            }).catch(function(err) {
+                return err;
             });
         }
         return request.execute(name)
