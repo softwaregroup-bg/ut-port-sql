@@ -24,9 +24,9 @@ function changeRowVersionType(field) {
     }
 }
 
-module.exports = function(Parent) {
+module.exports = function({parent}) {
     function SqlPort({config}) {
-        Parent && Parent.apply(this, arguments);
+        parent && parent.apply(this, arguments);
         this.config = merge({
             id: null,
             logLevel: '',
@@ -57,12 +57,12 @@ module.exports = function(Parent) {
         return (column.column + '\t' + column.type + '\t' + (column.length === null ? '' : column.length) + '\t' + (column.scale === null ? '' : column.scale)).toLowerCase();
     }
 
-    if (Parent) {
-        util.inherits(SqlPort, Parent);
+    if (parent) {
+        util.inherits(SqlPort, parent);
     }
 
     SqlPort.prototype.init = function init() {
-        Parent && Parent.prototype.init.apply(this, arguments);
+        parent && parent.prototype.init.apply(this, arguments);
         this.latency = this.counter && this.counter('average', 'lt', 'Latency');
         this.bytesSent = this.counter && this.counter('counter', 'bs', 'Bytes sent', 300);
         this.bytesReceived = this.counter && this.counter('counter', 'br', 'Bytes received', 300);
@@ -118,7 +118,7 @@ module.exports = function(Parent) {
             }, {}));
         }
         return Promise.resolve()
-            .then(() => Parent && Parent.prototype.start.apply(this, Array.prototype.slice.call(arguments)))
+            .then(() => parent && parent.prototype.start.apply(this, Array.prototype.slice.call(arguments)))
             .then(this.connect.bind(this))
             .then(result => {
                 this.pull(this.exec);
@@ -131,7 +131,7 @@ module.exports = function(Parent) {
         // this.queue.push();
         this.connectionReady = false;
         this.connection.close();
-        Parent && Parent.prototype.stop.apply(this, Array.prototype.slice.call(arguments));
+        parent && parent.prototype.stop.apply(this, Array.prototype.slice.call(arguments));
     };
 
     function setPathProperty(object, fieldName, fieldValue) {
