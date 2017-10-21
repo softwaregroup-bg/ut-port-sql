@@ -719,7 +719,7 @@ module.exports = function({parent}) {
                 if (Object(cur) !== cur) {
                     result[prop] = cur;
                 } else if (Array.isArray(cur)) {
-                    // for (var i = 0, l = cur.length; i < l; i += 1) {
+                    // for (let i = 0, l = cur.length; i < l; i += 1) {
                     //     recurse(cur[i], prop + '[' + i + ']');
                     // }
                     // if (l === 0) {
@@ -728,7 +728,7 @@ module.exports = function({parent}) {
                     result[prop] = cur;
                 } else {
                     let isEmpty = true;
-                    for (var p in cur) {
+                    for (let p in cur) {
                         isEmpty = false;
                         recurse(cur[p], prop ? prop + delimiter + p : p);
                     }
@@ -763,12 +763,15 @@ module.exports = function({parent}) {
             return value;
         }
         function transform(request) {
-            var single; var namedSet; var comma = ''; var counter = 1;
+            let single;
+            let namedSet;
+            let comma = '';
+            let counter = 1;
             request.on('recordset', function(cols) {
                 counter++;
             });
             function getResultSetName(chunk) {
-                var keys = Object.keys(chunk);
+                let keys = Object.keys(chunk);
                 return keys.length > 0 && keys[0].toLowerCase() === 'resultsetname' ? chunk[keys[0]] : null;
             }
             return request.pipe(through2({ objectMode: true }, function(chunk, encoding, next) {
@@ -877,7 +880,7 @@ module.exports = function({parent}) {
                 }
             });
             if ($meta.saveAs) {
-                var fileDir = path.dirname($meta.saveAs);
+                let fileDir = path.dirname($meta.saveAs);
                 return new Promise((resolve, reject) => {
                     fs.mkdir(fileDir, (e) => {
                         if (!e || e.code === 'EEXIST') {
@@ -887,7 +890,7 @@ module.exports = function({parent}) {
                     });
                 }).then(function(resolve, reject) {
                     request.stream = true;
-                    var ws = fs.createWriteStream($meta.saveAs);
+                    let ws = fs.createWriteStream($meta.saveAs);
                     transform(request).pipe(ws);
                     request.execute(name);
                     return new Promise(function(resolve, reject) {
@@ -955,7 +958,7 @@ module.exports = function({parent}) {
                         }
                         let name = null;
                         let single = false;
-                        for (var i = 0; i < resultSets.length; ++i) {
+                        for (let i = 0; i < resultSets.length; ++i) {
                             if (name == null) {
                                 if (!isNamingResultSet(resultSets[i])) {
                                     throw errors.invalidResultSetOrder({
