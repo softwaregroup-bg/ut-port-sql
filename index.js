@@ -883,8 +883,6 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                         return reject(err);
                     });
                 });
-            }).catch(function(err) {
-                return err;
             });
         }
         return request.execute(name)
