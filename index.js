@@ -8,6 +8,8 @@ var utError = require('ut-error');
 var mssqlQueries = require('./sql');
 var xml2js = require('xml2js');
 var uuid = require('uuid');
+var through2 = require('through2');
+var path = require('path');
 var xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 var xmlBuilder = new xml2js.Builder({headless: true});
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
@@ -755,6 +757,53 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
         }
         return value;
     }
+    function transform(request) {
+        var single; var namedSet; var comma = ''; var counter = 1;
+        request.on('recordset', function(cols) {
+            counter++;
+        });
+        function getResultSetName(chunk) {
+            var keys = Object.keys(chunk);
+            return keys.length > 0 && keys[0].toLowerCase() === 'resultsetname' ? chunk[keys[0]] : null;
+        }
+        return request.pipe(through2({ objectMode: true }, function(chunk, encoding, next) {
+            if (namedSet === undefined) { // called only once to write object start literal
+                namedSet = !!getResultSetName(chunk);
+                this.push(namedSet ? '{' : '[');
+            }
+            if (counter % 2) { // handle rows
+                this.push(comma + JSON.stringify(chunk));
+                if (comma === '') {
+                    comma = ',';
+                }
+            } else { // handle resultsets
+                if (getResultSetName(chunk)) { // handle recordsets
+                    if (single !== undefined) {
+                        if (comma !== '') {
+                            this.push(single ? '{},' : '],'); // handling empty result set
+                        } else {
+                            this.push(single ? '},' : '],'); // handling end
+                        }
+                    }
+                    single = !!chunk.single;
+                    this.push('"' + getResultSetName(chunk) + '":');
+                    if (!single) {
+                        this.push('['); // open an array
+                    }
+                    comma = '';
+                }
+            }
+            next();
+        }, function(next) {
+            if (namedSet !== undefined) {
+                if (single === false) {
+                    this.push(']'); // push end of array literal If the last object is not a single
+                }
+                this.push(namedSet ? '}' : ']'); //  write object end literal
+            }
+            next();
+        }));
+    }
     return function callLinkedSP(msg, $meta) {
         self.checkConnection(true);
         var request = self.getRequest();
@@ -822,6 +871,30 @@ SqlPort.prototype.callSP = function(name, params, flatten, fileName) {
                 }
             }
         });
+        if ($meta.saveAs) {
+            var fileDir = path.dirname($meta.saveAs);
+            return new Promise((resolve, reject) => {
+                fs.mkdir(fileDir, (e) => {
+                    if (!e || e.code === 'EEXIST') {
+                        return resolve();
+                    }
+                    return reject(e);
+                });
+            }).then(function(resolve, reject) {
+                request.stream = true;
+                var ws = fs.createWriteStream($meta.saveAs);
+                transform(request).pipe(ws);
+                request.execute(name);
+                return new Promise(function(resolve, reject) {
+                    ws.on('finish', function() {
+                        return resolve({fileName: $meta.saveAs});
+                    });
+                    ws.on('error', function(err) {
+                        return reject(err);
+                    });
+                });
+            });
+        }
         return request.execute(name)
             .then(function(resultSets) {
                 var promise = Promise.resolve();
