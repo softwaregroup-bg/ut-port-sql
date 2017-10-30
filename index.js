@@ -533,6 +533,9 @@ module.exports = function({parent}) {
                                 }
                                 let queries = [];
                                 files = files.sort();
+                                if (schemaConfig.exclude && schemaConfig.exclude.length > 0) {
+                                    files = files.filter((file) => !(schemaConfig.exclude.indexOf(file) >= 0));
+                                }
                                 let objectIds = files.reduce(function(prev, cur) {
                                     prev[getObjectName(cur).toLowerCase()] = true;
                                     return prev;
@@ -774,7 +777,7 @@ module.exports = function({parent}) {
                 let keys = Object.keys(chunk);
                 return keys.length > 0 && keys[0].toLowerCase() === 'resultsetname' ? chunk[keys[0]] : null;
             }
-            return request.pipe(through2({ objectMode: true }, function(chunk, encoding, next) {
+            return request.pipe(through2({objectMode: true}, function(chunk, encoding, next) {
                 if (namedSet === undefined) { // called only once to write object start literal
                     namedSet = !!getResultSetName(chunk);
                     this.push(namedSet ? '{' : '[');
@@ -1296,7 +1299,7 @@ module.exports = function({parent}) {
                     c.debug.packet = (direction, packet) => {
                         if (direction === 'Sent') {
                             let length = packet.length();
-                            this.bytesSent(length + 8);
+                            this.bytesSent && this.bytesSent(length + 8);
                             if (this.log.trace) {
                                 let id = packet.packetId();
                                 if (id === 255 || packet.isLast()) {
@@ -1310,7 +1313,7 @@ module.exports = function({parent}) {
                         }
                         if (direction === 'Received') {
                             let length = packet.length();
-                            this.bytesReceived(length + 8);
+                            this.bytesReceived && this.bytesReceived(length + 8);
                             if (this.log.trace) {
                                 let id = packet.packetId();
                                 if (id === 255 || packet.isLast()) {
