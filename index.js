@@ -528,6 +528,9 @@ SqlPort.prototype.updateSchema = function(schema) {
                             }
                             var queries = [];
                             files = files.sort();
+                            if (schemaConfig.exclude && schemaConfig.exclude.length > 0) {
+                                files = files.filter((file) => !(schemaConfig.exclude.indexOf(file) >= 0));
+                            }
                             var objectIds = files.reduce(function(prev, cur) {
                                 prev[getObjectName(cur).toLowerCase()] = true;
                                 return prev;
