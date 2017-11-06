@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "6.7.2",
+  "version": "6.8.0-rc-acapulco.0",
   "main": "./index.js",
   "dependencies": {
     "ut-error": "^5.4.0",
