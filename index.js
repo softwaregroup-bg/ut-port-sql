@@ -31,7 +31,7 @@ module.exports = function({parent}) {
         parent && parent.apply(this, arguments);
         this.config = merge({
             id: null,
-            logLevel: '',
+            logLevel: 'info',
             retrySchemaUpdate: true,
             type: 'sql',
             createTT: false,
