@@ -4,7 +4,6 @@ const mssql = require('ut-mssql');
 const util = require('util');
 const fs = require('fs');
 const crypto = require('./crypto');
-const utError = require('ut-error');
 const mssqlQueries = require('./sql');
 const xml2js = require('xml2js');
 const uuid = require('uuid');
@@ -238,6 +237,7 @@ module.exports = function({parent}) {
         // let start = +new Date();
         let debug = this.isDebug();
         let request = this.getRequest();
+        let port = this;
         return new Promise(function(resolve, reject) {
             request.query(message.query, function(err, result) {
                 // let end = +new Date();
@@ -245,7 +245,7 @@ module.exports = function({parent}) {
                 // todo record execution time
                 if (err) {
                     debug && (err.query = message.query);
-                    let error = utError.get(err.message && err.message.split('\n').shift()) || errors.sql;
+                    let error = port.getError(err.message && err.message.split('\n').shift()) || errors.sql;
                     reject(error(err));
                 } else {
                     $meta.mtid = 'response';
@@ -972,7 +972,7 @@ module.exports = function({parent}) {
                                     name = resultSets[i][0].resultSetName;
                                     single = !!resultSets[i][0].single;
                                     if (name === 'ut-error') {
-                                        error = utError.get(resultSets[i][0] && resultSets[i][0].type) || errors.sql;
+                                        error = self.getError(resultSets[i][0] && resultSets[i][0].type) || errors.sql;
                                         error = Object.assign(error(), resultSets[i][0]);
                                         name = null;
                                         single = false;
@@ -1029,7 +1029,7 @@ module.exports = function({parent}) {
                 .catch(function(err) {
                     let errorLines = err.message && err.message.split('\n');
                     err.message = errorLines.shift();
-                    let error = utError.get(err.type || err.message) || errors.sql;
+                    let error = self.getError(err.type || err.message) || errors.sql;
                     let errToThrow = error(err);
                     if (debug) {
                         err.storedProcedure = name;
