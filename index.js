@@ -3,7 +3,6 @@ const merge = require('lodash.merge');
 const mssql = require('ut-mssql');
 const util = require('util');
 const fs = require('fs');
-const errors = require('./errors');
 const crypto = require('./crypto');
 const utError = require('ut-error');
 const mssqlQueries = require('./sql');
@@ -18,6 +17,7 @@ const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const VAR_RE = /\$\{([^}]*)\}/g;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
+let errors;
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -48,6 +48,7 @@ module.exports = function({parent}) {
                 }
             }
         }, config);
+        errors = errors || require('./errors')(this.defineError);
         this.super = {};
         this.connection = null;
         this.retryTimeout = null;
