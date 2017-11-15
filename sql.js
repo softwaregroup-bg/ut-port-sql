@@ -1,6 +1,6 @@
 'use strict';
 module.exports = {
-    loadSchema: function() {
+    loadSchema: function(partial) {
         return `
         SELECT
             o.create_date,
@@ -13,7 +13,7 @@ module.exports = {
             CASE o.[type]
                 WHEN 'SN' THEN 'DROP SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name +
                                 '] CREATE SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name + '] FOR ' +  s.base_object_name
-                ELSE c.text
+                ELSE ${partial ? `LEFT(c.text, CASE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) WHEN 0 THEN 2500 ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) + 10 END)` : 'c.text'}
             END AS [source]
 
         FROM
@@ -23,9 +23,10 @@ module.exports = {
         LEFT JOIN
             sys.synonyms s on s.object_id = o.object_id
         WHERE
-            o.type IN ('V', 'P', 'FN','F','IF','SN','TF','TR','U') AND
+            o.type IN (${partial ? `'P'` : `'V', 'P', 'FN','F','IF','SN','TF','TR','U'`}) AND
             user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo') AND
             objectproperty(o.object_id, 'IsMSShipped') = 0
+            ${partial ? 'AND ISNULL(c.colid, 1)=1' : ''}
         UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
         UNION ALL
