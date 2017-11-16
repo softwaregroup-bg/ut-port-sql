@@ -1294,7 +1294,7 @@ module.exports = function({parent}) {
                     let created = new Date();
                     let context = {id, created};
                     let notify = (event, connection) => {
-                        this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.connection.' + event}, connection});
+                        this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'poolSQL.' + event}, connection});
                     };
                     c.debug.packet = (direction, packet) => {
                         if (direction === 'Sent') {
