@@ -1294,7 +1294,7 @@ module.exports = function({parent}) {
                     let created = new Date();
                     let context = {id, created};
                     let notify = (event, connection) => {
-                        this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'poolSQL.' + event}, connection});
+                        this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.pool.' + event}, connection});
                     };
                     c.debug.packet = (direction, packet) => {
                         if (direction === 'Sent') {
@@ -1304,7 +1304,7 @@ module.exports = function({parent}) {
                                 let id = packet.packetId();
                                 if (id === 255 || packet.isLast()) {
                                     this.log.trace({
-                                        $meta: {mtid: 'event', opcode: 'port.out'},
+                                        $meta: {mtid: 'event', opcode: 'port.pool.out'},
                                         size: length + id * c.messageIo.packetSize(),
                                         header: packet.headerToString()
                                     });
@@ -1318,7 +1318,7 @@ module.exports = function({parent}) {
                                 let id = packet.packetId();
                                 if (id === 255 || packet.isLast()) {
                                     this.log.trace({
-                                        $meta: {mtid: 'event', opcode: 'port.in'},
+                                        $meta: {mtid: 'event', opcode: 'port.pool.in'},
                                         size: length + id * c.messageIo.packetSize(),
                                         header: packet.headerToString()
                                     });
@@ -1328,7 +1328,7 @@ module.exports = function({parent}) {
                     };
                     c.debug.log = msg => {
                         if (this.log.debug && c.state && (c.state.name !== 'LoggedIn') && (c.state.name !== 'SentClientRequest')) {
-                            this.log.debug({$meta: {mtid: 'event', opcode: 'port.connection'}, message: msg, id, created});
+                            this.log.debug({$meta: {mtid: 'event', opcode: 'port.pool.state'}, message: msg, id, created});
                         }
                     };
                     c.once('connect', err => {
