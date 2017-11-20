@@ -1102,7 +1102,16 @@ module.exports = function({parent}) {
                     if (!this.config[flatName]) {
                         this.config[flatName] = callSP;
                     } else {
-                        this.config[flatName].callSP = callSP;
+                        let root = this.config[flatName];
+                        let max = 10;
+                        while (max > 0 && root.super) {
+                            root = root.super;
+                            max--;
+                            if (!max) {
+                                throw Error.create('Max recursion reached');
+                            }
+                        }
+                        root.super = callSP;
                     }
                 }
             }.bind(this));
