@@ -1098,9 +1098,11 @@ module.exports = function({parent}) {
                             };
                         }
                     });
-                    this.super[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
+                    let callSP = this.super[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
                     if (!this.config[flatName]) {
-                        this.config[flatName] = this.super[flatName];
+                        this.config[flatName] = callSP;
+                    } else {
+                        this.config[flatName].callSP = callSP;
                     }
                 }
             }.bind(this));
