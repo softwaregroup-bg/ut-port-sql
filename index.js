@@ -34,6 +34,7 @@ module.exports = function({parent}) {
             retrySchemaUpdate: true,
             type: 'sql',
             createTT: false,
+            allowQuery: false,
             retry: 10000,
             tableToType: {},
             skipTableType: [],
@@ -234,7 +235,10 @@ module.exports = function({parent}) {
             this.config.validate(message);
         }
 
-        // let start = +new Date();
+        if (!this.config.allowQuery || !message.query) {
+            return Promise.reject(this.bus.errors.methodNotFound({params: {method: methodName}}));
+        };
+
         let debug = this.isDebug();
         let request = this.getRequest();
         let port = this;
