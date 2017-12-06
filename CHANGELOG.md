@@ -1,3 +1,18 @@
+<a name="7.0.0"></a>
+# [7.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.0.0-ut6.12...v7.0.0) (2017-12-06)
+
+
+### Bug Fixes
+
+* add ability to exclude part of the schema ([#42](https://github.com/softwaregroup-bg/ut-port-sql/issues/42)) ([6f9af5e](https://github.com/softwaregroup-bg/ut-port-sql/commit/6f9af5e))
+
+
+### Features
+
+* add $meta.saveAs option ([#40](https://github.com/softwaregroup-bg/ut-port-sql/issues/40)) ([811afc5](https://github.com/softwaregroup-bg/ut-port-sql/commit/811afc5))
+
+
+
 <a name="6.8.0"></a>
 # [6.8.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v6.7.1...v6.8.0) (2017-10-09)
 
