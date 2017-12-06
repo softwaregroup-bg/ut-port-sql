@@ -1,5 +1,6 @@
+'use strict';
 module.exports = {
-    loadSchema: function() {
+    loadSchema: function(partial) {
         return `
         SELECT
             o.create_date,
@@ -12,7 +13,7 @@ module.exports = {
             CASE o.[type]
                 WHEN 'SN' THEN 'DROP SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name +
                                 '] CREATE SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name + '] FOR ' +  s.base_object_name
-                ELSE c.text
+                ELSE ${partial ? `LEFT(c.text, CASE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) WHEN 0 THEN 2500 ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) + 10 END)` : 'c.text'}
             END AS [source]
 
         FROM
@@ -22,9 +23,10 @@ module.exports = {
         LEFT JOIN
             sys.synonyms s on s.object_id = o.object_id
         WHERE
-            o.type IN ('V', 'P', 'FN','F','IF','SN','TF','TR','U') AND
+            o.type IN (${partial ? `'P'` : `'V', 'P', 'FN','F','IF','SN','TF','TR','U'`}) AND
             user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo') AND
             objectproperty(o.object_id, 'IsMSShipped') = 0
+            ${partial ? 'AND ISNULL(c.colid, 1)=1' : ''}
         UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
         UNION ALL
@@ -220,10 +222,10 @@ module.exports = {
         BEGIN
             EXEC sp_addrolemember 'db_owner', '${user}'
         END
-        IF NOT EXISTS (SELECT 1 FROM sys.server_principals AS pr   
+        IF NOT EXISTS (SELECT 1 FROM sys.server_principals AS pr
             INNER JOIN sys.server_permissions AS pe ON pe.grantee_principal_id = pr.principal_id
             WHERE permission_name = N'VIEW SERVER STATE' AND state = N'G' AND pr.name = N'${user}')
-        BEGIN         
+        BEGIN
             USE [master]
             GRANT VIEW SERVER STATE to [${user}]
         END
@@ -241,14 +243,14 @@ module.exports = {
             BEGIN
                 IF OBJECT_ID(N''dbo.sysdiagrams'') IS NOT NULL
                     return 0;
-            
+
                 CREATE TABLE dbo.sysdiagrams
                 (
                     name sysname NOT NULL,
                     principal_id int NOT NULL,  -- we may change it to varbinary(85)
                     diagram_id int PRIMARY KEY IDENTITY,
                     version int,
-            
+
                     definition varbinary(max)
                     CONSTRAINT UK_principal_name UNIQUE
                     (
@@ -277,16 +279,16 @@ module.exports = {
                         [version],
                         [definition]
                     )
-                    select   
+                    select
                         convert(sysname, dgnm.[uvalue]),
                         DATABASE_PRINCIPAL_ID(N''dbo''),            -- will change to the sid of sa
                         0,                          -- zero for old format, dgdef.[version],
                         dgdef.[lvalue]
                     from dbo.[dtproperties] dgnm
-                        inner join dbo.[dtproperties] dggd on dggd.[property] = ''DtgSchemaGUID'' and dggd.[objectid] = dgnm.[objectid] 
+                        inner join dbo.[dtproperties] dggd on dggd.[property] = ''DtgSchemaGUID'' and dggd.[objectid] = dgnm.[objectid]
                         inner join dbo.[dtproperties] dgdef on dgdef.[property] = ''DtgSchemaDATA'' and dgdef.[objectid] = dgnm.[objectid]
-                        
-                    where dgnm.[property] = ''DtgSchemaNAME'' and dggd.[uvalue] like N''_EA3E6268-D998-11CE-9454-00AA00A3F36E_'' 
+
+                    where dgnm.[property] = ''DtgSchemaNAME'' and dggd.[uvalue] like N''_EA3E6268-D998-11CE-9454-00AA00A3F36E_''
                     return 2;
                 end
                 return 1;
@@ -342,7 +344,7 @@ module.exports = {
             CREATE PROCEDURE dbo.sp_helpdiagramdefinition
             (
                 @diagramname    sysname,
-                @owner_id   int = null      
+                @owner_id   int = null
             )
             WITH EXECUTE AS N''dbo''
             AS
@@ -353,20 +355,20 @@ module.exports = {
                 declare @IsDbo      int
                 declare @DiagId     int
                 declare @UIDFound   int
-            
+
                 if(@diagramname is null)
                 begin
                     RAISERROR (N''E_INVALIDARG'', 16, 1);
                     return -1
                 end
-            
+
                 execute as caller;
                 select @theId = DATABASE_PRINCIPAL_ID();
                 select @IsDbo = IS_MEMBER(N''db_owner'');
                 if(@owner_id is null)
                     select @owner_id = @theId;
-                revert; 
-            
+                revert;
+
                 select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname;
                 if(@DiagId IS NULL or (@IsDbo = 0 and @UIDFound <> @theId ))
                 begin
@@ -374,7 +376,7 @@ module.exports = {
                     return -3
                 end
 
-                select version, definition FROM dbo.sysdiagrams where diagram_id = @DiagId ; 
+                select version, definition FROM dbo.sysdiagrams where diagram_id = @DiagId ;
                 return 0
             END
             '
@@ -396,7 +398,7 @@ module.exports = {
             AS
             BEGIN
                 set nocount on
-            
+
                 declare @theId int
                 declare @retval int
                 declare @IsDbo  int
@@ -406,12 +408,12 @@ module.exports = {
                     RAISERROR (N''E_INVALIDARG'', 16, 1);
                     return -1
                 end
-            
+
                 execute as caller;
-                select @theId = DATABASE_PRINCIPAL_ID(); 
+                select @theId = DATABASE_PRINCIPAL_ID();
                 select @IsDbo = IS_MEMBER(N''db_owner'');
-                revert; 
-                
+                revert;
+
                 if @owner_id is null
                 begin
                     select @owner_id = @theId;
@@ -434,11 +436,11 @@ module.exports = {
                     RAISERROR (''The name is already used.'', 16, 1);
                     return -2
                 end
-            
+
                 insert into dbo.sysdiagrams(name, principal_id , version, definition)
                         VALUES(@diagramname, @theId, @version, @definition) ;
-                
-                select @retval = @@IDENTITY 
+
+                select @retval = @@IDENTITY
                 return @retval
             END
             '
@@ -454,7 +456,7 @@ module.exports = {
                 @diagramname        sysname,
                 @owner_id       int = null,
                 @new_diagramname    sysname
-            
+
             )
             WITH EXECUTE AS ''dbo''
             AS
@@ -462,7 +464,7 @@ module.exports = {
                 set nocount on
                 declare @theId          int
                 declare @IsDbo          int
-                
+
                 declare @UIDFound       int
                 declare @DiagId         int
                 declare @DiagIdTarg     int
@@ -472,37 +474,37 @@ module.exports = {
                     RAISERROR (''Invalid value'', 16, 1);
                     return -1
                 end
-            
+
                 EXECUTE AS CALLER;
                 select @theId = DATABASE_PRINCIPAL_ID();
-                select @IsDbo = IS_MEMBER(N''db_owner''); 
+                select @IsDbo = IS_MEMBER(N''db_owner'');
                 if(@owner_id is null)
                     select @owner_id = @theId;
                 REVERT;
-            
+
                 select @u_name = USER_NAME(@owner_id)
-            
-                select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname 
+
+                select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname
                 if(@DiagId IS NULL or (@IsDbo = 0 and @UIDFound <> @theId))
                 begin
                     RAISERROR (''Diagram does not exist or you do not have permission.'', 16, 1)
                     return -3
                 end
-            
+
                 -- if((@u_name is not null) and (@new_diagramname = @diagramname))  -- nothing will change
                 --  return 0;
-            
+
                 if(@u_name is null)
                     select @DiagIdTarg = diagram_id from dbo.sysdiagrams where principal_id = @theId and name = @new_diagramname
                 else
                     select @DiagIdTarg = diagram_id from dbo.sysdiagrams where principal_id = @owner_id and name = @new_diagramname
-            
+
                 if((@DiagIdTarg is not null) and  @DiagId <> @DiagIdTarg)
                 begin
                     RAISERROR (''The name is already used.'', 16, 1);
                     return -2
-                end     
-            
+                end
+
                 if(@u_name is null)
                     update dbo.sysdiagrams set [name] = @new_diagramname, principal_id = @theId where diagram_id = @DiagId
                 else
@@ -528,36 +530,36 @@ module.exports = {
             AS
             BEGIN
                 set nocount on
-            
+
                 declare @theId          int
                 declare @retval         int
                 declare @IsDbo          int
                 declare @UIDFound       int
                 declare @DiagId         int
                 declare @ShouldChangeUID    int
-            
+
                 if(@diagramname is null)
                 begin
                     RAISERROR (''Invalid ARG'', 16, 1)
                     return -1
                 end
-            
+
                 execute as caller;
                 select @theId = DATABASE_PRINCIPAL_ID();
                 select @IsDbo = IS_MEMBER(N''db_owner'');
                 if(@owner_id is null)
                     select @owner_id = @theId;
                 revert;
-            
+
                 select @ShouldChangeUID = 0
-                select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname 
-                
+                select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname
+
                 if(@DiagId IS NULL or (@IsDbo = 0 and @theId <> @UIDFound))
                 begin
                     RAISERROR (''Diagram does not exist or you do not have permission.'', 16, 1);
                     return -3
                 end
-            
+
                 if(@IsDbo <> 0)
                 begin
                     if(@UIDFound is null or USER_NAME(@UIDFound) is null) -- invalid principal_id
@@ -566,7 +568,7 @@ module.exports = {
                     end
                 end
 
-                -- update dds data          
+                -- update dds data
                 update dbo.sysdiagrams set definition = @definition where diagram_id = @DiagId ;
 
                 -- change owner
@@ -599,32 +601,32 @@ module.exports = {
                 set nocount on
                 declare @theId          int
                 declare @IsDbo          int
-                
+
                 declare @UIDFound       int
                 declare @DiagId         int
-            
+
                 if(@diagramname is null)
                 begin
                     RAISERROR (''Invalid value'', 16, 1);
                     return -1
                 end
-            
+
                 EXECUTE AS CALLER;
                 select @theId = DATABASE_PRINCIPAL_ID();
-                select @IsDbo = IS_MEMBER(N''db_owner''); 
+                select @IsDbo = IS_MEMBER(N''db_owner'');
                 if(@owner_id is null)
                     select @owner_id = @theId;
-                REVERT; 
-                
-                select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname 
+                REVERT;
+
+                select @DiagId = diagram_id, @UIDFound = principal_id from dbo.sysdiagrams where principal_id = @owner_id and name = @diagramname
                 if(@DiagId IS NULL or (@IsDbo = 0 and @UIDFound <> @theId))
                 begin
                     RAISERROR (''Diagram does not exist or you do not have permission.'', 16, 1)
                     return -3
                 end
-            
+
                 delete from dbo.sysdiagrams where diagram_id = @DiagId;
-            
+
                 return 0;
             END
             '
@@ -635,7 +637,7 @@ module.exports = {
         IF OBJECT_ID(N'dbo.fn_diagramobjects') IS NULL and IS_MEMBER('db_owner') = 1
         BEGIN
             EXEC sp_executesql N'
-            CREATE FUNCTION dbo.fn_diagramobjects() 
+            CREATE FUNCTION dbo.fn_diagramobjects()
             RETURNS int
             WITH EXECUTE AS N''dbo''
             AS
@@ -646,7 +648,7 @@ module.exports = {
                 declare @id_helpdiagramdefinition   int
                 declare @id_creatediagram   int
                 declare @id_renamediagram   int
-                declare @id_alterdiagram    int 
+                declare @id_alterdiagram    int
                 declare @id_dropdiagram     int
                 declare @InstalledObjects   int
 
@@ -658,7 +660,7 @@ module.exports = {
                     @id_helpdiagramdefinition = object_id(N''dbo.sp_helpdiagramdefinition''),
                     @id_creatediagram = object_id(N''dbo.sp_creatediagram''),
                     @id_renamediagram = object_id(N''dbo.sp_renamediagram''),
-                    @id_alterdiagram = object_id(N''dbo.sp_alterdiagram''), 
+                    @id_alterdiagram = object_id(N''dbo.sp_alterdiagram''),
                     @id_dropdiagram = object_id(N''dbo.sp_dropdiagram'')
 
 
@@ -678,8 +680,8 @@ module.exports = {
                     select @InstalledObjects = @InstalledObjects + 64
                 if @id_dropdiagram is not null
                     select @InstalledObjects = @InstalledObjects + 128
-                
-                return @InstalledObjects 
+
+                return @InstalledObjects
             END
             '
 
@@ -691,63 +693,63 @@ module.exports = {
         BEGIN
             declare @val int
             select @val = 1
-            if NOT EXISTS(  select major_id 
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sysdiagrams') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'TABLE', N'sysdiagrams', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_upgraddiagrams') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_upgraddiagrams', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_helpdiagrams') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_helpdiagrams', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_helpdiagramdefinition') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_helpdiagramdefinition', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_creatediagram') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_creatediagram', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_renamediagram') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_renamediagram', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_alterdiagram') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_alterdiagram', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.sp_dropdiagram') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
                 exec sp_addextendedproperty N'microsoft_database_tools_support', @val, 'SCHEMA', N'dbo', 'PROCEDURE', N'sp_dropdiagram', NULL, NULL
             end
-            
-            if NOT EXISTS(  select major_id 
+
+            if NOT EXISTS(  select major_id
                             from sys.extended_properties
                             where major_id = object_id(N'dbo.fn_diagramobjects') and class = 1 and minor_id = 0 and name = N'microsoft_database_tools_support')
             begin
@@ -764,25 +766,25 @@ module.exports = {
 
         IF OBJECT_ID(N'dbo.sp_dropdiagram') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_dropdiagram
-        
+
         IF OBJECT_ID(N'dbo.sp_alterdiagram') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_alterdiagram
 
         IF OBJECT_ID(N'dbo.sp_renamediagram') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_renamediagram
-        
+
         IF OBJECT_ID(N'dbo.sp_creatediagram') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_creatediagram
 
         IF OBJECT_ID(N'dbo.sp_helpdiagramdefinition') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_helpdiagramdefinition
-        
+
         IF OBJECT_ID(N'dbo.sp_helpdiagrams') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_helpdiagrams
 
         IF OBJECT_ID(N''dbo.sysdiagrams'') IS NOT NULL and IS_MEMBER('db_owner') = 1
             DROP TABLE dbo.sysdiagrams
-        
+
         IF OBJECT_ID(N'dbo.sp_upgraddiagrams') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_upgraddiagrams`;
     }

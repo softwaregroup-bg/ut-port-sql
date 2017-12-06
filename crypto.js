@@ -1,14 +1,15 @@
-var crypto = require('crypto');
-var defPassword = 'some password';
+'use strict';
+const crypto = require('crypto');
+const defPassword = 'some password';
 
 module.exports = {
     encrypt: (text, algorithm, password) => {
-        var cipher = crypto.createCipher(algorithm, password || defPassword);
+        let cipher = crypto.createCipher(algorithm, password || defPassword);
 
         return new Promise((resolve, reject) => {
-            var encrypted = '';
+            let encrypted = '';
             cipher.on('readable', () => {
-                var data = cipher.read();
+                let data = cipher.read();
                 if (data) {
                     encrypted += data.toString('hex');
                 }
@@ -22,12 +23,12 @@ module.exports = {
         });
     },
     decrypt: (text, algorithm, password) => {
-        var decipher = crypto.createDecipher(algorithm, password || defPassword);
+        let decipher = crypto.createDecipher(algorithm, password || defPassword);
 
         return new Promise((resolve, reject) => {
-            var decrypted = '';
+            let decrypted = '';
             decipher.on('readable', () => {
-                var data = decipher.read();
+                let data = decipher.read();
                 if (data) {
                     decrypted += data.toString('utf8');
                 }

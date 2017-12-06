@@ -190,15 +190,35 @@ pk_constraint
 
 clustered = "CLUSTERED"i / "NONCLUSTERED"i
 order = "ASC"i / "DESC"i
+action = "NO ACTION"i / "SET DEFAULT"i / "SET NULL"i / "CASCADE"i / "RESTRICT"i
+clause = "DELETE"i / "UPDATE"i / "INSERT"i
 
 fk_constraint
-  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws1 "REFERENCES" ws1 t:fullname ws lparen c:name ws rparen {
+  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws "REFERENCES"i ws t:fullname ws lparen ws c:name ws rparen a:fk_clause_actions {
       return {
           type: "FOREIGN KEY",
             referenceTable: t,
-            referenceColumn: c
+            referenceColumn: c,
+            actionClauses: a
         }
     }
+
+fk_clause_action
+   = "ON"i ws c:clause ws a:action {
+     return {
+       type: "CLAUSE_ACTION",
+       clause: c,
+       action: a
+     }
+   }
+
+fk_clause_actions = q:(w:ws ac:fk_clause_action {return [w, ac]})* {
+    var y = [];
+    q.forEach(function(pp){
+      y.push(pp[1]);
+    });
+    return y;
+  }
 
 unique_constraint
    = "UNIQUE"i ws lparen ws n:names ws rparen {

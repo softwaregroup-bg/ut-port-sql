@@ -1,20 +1,16 @@
 {
   "name": "ut-port-sql",
-  "version": "6.7.2-rc.4",
+  "version": "7.0.0-ut6.12",
   "main": "./index.js",
   "dependencies": {
-    "ut-error": "^5.4.0",
+    "lodash.merge": "4.6.0",
     "ut-mssql": "3.4.1",
-    "uuid": "^3.0.1",
-    "xml2js": "0.4.17",
-    "through2": "2.0.3"
+    "uuid": "3.1.0",
+    "xml2js": "0.4.19"
   },
   "devDependencies": {
-    "ut-tools": "^5.15.0",
+    "ut-tools": "^5.23.2",
     "pegjs": "0.10.0"
-  },
-  "peerDependencies": {
-    "ut-bus": "^5.10.0"
   },
   "scripts": {
     "lint": "ut-lint .",
