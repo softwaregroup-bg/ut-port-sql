@@ -535,6 +535,7 @@ module.exports = function({parent}) {
                             fs.readdir(schemaConfig.path, (err, files) => {
                                 if (err) {
                                     reject(err);
+                                    return;
                                 }
                                 let queries = [];
                                 files = files.sort();
