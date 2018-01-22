@@ -25,7 +25,8 @@ module.exports = {
         WHERE
             o.type IN (${partial ? `'P'` : `'V', 'P', 'FN','F','IF','SN','TF','TR','U'`}) AND
             user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo') AND
-            objectproperty(o.object_id, 'IsMSShipped') = 0
+            objectproperty(o.object_id, 'IsMSShipped') = 0 AND
+            SCHEMA_NAME(o.schema_id) != 'dbo'
             ${partial ? 'AND ISNULL(c.colid, 1)=1' : ''}
         UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
@@ -782,7 +783,7 @@ module.exports = {
         IF OBJECT_ID(N'dbo.sp_helpdiagrams') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_helpdiagrams
 
-        IF OBJECT_ID(N''dbo.sysdiagrams'') IS NOT NULL and IS_MEMBER('db_owner') = 1
+        IF OBJECT_ID(N'dbo.sysdiagrams') IS NOT NULL and IS_MEMBER('db_owner') = 1
             DROP TABLE dbo.sysdiagrams
 
         IF OBJECT_ID(N'dbo.sp_upgraddiagrams') IS NULL and IS_MEMBER('db_owner') = 1
