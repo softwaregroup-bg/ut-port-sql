@@ -1134,7 +1134,7 @@ module.exports = function({parent}) {
         this.checkConnection();
         let request = this.getRequest();
         request.multiple = true;
-        return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === "false")).then(function(result) {
+        return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false')).then(function(result) {
             let schema = {source: {}, parseList: [], types: {}, deps: {}};
             result[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
                 let full = cur.full;
