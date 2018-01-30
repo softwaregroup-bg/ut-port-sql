@@ -1,3 +1,8 @@
+<a name="7.1.0"></a>
+# [7.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.1.0-rc-bahur.4...v7.1.0) (2018-01-30)
+
+
+
 <a name="7.0.0"></a>
 # [7.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.0.0-ut6.12...v7.0.0) (2017-12-06)
 
