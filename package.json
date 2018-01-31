@@ -5,12 +5,12 @@
   "dependencies": {
     "lodash.merge": "4.6.0",
     "through2": "2.0.3",
-    "ut-mssql": "3.4.3",
-    "uuid": "3.1.0",
+    "mssql": "4.1.0",
+    "uuid": "3.2.1",
     "xml2js": "0.4.19"
   },
   "devDependencies": {
-    "ut-tools": "^5.23.2",
+    "ut-tools": "^5.32.5",
     "pegjs": "0.10.0"
   },
   "scripts": {

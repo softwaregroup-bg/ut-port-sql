@@ -1,8 +1,10 @@
 'use strict';
 const merge = require('lodash.merge');
-const mssql = require('ut-mssql');
+const stringify = require('json-stringify-deterministic');
+const mssql = require('mssql');
 const util = require('util');
 const fs = require('fs');
+const fsplus = require('fs-plus');
 const crypto = require('./crypto');
 const mssqlQueries = require('./sql');
 const xml2js = require('xml2js');
@@ -17,6 +19,7 @@ const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const VAR_RE = /\$\{([^}]*)\}/g;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 let errors;
+const serverRequire = require;
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -33,6 +36,7 @@ module.exports = function({parent}) {
             logLevel: 'info',
             retrySchemaUpdate: true,
             type: 'sql',
+            cache: false,
             createTT: false,
             allowQuery: false,
             retry: 10000,
@@ -106,6 +110,7 @@ module.exports = function({parent}) {
     };
 
     SqlPort.prototype.start = function start() {
+        this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
         this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
 
         this.config.imports && this.config.imports.forEach(impl => {
@@ -254,14 +259,14 @@ module.exports = function({parent}) {
                 } else {
                     $meta.mtid = 'response';
                     if (message.process === 'return') {
-                        if (result && result.length) {
-                            Object.keys(result[0]).forEach(function(value) {
-                                setPathProperty(message, value, result[0][value]);
+                        if (result && result.recordset && result.recordset.length) {
+                            Object.keys(result.recordset[0]).forEach(function(value) {
+                                setPathProperty(message, value, result.recordset[0][value]);
                             });
                         }
                         resolve(message);
                     } else if (message.process === 'json') {
-                        message.dataSet = result;
+                        message.dataSet = result.recordset;
                         resolve(message);
                     } else if (message.process === 'xls') { // todo
                         reject(errors.notImplemented(message.process));
@@ -488,7 +493,7 @@ module.exports = function({parent}) {
                     .then(function retryFailedQueueSchema() {
                         return request
                             .batch(schema.content)
-                            .then((r) => {
+                            .then(() => {
                                 self.log.warn && self.log.warn({
                                     message: schema.objectName,
                                     $meta: {
@@ -522,6 +527,7 @@ module.exports = function({parent}) {
         let self = this;
         let schemas = this.getSchema();
         let failedQueries = [];
+        let hashDropped = false;
         if (!schemas || !schemas.length) {
             return schema;
         }
@@ -589,6 +595,14 @@ module.exports = function({parent}) {
                                 let request = self.getRequest();
                                 let updated = [];
                                 let innerPromise = Promise.resolve();
+                                if (queries.length && !hashDropped) {
+                                    innerPromise = innerPromise
+                                        .then(() => request.batch(mssqlQueries.dropHash())
+                                        .then(() => {
+                                            hashDropped = true;
+                                            return true;
+                                        }));
+                                }
                                 queries.forEach((query) => {
                                     innerPromise = innerPromise.then(() => {
                                         return request
@@ -838,6 +852,9 @@ module.exports = function({parent}) {
                 } else {
                     value = data[param.name];
                 }
+                if (param.encrypt) {
+                    value = self.cbc.encrypt(value);
+                }
                 let hasValue = value !== void 0;
                 let type = sqlType(param.def);
                 debug && (debugParams[param.name] = value);
@@ -913,9 +930,9 @@ module.exports = function({parent}) {
                 });
             }
             return request.execute(name)
-                .then(function(resultSets) {
+                .then(function(result) {
                     let promise = Promise.resolve();
-                    resultSets.forEach(function(resultset) {
+                    result.recordsets.forEach(function(resultset) {
                         let xmlColumns = Object.keys(resultset.columns)
                             .reduce(function(columns, column) {
                                 if (resultset.columns[column].type.declaration === 'xml') {
@@ -947,7 +964,7 @@ module.exports = function({parent}) {
                             });
                         }
                     });
-                    return promise.then(() => resultSets);
+                    return promise.then(() => result.recordsets);
                 })
                 .then(function(resultSets) {
                     function isNamingResultSet(element) {
@@ -1069,6 +1086,9 @@ module.exports = function({parent}) {
                     });
                     binding.params && binding.params.forEach(function(param) {
                         (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
+                        if (param.def && param.def.type === 'varbinary' && param.def.size % 16 === 0 && this.cbc) {
+                            param.encrypt = true;
+                        };
                         if (param.def && param.def.type === 'table') {
                             let columns = schema.types[param.def.typeName.toLowerCase()];
                             param.columns = [];
@@ -1124,11 +1144,19 @@ module.exports = function({parent}) {
         return schema;
     };
 
-    SqlPort.prototype.loadSchema = function(objectList) {
+    SqlPort.prototype.loadSchema = function(objectList, hash) {
         let self = this;
         let schema = this.getSchema();
         if (((Array.isArray(schema) && !schema.length) || !schema) && !this.config.linkSP) {
             return {source: {}, parseList: []};
+        }
+
+        let cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
+        if (hash) {
+            let cacheFileName = cacheFile(hash);
+            if (fs.existsSync(cacheFileName)) {
+                return serverRequire(cacheFileName);
+            }
         }
 
         this.checkConnection();
@@ -1136,7 +1164,7 @@ module.exports = function({parent}) {
         request.multiple = true;
         return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false')).then(function(result) {
             let schema = {source: {}, parseList: [], types: {}, deps: {}};
-            result[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
+            result.recordsets[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
                 let full = cur.full;
                 let namespace = cur.namespace;
                 cur.namespace = cur.namespace && cur.namespace.toLowerCase();
@@ -1158,7 +1186,7 @@ module.exports = function({parent}) {
                 };
                 return prev;
             }, schema);
-            result[1].reduce(function(prev, cur) { // extract columns of user defined table types
+            result.recordsets[1].reduce(function(prev, cur) { // extract columns of user defined table types
                 let parserDefault = require('./parsers/mssqlDefault');
                 changeRowVersionType(cur);
                 if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
@@ -1179,7 +1207,7 @@ module.exports = function({parent}) {
                 type.push(cur);
                 return prev;
             }, schema.types);
-            result[2].reduce(function(prev, cur) { // extract dependencies
+            result.recordsets[2].reduce(function(prev, cur) { // extract dependencies
                 cur.name = cur.name && cur.name.toLowerCase();
                 cur.type = cur.type && cur.type.toLowerCase();
                 let dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: []});
@@ -1192,7 +1220,20 @@ module.exports = function({parent}) {
             Object.keys(schema.types).forEach(function(type) { // extract pseudo source code of user defined table types
                 schema.source[type] = schema.types[type].map(fieldSource).join('\r\n');
             });
+
             return schema;
+        })
+        .then(schema => {
+            if (objectList && self.config.cache) {
+                let content = stringify(schema);
+                let contentHash = crypto.hash(content);
+                fsplus.makeTreeSync(cacheFile());
+                fs.writeFileSync(cacheFile(contentHash), content);
+                return request.query(mssqlQueries.setHash(contentHash))
+                    .then(() => schema);
+            } else {
+                return schema;
+            }
         });
     };
 
@@ -1200,15 +1241,23 @@ module.exports = function({parent}) {
         this.checkConnection();
         let schema = this.getSchema();
         if ((Array.isArray(schema) && !schema.length) || !schema) {
-            return data;
+            if (drop && this.config.cache) {
+                return this.getRequest()
+                    .query(mssqlQueries.getHash())
+                    .then(result => result && result.recordset && result.recordset[0] && result.recordset[0].hash);
+            }
+            return !drop && data;
         }
         return this.getRequest()
             .query(mssqlQueries.refreshView(drop))
-            .then(function(result) {
-                if (!drop && result && result.length) {
+            .then(result => {
+                if (!drop && result && result.recordset && result.recordset.length && result.recordset[0].view_name) {
                     throw errors.invalidView(result);
                 }
-                return data;
+                if (this.config.cache && drop && result && result.recordset && result.recordset[0] && result.recordset[0].hash) {
+                    return result.recordset[0].hash;
+                }
+                return !drop && data;
             });
     };
 
@@ -1370,9 +1419,9 @@ module.exports = function({parent}) {
             };
         };
 
-        this.connection = new mssql.Connection(this.config.db);
+        this.connection = new mssql.ConnectionPool(this.config.db);
         if (this.config.create) {
-            let conCreate = new mssql.Connection({
+            let conCreate = new mssql.ConnectionPool({
                 server: this.config.db.server,
                 user: this.config.create.user,
                 password: this.config.create.password
