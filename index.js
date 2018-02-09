@@ -1122,7 +1122,7 @@ module.exports = function({parent}) {
                                 return table;
                             };
                         }
-                    });
+                    }.bind(this));
                     let callSP = this.super[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
                     if (!this.config[flatName]) {
                         this.config[flatName] = callSP;
