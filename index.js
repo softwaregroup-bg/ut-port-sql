@@ -1389,7 +1389,8 @@ module.exports = function({parent}) {
             .then(() => conCreate.close())
             .then(() => this.connection.connect())
             .catch((err) => {
-                this.log && this.log.error && this.log.error({sourcePort: this.config.id, err});
+                err.sourcePort = this.config.id;
+                this.log && this.log.error && this.log.error(err);
                 try { conCreate.close(); } catch (e) {};
                 throw err;
             });
