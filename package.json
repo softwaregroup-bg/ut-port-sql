@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.2.0-rc-cubalibre.3",
+  "version": "7.2.0-rc-cubalibre.4",
   "main": "./index.js",
   "dependencies": {
     "json-stringify-deterministic": "1.0.1",
