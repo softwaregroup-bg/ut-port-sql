@@ -64,5 +64,7 @@ module.exports = (drop) => {
     CLOSE view_cursor
     DEALLOCATE view_cursor
 
+    IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL SELECT dbo.utSchemaHash() hash
+
     SET NOCOUNT OFF;`;
 };

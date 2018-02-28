@@ -4,7 +4,10 @@ module.exports = {
     createDatabase: require('./createDatabase'),
     createUser: require('./createUser'),
     disableDatabaseDiagrams: require('./disableDatabaseDiagrams'),
+    dropHash: require('./dropHash'),
     enableDatabaseDiagrams: require('./enableDatabaseDiagrams'),
+    getHash: require('./getHash'),
     loadSchema: require('./loadSchema'),
-    refreshView: require('./refreshView')
+    refreshView: require('./refreshView'),
+    setHash: require('./setHash')
 };
