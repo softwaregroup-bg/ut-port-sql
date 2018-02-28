@@ -5,6 +5,9 @@ const util = require('util');
 const fs = require('fs');
 const crypto = require('./crypto');
 const mssqlQueries = require('./sql');
+const crud = require('./crud');
+const parserSP = require('./parsers/mssqlSP');
+const parserDefault = require('./parsers/mssqlDefault');
 const xml2js = require('xml2js');
 const uuid = require('uuid');
 const through2 = require('through2');
@@ -34,10 +37,13 @@ module.exports = function({parent}) {
             retrySchemaUpdate: true,
             type: 'sql',
             createTT: false,
-            allowQuery: false,
-            retry: 10000,
             tableToType: {},
             skipTableType: [],
+            createCRUD: false,
+            tableToCRUD: {},
+            skipCRUD: {},
+            allowQuery: false,
+            retry: 10000,
             paramsOutName: 'out',
             doc: false,
             db: {
@@ -119,6 +125,18 @@ module.exports = function({parent}) {
                 obj[tableName.toLowerCase()] = true;
                 return obj;
             }, {}));
+        }
+
+        if (typeof this.config.createCRUD === 'object') {
+            // e.g {'namespace.entity': ['create', 'read', 'update', 'delete']}
+            // or {'namespace.entity': true}
+            let crudTables = Object.keys(this.config.createCRUD);
+            if (crudTables.length) {
+                Object.assign(this.config.tableToCRUD, crudTables.reduce((obj, tableName) => {
+                    obj[tableName.toLowerCase()] = this.config.createCRUD[tableName];
+                    return obj;
+                }, {}));
+            }
         }
         return Promise.resolve()
             .then(() => parent && parent.prototype.start.apply(this, Array.prototype.slice.call(arguments)))
@@ -336,13 +354,11 @@ module.exports = function({parent}) {
         let busConfig = flatten(this.bus.config);
 
         function replaceAuditLog(statement) {
-            let parserSP = require('./parsers/mssqlSP');
             let binding = parserSP.parse(statement);
             return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
         }
 
         function replaceCallParams(statement) {
-            let parserSP = require('./parsers/mssqlSP');
             let binding = parserSP.parse(statement);
             return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding));
         }
@@ -385,7 +401,6 @@ module.exports = function({parent}) {
 
         function tableToType(statement) {
             if (statement.match(/^CREATE\s+TABLE/i)) {
-                let parserSP = require('./parsers/mssqlSP');
                 let binding = parserSP.parse(statement);
                 if (binding.type === 'table') {
                     let name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
@@ -403,10 +418,19 @@ module.exports = function({parent}) {
             return '';
         }
 
+        function tableToCRUD(statement, action) {
+            if (statement.match(/^CREATE\s+TABLE/i)) {
+                let binding = parserSP.parse(statement);
+                if (binding.type === 'table') {
+                    return crud.generate(binding, action);
+                }
+            }
+            return '';
+        }
+
         function tableToTTU(statement) {
             let result = '';
             if (statement.match(/^CREATE\s+TABLE/i)) {
-                let parserSP = require('./parsers/mssqlSP');
                 let binding = parserSP.parse(statement);
                 if (binding.type === 'table') {
                     let name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
@@ -432,7 +456,6 @@ module.exports = function({parent}) {
         function getSource(statement, fileName, objectName) {
             statement = preProcess(statement, fileName, objectName);
             if (statement.trim().match(/^CREATE\s+TYPE/i)) {
-                let parserSP = require('./parsers/mssqlSP');
                 let binding = parserSP.parse(statement);
                 if (binding && binding.type === 'table type') {
                     return binding.fields.map(fieldSource).join('\r\n');
@@ -475,6 +498,20 @@ module.exports = function({parent}) {
 
         function shouldCreateTT(tableName) {
             return (self.config.createTT === true || self.includesConfig('tableToType', tableName, false)) && !self.includesConfig('skipTableType', tableName, false);
+        }
+
+        function shouldCreateCRUD(tableName, action) {
+            let includesConfig = (name) => {
+                let config = self.config[name] && self.config[name][tableName];
+                if (typeof config === 'boolean') {
+                    return config;
+                }
+                if (Array.isArray(config)) {
+                    return config.indexOf(action) !== -1;
+                }
+                return false;
+            };
+            return (self.config.createCRUD === true || includesConfig('tableToCRUD')) && !includesConfig('skipCRUD');
         }
 
         function retrySchemaUpdate(failedQueue) {
@@ -584,6 +621,25 @@ module.exports = function({parent}) {
                                             });
                                         }
                                     }
+                                    crud.actions.forEach((action) => {
+                                        if (!objectIds[`${objectId}.${action}`] && shouldCreateCRUD(objectId, action)) {
+                                            let sp = tableToCRUD(fileContent.trim().replace(/^ALTER /i, 'CREATE '), action);
+                                            if (sp) {
+                                                let context = {
+                                                    objectName: `${objectName}.${action}`,
+                                                    objectId: `${objectId}.${action}`
+                                                };
+                                                schemaConfig.linkSP && (objectList[context.objectId] = fileName);
+                                                addQuery(queries, {
+                                                    fileName: fileName,
+                                                    objectName: context.objectName,
+                                                    objectId: context.objectId,
+                                                    fileContent: sp,
+                                                    createStatement: sp
+                                                });
+                                            }
+                                        }
+                                    });
                                 });
 
                                 let request = self.getRequest();
@@ -1051,7 +1107,6 @@ module.exports = function({parent}) {
 
     SqlPort.prototype.linkSP = function(schema) {
         if (schema.parseList.length) {
-            let parserSP = require('./parsers/mssqlSP');
             schema.parseList.forEach(function(procedure) {
                 let binding = parserSP.parse(procedure.source);
                 let flatName = binding.name.replace(/[[\]]/g, '');
@@ -1159,7 +1214,6 @@ module.exports = function({parent}) {
                 return prev;
             }, schema);
             result[1].reduce(function(prev, cur) { // extract columns of user defined table types
-                let parserDefault = require('./parsers/mssqlDefault');
                 changeRowVersionType(cur);
                 if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
                     throw errors.unexpectedColumnType({
@@ -1219,7 +1273,6 @@ module.exports = function({parent}) {
         this.checkConnection();
         let self = this;
         let schemas = this.getSchema();
-        let parserSP = require('./parsers/mssqlSP');
         return new Promise(function(resolve, reject) {
             let docList = [];
             let promise = Promise.resolve();
