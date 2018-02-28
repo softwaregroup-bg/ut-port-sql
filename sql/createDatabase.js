@@ -1,4 +1,4 @@
-module.exports = (name, user) => {
+module.exports = function(name, user) {
     return `
     IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${name}')
     BEGIN

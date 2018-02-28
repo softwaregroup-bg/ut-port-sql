@@ -1,4 +1,4 @@
-module.exports = (statement) => {
+module.exports = function(statement) {
     if (!statement.params) {
         return;
     }

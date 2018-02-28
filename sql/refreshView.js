@@ -1,4 +1,4 @@
-module.exports = (drop) => {
+module.exports = function(drop) {
     return `
     SET NOCOUNT ON;
 

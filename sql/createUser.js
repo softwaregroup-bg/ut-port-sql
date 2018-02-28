@@ -1,4 +1,4 @@
-module.exports = (name, user, password) => {
+module.exports = function(name, user, password) {
     return `
     IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '${user}')
     BEGIN
@@ -19,5 +19,6 @@ module.exports = (name, user, password) => {
     BEGIN
         USE [master]
         GRANT VIEW SERVER STATE to [${user}]
-    END`;
+    END
+    `;
 };

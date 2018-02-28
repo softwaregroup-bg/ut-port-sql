@@ -1,4 +1,4 @@
-module.exports = (partial) => {
+module.exports = function(partial) {
     return `
     SELECT
         o.create_date,

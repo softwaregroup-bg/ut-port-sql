@@ -1,4 +1,4 @@
-module.exports = (name) => {
+module.exports = function(name) {
     return `
     USE [${name}]
 
