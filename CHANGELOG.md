@@ -1,3 +1,13 @@
+<a name="7.1.1"></a>
+## [7.1.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.1.0...v7.1.1) (2018-03-04)
+
+
+### Bug Fixes
+
+* log error instead of plain object ([#52](https://github.com/softwaregroup-bg/ut-port-sql/issues/52)) ([76aef9f](https://github.com/softwaregroup-bg/ut-port-sql/commit/76aef9f))
+
+
+
 <a name="7.1.0"></a>
 # [7.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.1.0-rc-bahur.4...v7.1.0) (2018-01-30)
 
