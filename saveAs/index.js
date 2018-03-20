@@ -1,7 +1,8 @@
 const through2 = require('through2');
 let { getResultSetName } = require('./helpers');
 var transforms = {
-    json: require('./json')
+    json: require('./json'),
+    csv: require('./csv')
 };
 module.exports = function(request, saveAs) {
     var config = Object.assign({}, {
