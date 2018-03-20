@@ -40,7 +40,7 @@ class JsonTransform extends Transform {
         }
         this.stream.push(`"${current}": ${!single ? '[' : ''}`);
         this.options.comma = '';
-        this.options.resultsetPrev =  chunk;
+        this.options.resultsetPrev = chunk;
     }
 }
 module.exports = JsonTransform;
