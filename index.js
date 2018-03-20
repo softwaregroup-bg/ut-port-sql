@@ -7,10 +7,10 @@ const crypto = require('./crypto');
 const mssqlQueries = require('./sql');
 const xml2js = require('xml2js');
 const uuid = require('uuid');
-const through2 = require('through2');
 const path = require('path');
 const xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 const xmlBuilder = new xml2js.Builder({headless: true});
+const saveAs = require('./saveAs');
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
@@ -771,56 +771,6 @@ module.exports = function({parent}) {
             }
             return value;
         }
-        function transform(request) {
-            let single;
-            let namedSet;
-            let comma = '';
-            let counter = 1;
-            request.on('recordset', function(cols) {
-                counter++;
-            });
-            function getResultSetName(chunk) {
-                let keys = Object.keys(chunk);
-                return keys.length > 0 && keys[0].toLowerCase() === 'resultsetname' ? chunk[keys[0]] : null;
-            }
-            return request.pipe(through2({objectMode: true}, function(chunk, encoding, next) {
-                if (namedSet === undefined) { // called only once to write object start literal
-                    namedSet = !!getResultSetName(chunk);
-                    this.push(namedSet ? '{' : '[');
-                }
-                if (counter % 2) { // handle rows
-                    this.push(comma + JSON.stringify(chunk));
-                    if (comma === '') {
-                        comma = ',';
-                    }
-                } else { // handle resultsets
-                    if (getResultSetName(chunk)) { // handle recordsets
-                        if (single !== undefined) {
-                            if (comma !== '') {
-                                this.push(single ? '{},' : '],'); // handling empty result set
-                            } else {
-                                this.push(single ? '},' : '],'); // handling end
-                            }
-                        }
-                        single = !!chunk.single;
-                        this.push('"' + getResultSetName(chunk) + '":');
-                        if (!single) {
-                            this.push('['); // open an array
-                        }
-                        comma = '';
-                    }
-                }
-                next();
-            }, function(next) {
-                if (namedSet !== undefined) {
-                    if (single === false) {
-                        this.push(']'); // push end of array literal If the last object is not a single
-                    }
-                    this.push(namedSet ? '}' : ']'); //  write object end literal
-                }
-                next();
-            }));
-        }
         return function callLinkedSP(msg, $meta) {
             self.checkConnection(true);
             let request = self.getRequest();
@@ -889,7 +839,8 @@ module.exports = function({parent}) {
                 }
             });
             if ($meta.saveAs) {
-                let fileDir = path.dirname($meta.saveAs);
+                var filename = typeof $meta.saveAs === 'string' ? $meta.saveAs : $meta.saveAs.filename;
+                let fileDir = path.dirname(filename);
                 return new Promise((resolve, reject) => {
                     fs.mkdir(fileDir, (e) => {
                         if (!e || e.code === 'EEXIST') {
@@ -899,12 +850,12 @@ module.exports = function({parent}) {
                     });
                 }).then(function(resolve, reject) {
                     request.stream = true;
-                    let ws = fs.createWriteStream($meta.saveAs);
-                    transform(request).pipe(ws);
+                    let ws = fs.createWriteStream(filename);
+                    saveAs(request, $meta.saveAs).pipe(ws);
                     request.execute(name);
                     return new Promise(function(resolve, reject) {
                         ws.on('finish', function() {
-                            return resolve({fileName: $meta.saveAs});
+                            return resolve({fileName});
                         });
                         ws.on('error', function(err) {
                             return reject(err);
