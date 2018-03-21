@@ -813,8 +813,12 @@ module.exports = function({parent}) {
                 if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
                     // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime' and 'time'
                     return new Date(value);
+                // } else if (column.type.declaration === 'time') {
+                //     return new Date('1970-01-01T' + value);
                 } else if (column.type.declaration === 'time') {
-                    return new Date('1970-01-01T' + value);
+                    let date = new Date('1970-01-01T' + value);
+                    date.setTime(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
+                    return date;
                 } else if (column.type.declaration === 'xml') {
                     let obj = {};
                     obj[column.name] = value;
