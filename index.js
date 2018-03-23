@@ -3,6 +3,7 @@ const merge = require('lodash.merge');
 const mssql = require('ut-mssql');
 const util = require('util');
 const fs = require('fs');
+const fsplus = require('fs-plus');
 const crypto = require('./crypto');
 const mssqlQueries = require('./sql');
 const xml2js = require('xml2js');
@@ -840,22 +841,30 @@ module.exports = function({parent}) {
             });
             if ($meta.saveAs) {
                 var filename = typeof $meta.saveAs === 'string' ? $meta.saveAs : $meta.saveAs.filename;
-                let fileDir = path.dirname(filename);
+                if (path.isAbsolute(filename)) {
+                    throw errors.absolutePath();
+                }
+                let baseDir = path.join(this.bus.config.workDir, 'ut-port-sql', 'export');
+                let newFilename = path.resolve(baseDir, filename);
+                if (!newFilename.startsWith(baseDir)) {
+                    return Promise.reject(errors.invalidFileLocation());
+                }
                 return new Promise((resolve, reject) => {
-                    fs.mkdir(fileDir, (e) => {
-                        if (!e || e.code === 'EEXIST') {
+                    fsplus.makeTree(path.dirname(newFilename), (err) => {
+                        if (!err || err.code === 'EEXIST') {
                             return resolve();
                         }
-                        return reject(e);
+                        return reject(err);
                     });
-                }).then(function(resolve, reject) {
+                })
+                .then(function(resolve, reject) {
                     request.stream = true;
-                    let ws = fs.createWriteStream(filename);
+                    let ws = fs.createWriteStream(newFilename);
                     saveAs(request, $meta.saveAs).pipe(ws);
                     request.execute(name);
                     return new Promise(function(resolve, reject) {
                         ws.on('finish', function() {
-                            return resolve({fileName});
+                            return resolve({outputFilePath: newFilename});
                         });
                         ws.on('error', function(err) {
                             return reject(err);
