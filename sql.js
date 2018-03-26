@@ -1,5 +1,14 @@
 'use strict';
 module.exports = {
+    getHash: function() {
+        return `IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL SELECT dbo.utSchemaHash() hash`;
+    },
+    setHash: function(hash) {
+        return `CREATE FUNCTION dbo.utSchemaHash() RETURNS VARCHAR(64) AS BEGIN RETURN '${hash}' END`;
+    },
+    dropHash: function() {
+        return `IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL DROP FUNCTION dbo.utSchemaHash`;
+    },
     loadSchema: function(partial) {
         return `
         SELECT
@@ -164,6 +173,8 @@ module.exports = {
 
         CLOSE view_cursor
         DEALLOCATE view_cursor
+
+        IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL SELECT dbo.utSchemaHash() hash
 
         SET NOCOUNT OFF;`;
     },

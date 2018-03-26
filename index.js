@@ -1,6 +1,7 @@
 'use strict';
 const merge = require('lodash.merge');
-const mssql = require('ut-mssql');
+const stringify = require('json-stringify-deterministic');
+const mssql = require('mssql');
 const util = require('util');
 const fs = require('fs');
 const fsplus = require('fs-plus');
@@ -18,6 +19,47 @@ const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const VAR_RE = /\$\{([^}]*)\}/g;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 let errors;
+const serverRequire = require;
+
+// patch for https://github.com/tediousjs/tedious/pull/710
+require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
+    if (parameter.value != null) {
+        var time = new Date(+parameter.value);
+
+        var timestamp = void 0;
+        if (options.useUTC) {
+            timestamp = ((time.getUTCHours() * 60 + time.getUTCMinutes()) * 60 + time.getUTCSeconds()) * 1000 + time.getUTCMilliseconds();
+        } else {
+            timestamp = ((time.getHours() * 60 + time.getMinutes()) * 60 + time.getSeconds()) * 1000 + time.getMilliseconds();
+        }
+
+        timestamp = timestamp * Math.pow(10, parameter.scale - 3);
+        timestamp += (parameter.value.nanosecondDelta != null ? parameter.value.nanosecondDelta : 0) * Math.pow(10, parameter.scale);
+        timestamp = Math.round(timestamp);
+
+        switch (parameter.scale) {
+            case 0:
+            case 1:
+            case 2:
+                buffer.writeUInt8(3);
+                buffer.writeUInt24LE(timestamp);
+                break;
+            case 3:
+            case 4:
+                buffer.writeUInt8(4);
+                buffer.writeUInt32LE(timestamp);
+                break;
+            case 5:
+            case 6:
+            case 7:
+                buffer.writeUInt8(5);
+                buffer.writeUInt40LE(timestamp);
+        }
+    } else {
+        buffer.writeUInt8(0);
+    }
+};
+// end patch
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -34,6 +76,7 @@ module.exports = function({parent}) {
             logLevel: 'info',
             retrySchemaUpdate: true,
             type: 'sql',
+            cache: false,
             createTT: false,
             allowQuery: false,
             retry: 10000,
@@ -107,6 +150,7 @@ module.exports = function({parent}) {
     };
 
     SqlPort.prototype.start = function start() {
+        this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
         this.bus && this.bus.importMethods(this.config, this.config.imports, undefined, this);
 
         this.config.imports && this.config.imports.forEach(impl => {
@@ -255,14 +299,14 @@ module.exports = function({parent}) {
                 } else {
                     $meta.mtid = 'response';
                     if (message.process === 'return') {
-                        if (result && result.length) {
-                            Object.keys(result[0]).forEach(function(value) {
-                                setPathProperty(message, value, result[0][value]);
+                        if (result && result.recordset && result.recordset.length) {
+                            Object.keys(result.recordset[0]).forEach(function(value) {
+                                setPathProperty(message, value, result.recordset[0][value]);
                             });
                         }
                         resolve(message);
                     } else if (message.process === 'json') {
-                        message.dataSet = result;
+                        message.dataSet = result.recordset;
                         resolve(message);
                     } else if (message.process === 'xls') { // todo
                         reject(errors.notImplemented(message.process));
@@ -489,7 +533,7 @@ module.exports = function({parent}) {
                     .then(function retryFailedQueueSchema() {
                         return request
                             .batch(schema.content)
-                            .then((r) => {
+                            .then(() => {
                                 self.log.warn && self.log.warn({
                                     message: schema.objectName,
                                     $meta: {
@@ -523,6 +567,7 @@ module.exports = function({parent}) {
         let self = this;
         let schemas = this.getSchema();
         let failedQueries = [];
+        let hashDropped = false;
         if (!schemas || !schemas.length) {
             return schema;
         }
@@ -590,6 +635,14 @@ module.exports = function({parent}) {
                                 let request = self.getRequest();
                                 let updated = [];
                                 let innerPromise = Promise.resolve();
+                                if (queries.length && !hashDropped) {
+                                    innerPromise = innerPromise
+                                        .then(() => request.batch(mssqlQueries.dropHash())
+                                            .then(() => {
+                                                hashDropped = true;
+                                                return true;
+                                            }));
+                                }
                                 queries.forEach((query) => {
                                     innerPromise = innerPromise.then(() => {
                                         return request
@@ -633,16 +686,16 @@ module.exports = function({parent}) {
                 .then(() => resolve(objectList))
                 .catch(reject);
         })
-        .then((objectList) => {
-            if (!failedQueries.length) {
-                return objectList;
-            }
-            return retrySchemaUpdate(failedQueries)
-                .then(() => (objectList));
-        })
-        .then(function(objectList) {
-            return self.loadSchema(objectList);
-        });
+            .then((objectList) => {
+                if (!failedQueries.length) {
+                    return objectList;
+                }
+                return retrySchemaUpdate(failedQueries)
+                    .then(() => (objectList));
+            })
+            .then(function(objectList) {
+                return self.loadSchema(objectList);
+            });
     };
 
     SqlPort.prototype.execTemplate = function(template, params) {
@@ -789,6 +842,9 @@ module.exports = function({parent}) {
                 } else {
                     value = data[param.name];
                 }
+                if (param.encrypt) {
+                    value = self.cbc.encrypt(value);
+                }
                 let hasValue = value !== void 0;
                 let type = sqlType(param.def);
                 debug && (debugParams[param.name] = value);
@@ -873,9 +929,9 @@ module.exports = function({parent}) {
                 });
             }
             return request.execute(name)
-                .then(function(resultSets) {
+                .then(function(result) {
                     let promise = Promise.resolve();
-                    resultSets.forEach(function(resultset) {
+                    result.recordsets.forEach(function(resultset) {
                         let xmlColumns = Object.keys(resultset.columns)
                             .reduce(function(columns, column) {
                                 if (resultset.columns[column].type.declaration === 'xml') {
@@ -907,7 +963,7 @@ module.exports = function({parent}) {
                             });
                         }
                     });
-                    return promise.then(() => resultSets);
+                    return promise.then(() => result.recordsets);
                 })
                 .then(function(resultSets) {
                     function isNamingResultSet(element) {
@@ -1029,6 +1085,9 @@ module.exports = function({parent}) {
                     });
                     binding.params && binding.params.forEach(function(param) {
                         (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
+                        if (param.def && param.def.type === 'varbinary' && param.def.size % 16 === 0 && this.cbc) {
+                            param.encrypt = true;
+                        };
                         if (param.def && param.def.type === 'table') {
                             let columns = schema.types[param.def.typeName.toLowerCase()];
                             param.columns = [];
@@ -1062,7 +1121,7 @@ module.exports = function({parent}) {
                                 return table;
                             };
                         }
-                    });
+                    }.bind(this));
                     let callSP = this.super[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
                     if (!this.config[flatName]) {
                         this.config[flatName] = callSP;
@@ -1084,11 +1143,19 @@ module.exports = function({parent}) {
         return schema;
     };
 
-    SqlPort.prototype.loadSchema = function(objectList) {
+    SqlPort.prototype.loadSchema = function(objectList, hash) {
         let self = this;
         let schema = this.getSchema();
         if (((Array.isArray(schema) && !schema.length) || !schema) && !this.config.linkSP) {
             return {source: {}, parseList: []};
+        }
+
+        let cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
+        if (hash) {
+            let cacheFileName = cacheFile(hash);
+            if (fs.existsSync(cacheFileName)) {
+                return serverRequire(cacheFileName);
+            }
         }
 
         this.checkConnection();
@@ -1096,7 +1163,7 @@ module.exports = function({parent}) {
         request.multiple = true;
         return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false')).then(function(result) {
             let schema = {source: {}, parseList: [], types: {}, deps: {}};
-            result[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
+            result.recordsets[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
                 let full = cur.full;
                 let namespace = cur.namespace;
                 cur.namespace = cur.namespace && cur.namespace.toLowerCase();
@@ -1118,7 +1185,7 @@ module.exports = function({parent}) {
                 };
                 return prev;
             }, schema);
-            result[1].reduce(function(prev, cur) { // extract columns of user defined table types
+            result.recordsets[1].reduce(function(prev, cur) { // extract columns of user defined table types
                 let parserDefault = require('./parsers/mssqlDefault');
                 changeRowVersionType(cur);
                 if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
@@ -1139,7 +1206,7 @@ module.exports = function({parent}) {
                 type.push(cur);
                 return prev;
             }, schema.types);
-            result[2].reduce(function(prev, cur) { // extract dependencies
+            result.recordsets[2].reduce(function(prev, cur) { // extract dependencies
                 cur.name = cur.name && cur.name.toLowerCase();
                 cur.type = cur.type && cur.type.toLowerCase();
                 let dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: []});
@@ -1152,23 +1219,44 @@ module.exports = function({parent}) {
             Object.keys(schema.types).forEach(function(type) { // extract pseudo source code of user defined table types
                 schema.source[type] = schema.types[type].map(fieldSource).join('\r\n');
             });
+
             return schema;
-        });
+        })
+            .then(schema => {
+                if (objectList && self.config.cache) {
+                    let content = stringify(schema);
+                    let contentHash = crypto.hash(content);
+                    fsplus.makeTreeSync(cacheFile());
+                    fs.writeFileSync(cacheFile(contentHash), content);
+                    return request.query(mssqlQueries.setHash(contentHash))
+                        .then(() => schema);
+                } else {
+                    return schema;
+                }
+            });
     };
 
     SqlPort.prototype.refreshView = function(drop, data) {
         this.checkConnection();
         let schema = this.getSchema();
         if ((Array.isArray(schema) && !schema.length) || !schema) {
-            return data;
+            if (drop && this.config.cache) {
+                return this.getRequest()
+                    .query(mssqlQueries.getHash())
+                    .then(result => result && result.recordset && result.recordset[0] && result.recordset[0].hash);
+            }
+            return !drop && data;
         }
         return this.getRequest()
             .query(mssqlQueries.refreshView(drop))
-            .then(function(result) {
-                if (!drop && result && result.length) {
+            .then(result => {
+                if (!drop && result && result.recordset && result.recordset.length && result.recordset[0].view_name) {
                     throw errors.invalidView(result);
                 }
-                return data;
+                if (this.config.cache && drop && result && result.recordset && result.recordset[0] && result.recordset[0].hash) {
+                    return result.recordset[0].hash;
+                }
+                return !drop && data;
             });
     };
 
@@ -1240,26 +1328,26 @@ module.exports = function({parent}) {
                 .then(() => resolve(docList))
                 .catch(reject);
         })
-        .then(function(docList) {
-            let request = self.getRequest();
-            request.multiple = true;
-            let docListParam = new mssql.Table('core.documentationTT');
-            docListParam.columns.add('type0', mssql.VarChar(128));
-            docListParam.columns.add('name0', mssql.NVarChar(128));
-            docListParam.columns.add('type1', mssql.VarChar(128));
-            docListParam.columns.add('name1', mssql.NVarChar(128));
-            docListParam.columns.add('type2', mssql.VarChar(128));
-            docListParam.columns.add('name2', mssql.NVarChar(128));
-            docListParam.columns.add('doc', mssql.NVarChar(2000));
-            docList.forEach(function(doc) {
-                docListParam.rows.add(doc.type0, doc.name0, doc.type1, doc.name1, doc.type2, doc.name2, doc.doc);
-            });
-            request.input('docList', docListParam);
-            return request.execute('core.documentation')
-                .then(function() {
-                    return schema;
+            .then(function(docList) {
+                let request = self.getRequest();
+                request.multiple = true;
+                let docListParam = new mssql.Table('core.documentationTT');
+                docListParam.columns.add('type0', mssql.VarChar(128));
+                docListParam.columns.add('name0', mssql.NVarChar(128));
+                docListParam.columns.add('type1', mssql.VarChar(128));
+                docListParam.columns.add('name1', mssql.NVarChar(128));
+                docListParam.columns.add('type2', mssql.VarChar(128));
+                docListParam.columns.add('name2', mssql.NVarChar(128));
+                docListParam.columns.add('doc', mssql.NVarChar(2000));
+                docList.forEach(function(doc) {
+                    docListParam.rows.add(doc.type0, doc.name0, doc.type1, doc.name1, doc.type2, doc.name2, doc.doc);
                 });
-        });
+                request.input('docList', docListParam);
+                return request.execute('core.documentation')
+                    .then(function() {
+                        return schema;
+                    });
+            });
     };
 
     SqlPort.prototype.tryConnect = function() {
@@ -1330,29 +1418,42 @@ module.exports = function({parent}) {
             };
         };
 
-        this.connection = new mssql.Connection(this.config.db);
+        this.connection = new mssql.ConnectionPool(this.config.db);
         if (this.config.create) {
-            let conCreate = new mssql.Connection({
+            let conCreate = new mssql.ConnectionPool({
                 server: this.config.db.server,
                 user: this.config.create.user,
                 password: this.config.create.password
             });
-            return conCreate.connect()
-            .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
-            .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.db.database)))
-            .then(() => {
-                if (this.config.create.user === this.config.db.user) {
-                    return;
+
+            // Patch for https://github.com/patriksimek/node-mssql/issues/467
+            conCreate._throwingClose = conCreate._close;
+            conCreate._close = function(callback) {
+                const close = conCreate._throwingClose.bind(this, callback);
+                if (this.pool) {
+                    return this.pool.drain().then(close);
+                } else {
+                    return close();
                 }
-                return (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password));
-            })
-            .then(() => conCreate.close())
-            .then(() => this.connection.connect())
-            .catch((err) => {
-                this.log && this.log.error && this.log.error(err);
-                try { conCreate.close(); } catch (e) {};
-                throw err;
-            });
+            };
+            // end patch
+
+            return conCreate.connect()
+                .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
+                .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.db.database)))
+                .then(() => {
+                    if (this.config.create.user === this.config.db.user) {
+                        return;
+                    }
+                    return (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password));
+                })
+                .then(() => conCreate.close())
+                .then(() => this.connection.connect())
+                .catch((err) => {
+                    this.log && this.log.error && this.log.error(err);
+                    try { conCreate.close(); } catch (e) {};
+                    throw err;
+                });
         } else {
             return this.connection.connect();
         }
