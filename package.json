@@ -15,6 +15,9 @@
     "ut-tools": "^5.32.5",
     "pegjs": "0.10.0"
   },
+  "peerDependency": {
+    "tedious": "^2.0.0"
+  },
   "scripts": {
     "lint": "ut-lint .",
     "release": "ut-release",
