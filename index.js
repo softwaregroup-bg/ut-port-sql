@@ -811,10 +811,10 @@ module.exports = function({parent}) {
                 return def;
             } else if (value) {
                 if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
-                    // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime' and 'time'
+                    // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
                     return new Date(value);
                 } else if (column.type.declaration === 'time') {
-                    return new Date('1970-01-01T' + value);
+                    return new Date('1970-01-01T' + value + 'Z');
                 } else if (column.type.declaration === 'xml') {
                     let obj = {};
                     obj[column.name] = value;
@@ -913,20 +913,20 @@ module.exports = function({parent}) {
                         return reject(err);
                     });
                 })
-                .then(function(resolve, reject) {
-                    request.stream = true;
-                    let ws = fs.createWriteStream(newFilename);
-                    saveAs(request, $meta.saveAs).pipe(ws);
-                    request.execute(name);
-                    return new Promise(function(resolve, reject) {
-                        ws.on('finish', function() {
-                            return resolve({outputFilePath: newFilename});
-                        });
-                        ws.on('error', function(err) {
-                            return reject(err);
+                    .then(function(resolve, reject) {
+                        request.stream = true;
+                        let ws = fs.createWriteStream(newFilename);
+                        saveAs(request, $meta.saveAs).pipe(ws);
+                        request.execute(name);
+                        return new Promise(function(resolve, reject) {
+                            ws.on('finish', function() {
+                                return resolve({outputFilePath: newFilename});
+                            });
+                            ws.on('error', function(err) {
+                                return reject(err);
+                            });
                         });
                     });
-                });
             }
             return request.execute(name)
                 .then(function(result) {

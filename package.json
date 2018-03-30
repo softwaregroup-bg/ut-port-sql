@@ -15,8 +15,8 @@
     "ut-tools": "^5.32.5",
     "pegjs": "0.10.0"
   },
-  "peerDependency": {
-    "tedious": "^2.0.0"
+  "peerDependencies": {
+    "tedious": "^2.3.1"
   },
   "scripts": {
     "lint": "ut-lint .",
@@ -32,6 +32,7 @@
     "prepublish": "ut-prepublish",
     "prepush": "ut-prepush",
     "pretest": "ut-pretest",
+    "precover": "ut-precover",
     "preversion": "ut-preversion",
     "test": "ut-test",
     "version": "ut-version",
