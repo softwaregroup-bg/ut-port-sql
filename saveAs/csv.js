@@ -1,6 +1,9 @@
 const EOL = require('os').EOL;
 var Transform = require('./transform');
 let { getResultSetName } = require('./helpers');
+const formatCellValue = (value) => {
+    return value && `${value.replace(/\n|,/g, ' ')}`;
+};
 class CsvTransform extends Transform {
     constructor(stream, config) {
         super(stream, config);
@@ -10,11 +13,11 @@ class CsvTransform extends Transform {
     }
     onStart() {
         let { columns } = this.config;
-        this.stream.push((columns || []).map((col) => `"${col.displayName}"`).join(this.config.seperator || ',') + EOL);
+        this.stream.push((columns || []).map((col) => formatCellValue(col.displayName)).join(this.config.seperator || ',') + EOL);
     }
     onRow(chunk) {
         this.options.canPushRow && this.stream.push((this.config.columns || []).map((col) => {
-            return ['"', col.transform ? col.transform(chunk[col.name], chunk) : chunk[col.name], '"'].join('');
+            return formatCellValue(col.transform ? col.transform(chunk[col.name], chunk) : chunk[col.name]);
         }).join(this.config.seperator || ',') + EOL);
     }
     onResultSet(chunk) {
