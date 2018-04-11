@@ -21,6 +21,8 @@ module.exports = create => {
         singleResultsetExpected: create('singleResultsetExpected', PortSQL, 'Single resultset expected'),
         oneRowExpected: create('oneRowExpected', PortSQL, 'Exactly one row was expected in the result'),
         maxOneRowExpected: create('maxOneRowExpected', PortSQL, 'Maximum one row was expected in the result'),
-        minOneRowExpected: create('minOneRowExpected', PortSQL, 'Minimum one row was expected in the result')
+        minOneRowExpected: create('minOneRowExpected', PortSQL, 'Minimum one row was expected in the result'),
+        absolutePath: create('absolutePath', PortSQL, 'Absolute path error'),
+        invalidFileLocation: create('invalidFileLocation', PortSQL, 'Writing outside of base directory is forbidden')
     };
 };
