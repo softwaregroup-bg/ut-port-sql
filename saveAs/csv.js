@@ -2,7 +2,7 @@ const EOL = require('os').EOL;
 var Transform = require('./transform');
 let { getResultSetName } = require('./helpers');
 const formatCellValue = (value) => {
-    return `${String(value).replace(/\n|,/g, ' ')}`;
+    return String(value).replace(/\n|,/g, ' ');
 };
 class CsvTransform extends Transform {
     constructor(stream, config) {
