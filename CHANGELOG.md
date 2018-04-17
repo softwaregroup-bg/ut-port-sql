@@ -1,3 +1,8 @@
+<a name="7.2.0"></a>
+# [7.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.0-rc-cubalibre.10...v7.2.0) (2018-04-17)
+
+
+
 <a name="7.1.1"></a>
 ## [7.1.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.1.0...v7.1.1) (2018-03-04)
 
