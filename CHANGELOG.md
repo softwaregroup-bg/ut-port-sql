@@ -1,3 +1,13 @@
+<a name="7.2.1"></a>
+## [7.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.0...v7.2.1) (2018-05-09)
+
+
+### Bug Fixes
+
+* handle all updates cases ([559a164](https://github.com/softwaregroup-bg/ut-port-sql/commit/559a164))
+
+
+
 <a name="7.2.0"></a>
 # [7.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.0-rc-cubalibre.10...v7.2.0) (2018-04-17)
 
