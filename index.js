@@ -342,8 +342,8 @@ module.exports = function({parent}) {
             }
         }
         this.config.imports && this.config.imports.forEach(function(imp) {
-            imp.match(/\.schema$/) && Array.prototype.push.apply(result, this.config[imp]);
             if (this.includesConfig('updates', imp, true)) {
+                imp.match(/\.schema$/) && Array.prototype.push.apply(result, this.config[imp]);
                 this.config[imp + '.schema'] && Array.prototype.push.apply(result, this.config[imp + '.schema']);
             }
         }.bind(this));
