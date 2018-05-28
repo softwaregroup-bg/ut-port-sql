@@ -1422,6 +1422,7 @@ module.exports = function({parent}) {
         if (this.config.create) {
             let conCreate = new mssql.ConnectionPool({
                 server: this.config.db.server,
+                options: this.config.db.options,
                 user: this.config.create.user,
                 password: this.config.create.password
             });
