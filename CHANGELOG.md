@@ -1,3 +1,13 @@
+<a name="7.3.0"></a>
+# [7.3.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.1...v7.3.0) (2018-06-07)
+
+
+### Bug Fixes
+
+* pass options to initial connection ([a34918d](https://github.com/softwaregroup-bg/ut-port-sql/commit/a34918d))
+
+
+
 <a name="7.2.1"></a>
 ## [7.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.0...v7.2.1) (2018-05-09)
 
