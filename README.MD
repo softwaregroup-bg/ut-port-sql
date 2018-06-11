@@ -16,11 +16,11 @@ In the UT5 implementations the SQL port is initialized in the following manner:
       port: 8002,
       retrySchemaUpdate: true, // allow retrying of schema update. Defaults to true
       db: {
-          user: 'switch',
-          password: 'switch',
+          user: 'db_user',
+          password: 'db_password',
           cryptoAlgorithm: '...',
-          server: 'DEVDB08',
-          database: 'UTNetSystem_3_2',
+          server: 'db_server',
+          database: 'db_database',
           requestTimeout: 30000
       },
       receive: function(msg) {
