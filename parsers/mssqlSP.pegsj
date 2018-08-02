@@ -150,7 +150,7 @@ fields =
 
   }
 
-param = n:param_name ws1 t:param_type d:(ws "=" ws v:value)? o:(ws1 "out"i)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
+param = n:param_name ws1 t:param_type d:(ws "=" ws v:value)? o:(ws1 out)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
 param_name = "@" n:name {return n}
 
 field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default? {
@@ -281,6 +281,8 @@ rparen = ")"
 plus = "+"
 minus = "-"
 comma = ","
+
+out = "output"i / "out"i
 
 Zs = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 

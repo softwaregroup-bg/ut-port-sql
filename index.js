@@ -68,6 +68,10 @@ function changeRowVersionType(field) {
     }
 }
 
+function interpolate(txt, params = {}) {
+    return txt.replace(VAR_RE, (placeHolder, label) => (params[label] || placeHolder));
+};
+
 module.exports = function({parent}) {
     function SqlPort({config}) {
         parent && parent.apply(this, arguments);
@@ -403,7 +407,7 @@ module.exports = function({parent}) {
         }
 
         function preProcess(statement, fileName, objectName) {
-            statement = statement.replace(VAR_RE, (placeHolder, label) => busConfig[label] || placeHolder);
+            statement = interpolate(statement, busConfig);
 
             if (statement.match(AUDIT_LOG)) {
                 statement = replaceAuditLog(statement);
@@ -430,6 +434,7 @@ module.exports = function({parent}) {
 
         function tableToType(statement) {
             if (statement.match(/^CREATE\s+TABLE/i)) {
+                statement = interpolate(statement, busConfig);
                 let parserSP = require('./parsers/mssqlSP');
                 let binding = parserSP.parse(statement);
                 if (binding.type === 'table') {
@@ -451,6 +456,7 @@ module.exports = function({parent}) {
         function tableToTTU(statement) {
             let result = '';
             if (statement.match(/^CREATE\s+TABLE/i)) {
+                statement = interpolate(statement, busConfig);
                 let parserSP = require('./parsers/mssqlSP');
                 let binding = parserSP.parse(statement);
                 if (binding.type === 'table') {
@@ -584,18 +590,23 @@ module.exports = function({parent}) {
                                     return;
                                 }
                                 let queries = [];
-                                files = files.sort();
+                                files = files.sort().map(file => {
+                                    return {
+                                        originalName: file,
+                                        name: interpolate(file, busConfig)
+                                    };
+                                });
                                 if (schemaConfig.exclude && schemaConfig.exclude.length > 0) {
-                                    files = files.filter((file) => !(schemaConfig.exclude.indexOf(file) >= 0));
+                                    files = files.filter((file) => !(schemaConfig.exclude.indexOf(file.name) >= 0));
                                 }
                                 let objectIds = files.reduce(function(prev, cur) {
-                                    prev[getObjectName(cur).toLowerCase()] = true;
+                                    prev[getObjectName(cur.name).toLowerCase()] = true;
                                     return prev;
                                 }, {});
                                 files.forEach(function(file) {
-                                    let objectName = getObjectName(file);
+                                    let objectName = getObjectName(file.name);
                                     let objectId = objectName.toLowerCase();
-                                    let fileName = schemaConfig.path + '/' + file;
+                                    let fileName = schemaConfig.path + '/' + file.originalName;
                                     if (!fs.statSync(fileName).isFile()) {
                                         return;
                                     }
@@ -1069,7 +1080,15 @@ module.exports = function({parent}) {
         if (schema.parseList.length) {
             let parserSP = require('./parsers/mssqlSP');
             schema.parseList.forEach(function(procedure) {
-                let binding = parserSP.parse(procedure.source);
+                let binding;
+                try {
+                    binding = parserSP.parse(procedure.source);
+                } catch (e) {
+                    if (this.isDebug()) {
+                        e.source = procedure.source;
+                    }
+                    throw e;
+                }
                 let flatName = binding.name.replace(/[[\]]/g, '');
                 if (binding && binding.type === 'procedure') {
                     let update = [];
