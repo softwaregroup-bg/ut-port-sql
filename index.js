@@ -96,7 +96,7 @@ module.exports = function({parent}) {
                 }
             }
         }, config);
-        errors = errors || require('./errors')(this.defineError);
+        errors = errors || require('./errors')(this.bus.errors);
         this.super = {};
         this.connection = null;
         this.retryTimeout = null;
@@ -202,13 +202,13 @@ module.exports = function({parent}) {
 
     SqlPort.prototype.checkConnection = function(checkReady) {
         if (!this.connection) {
-            throw errors.noConnection({
+            throw errors['portSQL.noConnection']({
                 server: this.config.db && this.config.db.server,
                 database: this.config.db && this.config.db.database
             });
         }
         if (checkReady && !this.connectionReady) {
-            throw errors.notReady({
+            throw errors['portSQL.notReady']({
                 server: this.config.db && this.config.db.server,
                 database: this.config.db && this.config.db.database
             });
@@ -245,31 +245,31 @@ module.exports = function({parent}) {
                                 if (result && result.length === 1) {
                                     return result[0];
                                 } else {
-                                    throw errors.singleResultsetExpected();
+                                    throw errors['portSQL.singleResultsetExpected']({});
                                 }
                             case '[^]':
                                 if (result && result.length === 0) {
                                     return null;
                                 } else {
-                                    throw errors.noRowsExpected();
+                                    throw errors['portSQL.noRowsExpected']({});
                                 }
                             case '[0]':
                                 if (result && result.length === 1 && result[0] && result[0].length === 1) {
                                     return result[0][0];
                                 } else {
-                                    throw errors.oneRowExpected();
+                                    throw errors['portSQL.oneRowExpected']({});
                                 }
                             case '[?]':
                                 if (result && result.length === 1 && result[0] && result[0].length <= 1) {
                                     return result[0][0];
                                 } else {
-                                    throw errors.maxOneRowExpected();
+                                    throw errors['portSQL.maxOneRowExpected']({});
                                 }
                             case '[+]':
                                 if (result && result.length === 1 && result[0] && result[0].length >= 1) {
                                     return result[0];
                                 } else {
-                                    throw errors.minOneRowExpected();
+                                    throw errors['portSQL.minOneRowExpected']({});
                                 }
                             default:
                                 return result;
@@ -285,7 +285,7 @@ module.exports = function({parent}) {
         }
 
         if (!this.config.allowQuery || !message.query) {
-            return Promise.reject(this.bus.errors.methodNotFound({params: {method: methodName}}));
+            return Promise.reject(this.bus.errors['bus.methodNotFound']({params: {method: methodName}}));
         };
 
         let debug = this.isDebug();
@@ -313,17 +313,17 @@ module.exports = function({parent}) {
                         message.dataSet = result.recordset;
                         resolve(message);
                     } else if (message.process === 'xls') { // todo
-                        reject(errors.notImplemented(message.process));
+                        reject(errors['portSQL.notImplemented'](message.process));
                     } else if (message.process === 'xml') { // todo
-                        reject(errors.notImplemented(message.process));
+                        reject(errors['portSQL.notImplemented'](message.process));
                     } else if (message.process === 'csv') { // todo
-                        reject(errors.notImplemented(message.process));
+                        reject(errors['portSQL.notImplemented'](message.process));
                     } else if (message.process === 'processRows') { // todo
-                        reject(errors.notImplemented(message.process));
+                        reject(errors['portSQL.notImplemented'](message.process));
                     } else if (message.process === 'queueRows') { // todo
-                        reject(errors.notImplemented(message.process));
+                        reject(errors['portSQL.notImplemented'](message.process));
                     } else {
-                        reject(errors.missingProcess(message.process));
+                        reject(errors['portSQL.missingProcess'](message.process));
                     }
                 }
             });
@@ -564,7 +564,7 @@ module.exports = function({parent}) {
                     if (newFailedQueue.length === 0) {
                         return;
                     } else if (newFailedQueue.length === failedQueue.length) {
-                        throw errors.retryFailedSchemas(errCollection);
+                        throw errors['portSQL.retryFailedSchemas'](errCollection);
                     }
                     return retrySchemaUpdate(newFailedQueue);
                 });
@@ -722,7 +722,7 @@ module.exports = function({parent}) {
             let result = (data && data[0]) || {};
             if (result._errorCode && parseInt(result._errorCode, 10) !== 0) {
                 // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
-                let error = errors.sql({
+                let error = errors['portSQL']({
                     code: result._errorCode || -1,
                     message: result._errorMessage || 'sql error'
                 });
@@ -738,7 +738,7 @@ module.exports = function({parent}) {
             let result = data || [{}];
             if (result[0] && result[0]._errorCode && parseInt(result[0]._errorCode, 10) !== 0) {
                 // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
-                let error = errors.sql({
+                let error = errors['portSQL']({
                     code: result[0]._errorCode || -1,
                     message: result[0]._errorMessage || 'sql error'
                 });
@@ -909,12 +909,12 @@ module.exports = function({parent}) {
             if ($meta.saveAs) {
                 var filename = typeof $meta.saveAs === 'string' ? $meta.saveAs : $meta.saveAs.filename;
                 if (path.isAbsolute(filename)) {
-                    throw errors.absolutePath();
+                    throw errors['portSQL.absolutePath']({});
                 }
                 let baseDir = path.join(this.bus.config.workDir, 'ut-port-sql', 'export');
                 let newFilename = path.resolve(baseDir, filename);
                 if (!newFilename.startsWith(baseDir)) {
-                    return Promise.reject(errors.invalidFileLocation());
+                    return Promise.reject(errors['portSQL.invalidFileLocation']({}));
                 }
                 return new Promise((resolve, reject) => {
                     fsplus.makeTree(path.dirname(newFilename), (err) => {
@@ -959,7 +959,7 @@ module.exports = function({parent}) {
                                                 return new Promise(function(resolve, reject) {
                                                     xmlParser.parseString(record[key], function(err, result) {
                                                         if (err) {
-                                                            reject(errors.wrongXmlFormat({
+                                                            reject(errors['portSQL.wrongXmlFormat']({
                                                                 xml: record[key]
                                                             }));
                                                         } else {
@@ -997,27 +997,27 @@ module.exports = function({parent}) {
                         for (let i = 0; i < resultSets.length; ++i) {
                             if (name == null) {
                                 if (!isNamingResultSet(resultSets[i])) {
-                                    throw errors.invalidResultSetOrder({
+                                    throw errors['portSQL.invalidResultSetOrder']({
                                         expectName: true
                                     });
                                 } else {
                                     name = resultSets[i][0].resultSetName;
                                     single = !!resultSets[i][0].single;
                                     if (name === 'ut-error') {
-                                        error = self.getError(resultSets[i][0] && resultSets[i][0].type) || errors.sql;
-                                        error = Object.assign(error(), resultSets[i][0]);
+                                        error = self.getError(resultSets[i][0] && resultSets[i][0].type) || errors['portSQL'];
+                                        error = Object.assign(error({}), resultSets[i][0]);
                                         name = null;
                                         single = false;
                                     }
                                 }
                             } else {
                                 if (isNamingResultSet(resultSets[i])) {
-                                    throw errors.invalidResultSetOrder({
+                                    throw errors['portSQL.invalidResultSetOrder']({
                                         expectName: false
                                     });
                                 }
                                 if (namedSet.hasOwnProperty(name)) {
-                                    throw errors.duplicateResultSetName({
+                                    throw errors['portSQL.duplicateResultSetName']({
                                         name: name
                                     });
                                 }
@@ -1027,7 +1027,7 @@ module.exports = function({parent}) {
                                     } else if (resultSets[i].length === 1) {
                                         namedSet[name] = resultSets[i][0];
                                     } else {
-                                        throw errors.singleResultExpected({
+                                        throw errors['portSQL.singleResultExpected']({
                                             count: resultSets[i].length
                                         });
                                     }
@@ -1039,7 +1039,7 @@ module.exports = function({parent}) {
                             }
                         }
                         if (name != null) {
-                            throw errors.invalidResultSetOrder({
+                            throw errors['portSQL.invalidResultSetOrder']({
                                 expectName: false
                             });
                         }
@@ -1061,7 +1061,7 @@ module.exports = function({parent}) {
                 .catch(function(err) {
                     let errorLines = err.message && err.message.split('\n');
                     err.message = errorLines.shift();
-                    let error = self.getError(err.type || err.message) || errors.sql;
+                    let error = self.getError(err.type || err.message) || errors['portSQL'];
                     let errToThrow = error(err);
                     if (debug) {
                         err.storedProcedure = name;
@@ -1126,7 +1126,7 @@ module.exports = function({parent}) {
                                     changeRowVersionType(column);
                                     let type = mssql[column.type.toUpperCase()];
                                     if (!(type instanceof Function)) {
-                                        throw errors.unexpectedType({
+                                        throw errors['portSQL.unexpectedType']({
                                             type: column.type,
                                             procedure: binding.name
                                         });
@@ -1208,7 +1208,7 @@ module.exports = function({parent}) {
                 let parserDefault = require('./parsers/mssqlDefault');
                 changeRowVersionType(cur);
                 if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
-                    throw errors.unexpectedColumnType({
+                    throw errors['portSQL.unexpectedColumnType']({
                         type: cur.type,
                         userDefinedTableType: cur.name
                     });
@@ -1219,7 +1219,7 @@ module.exports = function({parent}) {
                 } catch (err) {
                     err.type = cur.type;
                     err.userDefinedTableType = cur.name;
-                    throw errors.parserError(err);
+                    throw errors['portSQL.parserError'](err);
                 }
                 let type = prev[cur.name] || (prev[cur.name] = []);
                 type.push(cur);
@@ -1270,7 +1270,7 @@ module.exports = function({parent}) {
             .query(mssqlQueries.refreshView(drop))
             .then(result => {
                 if (!drop && result && result.recordset && result.recordset.length && result.recordset[0].view_name) {
-                    throw errors.invalidView(result);
+                    throw errors['portSQL.invalidView'](result);
                 }
                 if (this.config.cache && drop && result && result.recordset && result.recordset[0] && result.recordset[0].hash) {
                     return result.recordset[0].hash;
