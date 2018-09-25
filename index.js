@@ -1062,6 +1062,10 @@ module.exports = function({parent}) {
                     let errorLines = err.message && err.message.split('\n');
                     err.message = errorLines.shift();
                     let error = self.getError(err.type || err.message) || errors['portSQL'];
+                    if (error.type === err.message) {
+                        // use default message
+                        delete err.message;
+                    }
                     let errToThrow = error(err);
                     if (debug) {
                         err.storedProcedure = name;
