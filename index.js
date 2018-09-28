@@ -245,31 +245,31 @@ module.exports = function({parent}) {
                                 if (result && result.length === 1) {
                                     return result[0];
                                 } else {
-                                    throw errors['portSQL.singleResultsetExpected']({});
+                                    throw errors['portSQL.singleResultsetExpected']();
                                 }
                             case '[^]':
                                 if (result && result.length === 0) {
                                     return null;
                                 } else {
-                                    throw errors['portSQL.noRowsExpected']({});
+                                    throw errors['portSQL.noRowsExpected']();
                                 }
                             case '[0]':
                                 if (result && result.length === 1 && result[0] && result[0].length === 1) {
                                     return result[0][0];
                                 } else {
-                                    throw errors['portSQL.oneRowExpected']({});
+                                    throw errors['portSQL.oneRowExpected']();
                                 }
                             case '[?]':
                                 if (result && result.length === 1 && result[0] && result[0].length <= 1) {
                                     return result[0][0];
                                 } else {
-                                    throw errors['portSQL.maxOneRowExpected']({});
+                                    throw errors['portSQL.maxOneRowExpected']();
                                 }
                             case '[+]':
                                 if (result && result.length === 1 && result[0] && result[0].length >= 1) {
                                     return result[0];
                                 } else {
-                                    throw errors['portSQL.minOneRowExpected']({});
+                                    throw errors['portSQL.minOneRowExpected']();
                                 }
                             default:
                                 return result;
@@ -909,12 +909,12 @@ module.exports = function({parent}) {
             if ($meta.saveAs) {
                 var filename = typeof $meta.saveAs === 'string' ? $meta.saveAs : $meta.saveAs.filename;
                 if (path.isAbsolute(filename)) {
-                    throw errors['portSQL.absolutePath']({});
+                    throw errors['portSQL.absolutePath']();
                 }
                 let baseDir = path.join(this.bus.config.workDir, 'ut-port-sql', 'export');
                 let newFilename = path.resolve(baseDir, filename);
                 if (!newFilename.startsWith(baseDir)) {
-                    return Promise.reject(errors['portSQL.invalidFileLocation']({}));
+                    return Promise.reject(errors['portSQL.invalidFileLocation']());
                 }
                 return new Promise((resolve, reject) => {
                     fsplus.makeTree(path.dirname(newFilename), (err) => {
@@ -1005,7 +1005,7 @@ module.exports = function({parent}) {
                                     single = !!resultSets[i][0].single;
                                     if (name === 'ut-error') {
                                         error = self.getError(resultSets[i][0] && resultSets[i][0].type) || errors['portSQL'];
-                                        error = Object.assign(error({}), resultSets[i][0]);
+                                        error = Object.assign(error(), resultSets[i][0]);
                                         name = null;
                                         single = false;
                                     }
