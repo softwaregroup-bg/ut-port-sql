@@ -92,7 +92,8 @@ module.exports = function({parent}) {
                 options: {
                     debug: {
                         packet: true
-                    }
+                    },
+                    encrypt: false
                 }
             }
         }, config);
@@ -1442,14 +1443,19 @@ module.exports = function({parent}) {
             };
         };
 
-        this.connection = new mssql.ConnectionPool(this.config.db);
+        let sanitize = options => ({
+            ...options,
+            ...{
+                requestTimeout: parseInt(options.requestTimeout, 10),
+                connectionTimeout: parseInt(options.connectionTimeout, 10)
+            }
+        });
+
+        this.connection = new mssql.ConnectionPool(sanitize(this.config.db));
         if (this.config.create) {
-            let conCreate = new mssql.ConnectionPool({
-                server: this.config.db.server,
-                options: this.config.db.options,
-                user: this.config.create.user,
-                password: this.config.create.password
-            });
+            let conCreate = new mssql.ConnectionPool(
+                sanitize(...this.config.db, {user: '', password: ''}, ...this.config.create) // expect explicit user/pass
+            );
 
             // Patch for https://github.com/patriksimek/node-mssql/issues/467
             conCreate._throwingClose = conCreate._close;
