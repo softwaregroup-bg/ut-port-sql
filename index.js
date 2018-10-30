@@ -1454,7 +1454,7 @@ module.exports = function({parent}) {
         this.connection = new mssql.ConnectionPool(sanitize(this.config.db));
         if (this.config.create) {
             let conCreate = new mssql.ConnectionPool(
-                sanitize(...this.config.db, {user: '', password: ''}, ...this.config.create) // expect explicit user/pass
+                sanitize({...this.config.db, ...{user: '', password: ''}, ...this.config.create}) // expect explicit user/pass
             );
 
             // Patch for https://github.com/patriksimek/node-mssql/issues/467
