@@ -1443,18 +1443,23 @@ module.exports = function({parent}) {
             };
         };
 
+        const toInt = value => {
+            value = parseInt(value, 10);
+            return Number.isInteger(value) ? value : undefined;
+        };
+
         let sanitize = options => ({
             ...options,
             ...{
-                requestTimeout: parseInt(options.requestTimeout, 10),
-                connectionTimeout: parseInt(options.connectionTimeout, 10)
+                requestTimeout: toInt(options.requestTimeout),
+                connectionTimeout: toInt(options.connectionTimeout)
             }
         });
 
         this.connection = new mssql.ConnectionPool(sanitize(this.config.db));
         if (this.config.create) {
             let conCreate = new mssql.ConnectionPool(
-                sanitize({...this.config.db, ...{user: '', password: ''}, ...this.config.create}) // expect explicit user/pass
+                sanitize({...this.config.db, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
             );
 
             // Patch for https://github.com/patriksimek/node-mssql/issues/467
