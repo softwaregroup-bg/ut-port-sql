@@ -1,3 +1,24 @@
+{
+  function defaultSize(type, size) {
+    switch (type) {
+      case 'numeric':
+      case 'decimal':
+        if (size == null) return [18, 0];
+        else if (Array.isArray(size)) return size;
+        else return [size, 0];
+      case 'datetime2':
+      case 'time':
+      case 'datetimeoffset': return (size == null) ? 7 : size;
+      case 'varchar':
+      case 'varbinary':
+      case 'char':
+      case 'binary': return (size == null) ? 1 : size;
+      default:
+        return size
+    }
+  }
+}
+
 create = procedure / tableValue / table
 
 createoralter = "ALTER"i / "CREATE"i
@@ -248,7 +269,9 @@ table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
 
 scalar_type =  n:name
   size:( ( ws lparen ws s:(signed_number / "max"i) ws rparen {return s} )
-  / ws lparen ws s1:signed_number ws comma ws s2:signed_number ws rparen {return [s1,s2]})? {return {type:n.toLowerCase(), size:size}}
+  / ws lparen ws s1:signed_number ws comma ws s2:signed_number ws rparen {return [s1,s2]})? {
+    return {type:n.toLowerCase(), size:defaultSize(n.toLowerCase(), size)}
+  }
 
 signed_number =
   ( ( plus / minus )? numeric_literal ) {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;}
