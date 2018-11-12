@@ -3,7 +3,7 @@ let { getResultSetName } = require('./helpers');
 var transforms = {
     json: require('./json'),
     jsonl: require('./jsonLines'),
-    csv: require('./csv'),
+    csv: require('./csv')
 };
 module.exports = function(request, saveAs) {
     var config = Object.assign({}, {

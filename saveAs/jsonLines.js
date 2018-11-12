@@ -16,4 +16,4 @@ module.exports = class JsonLinesTransform extends Transform {
     onResultSet(chunk) {
         this.currentResultset = getResultSetName(chunk);
     }
-}
+};
