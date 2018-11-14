@@ -2,6 +2,7 @@ const through2 = require('through2');
 let { getResultSetName } = require('./helpers');
 var transforms = {
     json: require('./json'),
+    jsonl: require('./jsonLines'),
     csv: require('./csv')
 };
 module.exports = function(request, saveAs) {
