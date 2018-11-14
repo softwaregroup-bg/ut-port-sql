@@ -543,9 +543,9 @@ module.exports = function({parent}) {
                             .batch(schema.content)
                             .then(() => {
                                 self.log.warn && self.log.warn({
-                                    message: schema.objectName,
+                                    fileName: schema.fileName,
                                     $meta: {
-                                        opcode: 'updateFailedSchemas'
+                                        opcode: 'portSQL.retrySuccess'
                                     }
                                 });
                                 return true;
@@ -608,7 +608,7 @@ module.exports = function({parent}) {
                                 files.forEach(function(file) {
                                     let objectName = getObjectName(file.name);
                                     let objectId = objectName.toLowerCase();
-                                    let fileName = schemaConfig.path + '/' + file.originalName;
+                                    let fileName = path.join(schemaConfig.path, file.originalName);
                                     if (!fs.statSync(fileName).isFile()) {
                                         return;
                                     }
@@ -662,18 +662,14 @@ module.exports = function({parent}) {
                                             .batch(query.content)
                                             .then(() => updated.push(query.objectName))
                                             .catch((err) => {
+                                                err.message = err.message + ' (' + query.fileName + ':' + (err.lineNumber || 1) + ':1)';
+                                                let newError = sqlPortErrors['portSQL.updateSchema'](err);
+                                                newError.fileName = query.fileName;
                                                 if (!this.config.retrySchemaUpdate) {
-                                                    let newErr = err;
-                                                    newErr.fileName = query.fileName;
-                                                    newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
-                                                    newErr.stack = newErr.stack.split('\n').shift();
-                                                    throw newErr;
+                                                    throw newError;
                                                 } else {
                                                     failedQueries.push(query);
-                                                    if (self.log.warn) {
-                                                        self.log.warn({'failing file': query.fileName});
-                                                        self.log.warn(err);
-                                                    }
+                                                    self.log.error && self.log.error(newError);
                                                     return false;
                                                 }
                                             });

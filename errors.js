@@ -15,6 +15,7 @@ module.exports = ({defineError, getError, fetchErrors}) => {
         defineError('duplicateResultSetName', PortSQL, 'Duplicate resultset name');
         defineError('singleResultExpected', PortSQL, 'Expected single or no result');
         defineError('wrongXmlFormat', PortSQL, 'Wrong XML format in result');
+        defineError('updateSchema', PortSQL, 'Schema update error');
         defineError('retryFailedSchemas', PortSQL, 'Retries exceeded for failed schemas');
         defineError('noRowsExpected', PortSQL, 'No rows were expected in the result');
         defineError('singleResultsetExpected', PortSQL, 'Single resultset expected');
