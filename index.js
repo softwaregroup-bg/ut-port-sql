@@ -76,7 +76,6 @@ module.exports = function({utPort}) {
             super(...arguments);
             if (!this.errors || !this.errors.getError) throw new Error('Please use the latest version of ut-port');
             sqlPortErrors = require('./errors')(this.errors);
-            this.super = {};
             this.connection = null;
             this.retryTimeout = null;
             this.connectionAttempt = 0;
@@ -145,10 +144,10 @@ module.exports = function({utPort}) {
         }
         start() {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
-            this.bus && this.bus.importMethods(this.methods, this.config.imports, undefined, this);
-            this.config.imports && this.config.imports.forEach(impl => {
-                if (Array.isArray(this.methods[impl + '.skipTableType'])) {
-                    this.config.skipTableType = this.config.skipTableType.concat(this.methods[impl + '.skipTableType']);
+            this.bus && this.bus.attachHandlers(this.methods, this.config.imports, this);
+            this.methods.imported && Object.values(this.methods.imported).forEach(value => {
+                if (Array.isArray(value.skipTableType)) {
+                    this.config.skipTableType = this.config.skipTableType.concat(value.skipTableType);
                 };
             });
             if (Array.isArray(this.config.createTT)) {
@@ -203,11 +202,7 @@ module.exports = function({utPort}) {
                     methodName = parts[1];
                     modifier = parts[2];
                 }
-                let method = this.methods[methodName];
-                if (!method) {
-                    methodName = methodName.split('/', 2);
-                    method = methodName.length === 2 && this.methods[methodName[1]];
-                }
+                let method = this.findHandler(methodName);
                 if (method instanceof Function) {
                     return Promise.resolve()
                         .then(() => method.apply(this, Array.prototype.slice.call(arguments)))
@@ -316,10 +311,9 @@ module.exports = function({utPort}) {
                     result.push({path: schema});
                 }
             }
-            this.config.imports && this.config.imports.forEach(function(imp) {
-                if (this.includesConfig('updates', imp, true)) {
-                    imp.match(/\.schema$/) && Array.prototype.push.apply(result, this.methods[imp]);
-                    this.methods[imp + '.schema'] && Array.prototype.push.apply(result, this.methods[imp + '.schema']);
+            this.methods.imported && Object.entries(this.methods.imported).forEach(function([name, value]) {
+                if (this.includesConfig('updates', name, true)) {
+                    value.schema && Array.prototype.push.apply(result, value.schema);
                 }
             }.bind(this));
             return result.reduce((all, schema) => {
@@ -1086,21 +1080,7 @@ module.exports = function({utPort}) {
                                 };
                             }
                         }.bind(this));
-                        let callSP = this.super[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
-                        if (!this.methods[flatName]) {
-                            this.methods[flatName] = callSP;
-                        } else {
-                            let root = this.methods[flatName];
-                            let max = 10;
-                            while (max > 0 && root.super) {
-                                root = root.super;
-                                max--;
-                                if (!max) {
-                                    throw Error.create('Max recursion reached');
-                                }
-                            }
-                            root.super = callSP;
-                        }
+                        this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
                     }
                 }.bind(this));
             }
