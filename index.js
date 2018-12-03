@@ -144,7 +144,7 @@ module.exports = function({utPort}) {
         }
         start() {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
-            this.bus && this.bus.attachHandlers(this.methods, this.config.imports, this);
+            this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
             this.methods.imported && Object.values(this.methods.imported).forEach(value => {
                 if (Array.isArray(value.skipTableType)) {
                     this.config.skipTableType = this.config.skipTableType.concat(value.skipTableType);
@@ -1080,7 +1080,7 @@ module.exports = function({utPort}) {
                                 };
                             }
                         }.bind(this));
-                        this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName).bind(this);
+                        this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName);
                     }
                 }.bind(this));
             }
