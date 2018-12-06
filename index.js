@@ -168,7 +168,7 @@ module.exports = function({utPort}) {
             clearTimeout(this.retryTimeout);
             // this.queue.push();
             this.connectionReady = false;
-            this.connection.close();
+            this.connection && this.connection.close();
             return super.stop(...arguments);
         }
         checkConnection(checkReady) {
