@@ -844,11 +844,11 @@ module.exports = function({parent}) {
             let debugParams = {};
             request.multiple = true;
             $meta.globalId = ($meta && $meta.requestHeaders && $meta.requestHeaders['x-requestuid']) || uuid.v1();
-            $meta.requestDateTime = ($meta
-                && $meta.requestHeaders
-                && $meta.requestHeaders['x-requestuiddatetime']
-                && $meta.requestHeaders['x-requestuiddatetime'] != null
-                && $meta.requestHeaders['x-requestuiddatetime']) || new Date().getTime(); // TODO: if not se date
+            $meta.requestDateTime = ($meta &&
+                $meta.requestHeaders &&
+                $meta.requestHeaders['x-requestuiddatetime'] &&
+                $meta.requestHeaders['x-requestuiddatetime'] != null &&
+                $meta.requestHeaders['x-requestuiddatetime']) || new Date().getTime(); // TODO: if not se date
             params && params.forEach(function(param) {
                 let value;
                 if (param.name === 'meta') {
