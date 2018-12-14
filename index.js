@@ -98,7 +98,10 @@ module.exports = function({utPort}) {
                         debug: {
                             packet: true
                         },
-                        encrypt: false
+                        encrypt: false,
+                        enableArithAbort: true,
+                        enableAnsiWarnings: true,
+                        abortTransactionOnError: true
                     }
                 }
             };
