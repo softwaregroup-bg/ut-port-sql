@@ -842,7 +842,7 @@ module.exports = function({parent}) {
             let data = flattenMessage(msg, flatten);
             let debug = this.isDebug();
             let debugParams = {};
-            request.multiple = true;            
+            request.multiple = true;
             $meta.globalId = ($meta && $meta.requestHeaders && $meta.requestHeaders['x-requestuid']) || uuid.v1();
             $meta.requestDateTime = ($meta &&
                 $meta.requestHeaders &&
