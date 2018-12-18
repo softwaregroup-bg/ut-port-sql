@@ -842,14 +842,18 @@ module.exports = function({parent}) {
             let data = flattenMessage(msg, flatten);
             let debug = this.isDebug();
             let debugParams = {};
-            request.multiple = true;
-            $meta.globalId = uuid.v1();
+            request.multiple = true;            
             $meta.globalId = ($meta && $meta.requestHeaders && $meta.requestHeaders['x-requestuid']) || uuid.v1();
             $meta.requestDateTime = ($meta &&
                 $meta.requestHeaders &&
                 $meta.requestHeaders['x-requestuiddatetime'] &&
                 $meta.requestHeaders['x-requestuiddatetime'] != null &&
-                $meta.requestHeaders['x-requestuiddatetime']) || new Date().getTime(); // TODO: if not se date
+                $meta.requestHeaders['x-requestuiddatetime']) || new Date().getTime();
+            $meta.noAudit = ($meta &&
+                $meta.requestHeaders &&
+                $meta.requestHeaders['x-noaudit'] &&
+                $meta.requestHeaders['x-noaudit'] != null &&
+                $meta.requestHeaders['x-noaudit']) || 0;
             params && params.forEach(function(param) {
                 let value;
                 if (param.name === 'meta') {
