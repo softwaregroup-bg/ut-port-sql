@@ -1009,7 +1009,7 @@ module.exports = function({utPort}) {
                         if (debug) {
                             err.storedProcedure = name;
                             err.params = debugParams;
-                            err.fileName = fileName + ':1:1';
+                            err.fileName = (fileName || name) + ':' + err.lineNumber + ':1';
                             let stack = errToThrow.stack.split('\n');
                             stack.splice.apply(stack, [1, 0].concat(errorLines));
                             errToThrow.stack = stack.join('\n');
