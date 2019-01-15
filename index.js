@@ -782,7 +782,7 @@ module.exports = function({utPort}) {
                 params && params.forEach(function(param) {
                     let value;
                     if (param.name === 'meta') {
-                        value = $meta;
+                        value = Object.assign({}, $meta.forward, $meta);
                     } else if (param.update) {
                         value = data[param.name] || data.hasOwnProperty(param.update);
                     } else {
