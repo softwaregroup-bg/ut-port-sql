@@ -167,11 +167,11 @@ module.exports = function({utPort}) {
                     return result;
                 });
         }
-        stop() {
+        async stop() {
             clearTimeout(this.retryTimeout);
             // this.queue.push();
             this.connectionReady = false;
-            this.connection && this.connection.close();
+            await (this.connection && this.connection.close());
             return super.stop(...arguments);
         }
         checkConnection(checkReady) {
