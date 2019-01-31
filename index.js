@@ -884,15 +884,29 @@ module.exports = function({utPort}) {
                     .then(function(result) {
                         let promise = Promise.resolve();
                         result.recordsets.forEach(function(resultset) {
-                            let xmlColumns = Object.keys(resultset.columns)
-                                .reduce(function(columns, column) {
-                                    if (resultset.columns[column].type.declaration === 'xml') {
-                                        columns.push(column);
-                                    }
-                                    return columns;
-                                }, []);
-                            if (xmlColumns.length) {
+                            const encryptedColumns = [];
+                            const xmlColumns = [];
+                            Object.keys(resultset.columns).forEach(column => {
+                                switch (resultset.columns[column].type.declaration) {
+                                    case 'varbinary':
+                                        if (self.cbc && resultset.columns[column].length % 16 === 0) {
+                                            encryptedColumns.push(column);
+                                        }
+                                        break;
+                                    case 'xml':
+                                        xmlColumns.push(column);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            });
+                            if (xmlColumns.length || encryptedColumns.length) {
                                 resultset.forEach(function(record) {
+                                    encryptedColumns.forEach(function(key) {
+                                        if (record[key]) { // value is not null
+                                            record[key] = self.cbc.decrypt(record[key]);
+                                        }
+                                    });
                                     xmlColumns.forEach(function(key) {
                                         if (record[key]) { // value is not null
                                             promise = promise
