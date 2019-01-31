@@ -887,7 +887,7 @@ module.exports = function({utPort}) {
                             const encryptedColumns = [];
                             const xmlColumns = [];
                             Object.keys(resultset.columns).forEach(column => {
-                                switch(resultset.columns[column].type.declaration) {
+                                switch (resultset.columns[column].type.declaration) {
                                     case 'varbinary':
                                         if (self.cbc && resultset.columns[column].length % 16 === 0) {
                                             encryptedColumns.push(column);
@@ -903,7 +903,7 @@ module.exports = function({utPort}) {
                             if (xmlColumns.length || encryptedColumns.length) {
                                 resultset.forEach(function(record) {
                                     encryptedColumns.forEach(function(key) {
-                                        if (record[key]) {  // value is not null
+                                        if (record[key]) { // value is not null
                                             record[key] = self.cbc.decrypt(record[key]);
                                         }
                                     });
