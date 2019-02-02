@@ -1,3 +1,13 @@
+<a name="7.5.0"></a>
+# [7.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.4.0...v7.5.0) (2018-12-06)
+
+
+### Features
+
+* json lines format ([9465b49](https://github.com/softwaregroup-bg/ut-port-sql/commit/9465b49))
+
+
+
 <a name="7.4.0"></a>
 # [7.4.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.3.1...v7.4.0) (2018-08-02)
 
