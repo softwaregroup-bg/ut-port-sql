@@ -1,3 +1,22 @@
+# [7.6.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.5.0-rc-godfather.16...v7.6.0) (2019-02-02)
+
+
+### Bug Fixes
+
+* remove lock file ([0f824a1](https://github.com/softwaregroup-bg/ut-port-sql/commit/0f824a1))
+* upgrade dependencies ([6176eb0](https://github.com/softwaregroup-bg/ut-port-sql/commit/6176eb0))
+
+
+
+# [7.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.5.0-rc-godfather.10...v7.5.0) (2018-12-06)
+
+
+### Features
+
+* json lines format ([9465b49](https://github.com/softwaregroup-bg/ut-port-sql/commit/9465b49))
+
+
+
 <a name="7.5.0"></a>
 # [7.5.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.4.0...v7.5.0) (2018-12-06)
 

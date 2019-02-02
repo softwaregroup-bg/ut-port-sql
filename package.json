@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.6.0-rc-godfather.16",
+  "version": "7.6.0",
   "main": "./index.js",
   "dependencies": {
     "fs-plus": "3.0.2",
