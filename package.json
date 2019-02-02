@@ -11,7 +11,7 @@
     "xml2js": "0.4.19"
   },
   "devDependencies": {
-    "ut-tools": "^6.3.6",
+    "ut-tools": "^6.8.10",
     "pegjs": "0.10.0"
   },
   "peerDependencies": {
