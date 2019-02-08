@@ -373,7 +373,7 @@ module.exports = function({utPort}) {
                     statement = replaceCoreError(statement, fileName, objectName, params);
                 }
                 return statement;
-            }
+            };
 
             function getAlterStatement(statement, fileName, objectName) {
                 statement = preProcess(statement, fileName, objectName);
