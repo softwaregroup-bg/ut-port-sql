@@ -15,6 +15,7 @@ const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const VAR_RE = /\$\{([^}]*)\}/g;
+const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
 
@@ -353,8 +354,12 @@ module.exports = function({utPort}) {
                     .join('\n');
             }
 
-            function preProcess(statement, fileName, objectName) {
+            const preProcess = (statement, fileName, objectName) => {
                 statement = interpolate(statement, busConfig);
+
+                if (this.cbc) {
+                    statement = statement.replace(ENCRYPT_RE, (match, value) => '0x' + this.cbc.encrypt(value).toString('hex'));
+                }
 
                 if (statement.match(AUDIT_LOG)) {
                     statement = replaceAuditLog(statement);
