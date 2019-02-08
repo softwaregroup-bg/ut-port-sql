@@ -1,3 +1,18 @@
+# [7.7.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.6.0...v7.7.0) (2019-02-08)
+
+
+### Bug Fixes
+
+* change scripts ([d9e0d7e](https://github.com/softwaregroup-bg/ut-port-sql/commit/d9e0d7e))
+* typo ([c877848](https://github.com/softwaregroup-bg/ut-port-sql/commit/c877848))
+
+
+### Features
+
+* easily encrypt test data ([04440ff](https://github.com/softwaregroup-bg/ut-port-sql/commit/04440ff))
+
+
+
 # [7.6.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.5.0-rc-godfather.16...v7.6.0) (2019-02-02)
 
 
