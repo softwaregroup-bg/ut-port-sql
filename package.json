@@ -1,22 +1,22 @@
 {
   "name": "ut-port-sql",
-  "version": "7.4.1-internet-banking.2",
+  "version": "7.7.1-internet-banking.0",
   "main": "./index.js",
   "dependencies": {
     "fs-plus": "3.0.2",
     "json-stringify-deterministic": "1.0.1",
-    "lodash.merge": "4.6.0",
     "through2": "2.0.3",
-    "mssql": "4.1.0",
-    "uuid": "3.2.1",
+    "mssql": "4.3.0",
+    "uuid": "3.3.2",
     "xml2js": "0.4.19"
   },
   "devDependencies": {
-    "ut-tools": "^5.32.5",
+    "tap": "^12.5.2",
+    "ut-tools": "^6.8.10",
     "pegjs": "0.10.0"
   },
   "peerDependencies": {
-    "tedious": "^2.3.1"
+    "tedious": "^2.7.1"
   },
   "scripts": {
     "lint": "ut-lint .",
@@ -24,7 +24,7 @@
     "genParser": "pegjs parsers/mssqlSP.pegjs",
     "changelog": "ut-changelog",
     "check": "ut-check",
-    "cover": "ut-cover",
+    "cover": "ut-cover-parallel",
     "lint-js": "ut-lint-js .",
     "postpublish": "ut-postpublish",
     "postversion": "ut-postversion",
@@ -34,7 +34,7 @@
     "pretest": "ut-pretest",
     "precover": "ut-precover",
     "preversion": "ut-preversion",
-    "test": "ut-test",
+    "test": "ut-test-parallel",
     "version": "ut-version",
     "jenkins": "ut-jenkins",
     "gitlab": "ut-gitlab"

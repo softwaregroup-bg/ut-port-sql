@@ -1,10 +1,11 @@
 'use strict';
 const crypto = require('crypto');
-const defPassword = 'some password';
+const defPassword = '12345678901234567890123456789012';
+const defIV = '1234567890123456';
 
 module.exports = {
-    encrypt: (text, algorithm, password) => {
-        let cipher = crypto.createCipher(algorithm, password || defPassword);
+    encrypt: (text, algorithm, password, iv) => {
+        let cipher = crypto.createCipheriv(algorithm, password || defPassword, iv || defIV);
 
         return new Promise((resolve, reject) => {
             let encrypted = '';
@@ -22,8 +23,8 @@ module.exports = {
             cipher.end();
         });
     },
-    decrypt: (text, algorithm, password) => {
-        let decipher = crypto.createDecipher(algorithm, password || defPassword);
+    decrypt: (text, algorithm, password, iv) => {
+        let decipher = crypto.createDecipheriv(algorithm, password || defPassword, iv || defIV);
 
         return new Promise((resolve, reject) => {
             let decrypted = '';
