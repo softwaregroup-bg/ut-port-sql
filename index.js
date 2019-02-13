@@ -67,7 +67,9 @@ function changeRowVersionType(field) {
 }
 
 function interpolate(txt, params = {}) {
-    return txt.replace(VAR_RE, (placeHolder, label) => (params[label] || placeHolder));
+    return txt.replace(VAR_RE, (placeHolder, label) => {
+        return typeof params[label] === 'undefined' ? placeHolder : params[label];
+    });
 };
 
 module.exports = function({utPort}) {
