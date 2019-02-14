@@ -1,3 +1,12 @@
+## [7.7.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.7.0...v7.7.1) (2019-02-14)
+
+
+### Bug Fixes
+
+* interpolate falsy values correctly ([d6aa73d](https://github.com/softwaregroup-bg/ut-port-sql/commit/d6aa73d))
+
+
+
 # [7.7.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.6.0...v7.7.0) (2019-02-08)
 
 
