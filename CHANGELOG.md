@@ -1,3 +1,12 @@
+## [7.7.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.7.1...v7.7.2) (2019-02-14)
+
+
+### Bug Fixes
+
+* update mssql ([982e6c0](https://github.com/softwaregroup-bg/ut-port-sql/commit/982e6c0))
+
+
+
 ## [7.7.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.7.0...v7.7.1) (2019-02-14)
 
 
