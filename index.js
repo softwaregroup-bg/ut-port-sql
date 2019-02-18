@@ -1466,7 +1466,11 @@ module.exports = function({utPort}) {
                 let isEmpty = true;
                 Object.keys(cur).forEach(function(p) {
                     isEmpty = false;
-                    recurse(cur[p], prop ? prop + '.' + p : p);
+                    const key = prop ? prop + '.' + p : p;
+                    if (Object(cur[p]) === cur[p]) {
+                        result[key] = JSON.stringify(cur[p]);
+                    }
+                    recurse(cur[p], key);
                 });
                 if (isEmpty && prop) {
                     result[prop] = {};
