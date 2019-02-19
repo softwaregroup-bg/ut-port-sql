@@ -3,6 +3,7 @@
   "version": "7.7.2",
   "main": "./index.js",
   "dependencies": {
+    "dot-prop": "4.2.0",
     "fs-plus": "3.0.2",
     "json-stringify-deterministic": "1.0.1",
     "through2": "2.0.3",

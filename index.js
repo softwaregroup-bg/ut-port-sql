@@ -18,6 +18,7 @@ const VAR_RE = /\$\{([^}]*)\}/g;
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
+const dotprop = require('dot-prop');
 
 // patch for https://github.com/tediousjs/tedious/pull/710
 require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
@@ -68,7 +69,12 @@ function changeRowVersionType(field) {
 
 function interpolate(txt, params = {}) {
     return txt.replace(VAR_RE, (placeHolder, label) => {
-        return typeof params[label] === 'undefined' ? placeHolder : params[label];
+        let value = dotprop.get(params, label);
+        switch (typeof value) {
+            case 'undefined': return placeHolder;
+            case 'object': return JSON.stringify(value);
+            default: return value;
+        }
     });
 };
 
@@ -332,7 +338,7 @@ module.exports = function({utPort}) {
         }
         updateSchema(schema) {
             this.checkConnection();
-            let busConfig = flatten(this.bus.config);
+            let busConfig = this.bus.config;
 
             function replaceAuditLog(statement) {
                 let parserSP = require('./parsers/mssqlSP');
@@ -1453,27 +1459,5 @@ module.exports = function({utPort}) {
             }
         });
         object[fieldName] = fieldValue;
-    }
-
-    function flatten(data) {
-        let result = {};
-        function recurse(cur, prop) {
-            if (Object(cur) !== cur) {
-                result[prop] = cur;
-            } else if (Array.isArray(cur) || typeof cur === 'function') {
-                result[prop] = cur;
-            } else {
-                let isEmpty = true;
-                Object.keys(cur).forEach(function(p) {
-                    isEmpty = false;
-                    recurse(cur[p], prop ? prop + '.' + p : p);
-                });
-                if (isEmpty && prop) {
-                    result[prop] = {};
-                }
-            }
-        }
-        recurse(data, '');
-        return result;
     }
 };
