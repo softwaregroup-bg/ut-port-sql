@@ -157,7 +157,7 @@ module.exports = function({utPort}) {
         start() {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
-            this.methods.imported && Object.values(this.methods.imported).forEach(value => {
+            this.methods.importedMap && Array.from(this.methods.importedMap.values()).forEach(value => {
                 if (Array.isArray(value.skipTableType)) {
                     this.config.skipTableType = this.config.skipTableType.concat(value.skipTableType);
                 };
@@ -325,7 +325,7 @@ module.exports = function({utPort}) {
                     result.push({path: schema});
                 }
             }
-            this.methods.imported && Object.entries(this.methods.imported).forEach(function([name, value]) {
+            this.methods.importedMap && Array.from(this.methods.importedMap.entries()).forEach(function([name, value]) {
                 if (this.includesConfig('updates', name, true)) {
                     value.schema && Array.prototype.push.apply(result, value.schema);
                 }
