@@ -1,3 +1,12 @@
+# [7.8.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.7.2...v7.8.0) (2019-02-19)
+
+
+### Features
+
+* access whole config subtrees as JSON when interpolating ([37b81ab](https://github.com/softwaregroup-bg/ut-port-sql/commit/37b81ab))
+
+
+
 ## [7.7.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.7.1...v7.7.2) (2019-02-14)
 
 
