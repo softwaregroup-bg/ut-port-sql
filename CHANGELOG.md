@@ -1,3 +1,12 @@
+## [7.8.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.8.1...v7.8.2) (2019-02-25)
+
+
+### Bug Fixes
+
+* only create when create.user is configured ([4d52389](https://github.com/softwaregroup-bg/ut-port-sql/commit/4d52389))
+
+
+
 ## [7.8.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.8.0...v7.8.1) (2019-02-19)
 
 
