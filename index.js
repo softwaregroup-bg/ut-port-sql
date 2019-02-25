@@ -1404,7 +1404,7 @@ module.exports = function({utPort}) {
             });
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
-            if (this.config.create) {
+            if (this.config.create && this.config.create.user) {
                 let conCreate = new mssql.ConnectionPool(
                     sanitize({...this.config.connection, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
                 );
