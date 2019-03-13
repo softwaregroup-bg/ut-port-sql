@@ -19,7 +19,7 @@ const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
 const dotprop = require('dot-prop');
-const isEncrypted = item => item && ((item.def && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
+const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 
 // patch for https://github.com/tediousjs/tedious/pull/710
 require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
