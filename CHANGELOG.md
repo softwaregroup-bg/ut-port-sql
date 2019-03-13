@@ -1,3 +1,19 @@
+# [7.9.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.8.2...v7.9.0) (2019-03-13)
+
+
+### Bug Fixes
+
+* check for varbinary ([70a6f4a](https://github.com/softwaregroup-bg/ut-port-sql/commit/70a6f4a))
+* check this.cbc ([c87762d](https://github.com/softwaregroup-bg/ut-port-sql/commit/c87762d))
+
+
+### Features
+
+* crypto activated by field/param prefix ([a2b473a](https://github.com/softwaregroup-bg/ut-port-sql/commit/a2b473a))
+* support ?# before the modifiers ([36c8c81](https://github.com/softwaregroup-bg/ut-port-sql/commit/36c8c81))
+
+
+
 ## [7.8.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.8.1...v7.8.2) (2019-02-25)
 
 
