@@ -211,7 +211,7 @@ module.exports = function({utPort}) {
             $meta.debug = !!this.bus.config.debug;
             let methodName = ($meta && $meta.method);
             if (methodName) {
-                let parts = methodName.match(/^([^[]*)(\[[0+?^]?])?$/);
+                let parts = methodName.match(/^([^[#?]*)[^[]*(\[[0+?^]?])?$/);
                 let modifier;
                 if (parts) {
                     methodName = parts[1];
