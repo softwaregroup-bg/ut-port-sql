@@ -19,6 +19,7 @@ const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
 const dotprop = require('dot-prop');
+const isEncrypted = item => item && ((item.def && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 
 // patch for https://github.com/tediousjs/tedious/pull/710
 require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
@@ -803,8 +804,8 @@ module.exports = function({utPort}) {
                     } else {
                         value = data[param.name];
                     }
-                    if (param.encrypt) {
-                        value = self.cbc.encrypt(value);
+                    if (param.encrypt && value != null) {
+                        value = self.cbc.encrypt(Buffer.from(value));
                     }
                     let hasValue = value !== void 0;
                     let type = sqlType(param.def);
@@ -902,7 +903,7 @@ module.exports = function({utPort}) {
                             Object.keys(resultset.columns).forEach(column => {
                                 switch (resultset.columns[column].type.declaration) {
                                     case 'varbinary':
-                                        if (self.cbc && resultset.columns[column].length % 16 === 0) {
+                                        if (self.cbc && isEncrypted(resultset.columns[column])) {
                                             encryptedColumns.push(column);
                                         }
                                         break;
@@ -1073,9 +1074,9 @@ module.exports = function({utPort}) {
                                 flatten = '_';
                             }
                         });
-                        binding.params && binding.params.forEach(function(param) {
+                        binding.params && binding.params.forEach(param => {
                             (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
-                            if (param.def && param.def.type === 'varbinary' && param.def.size % 16 === 0 && this.cbc) {
+                            if (isEncrypted(param)) {
                                 param.encrypt = true;
                             };
                             if (param.def && param.def.type === 'table') {
@@ -1111,7 +1112,7 @@ module.exports = function({utPort}) {
                                     return table;
                                 };
                             }
-                        }.bind(this));
+                        });
                         this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName);
                     }
                 }.bind(this));
