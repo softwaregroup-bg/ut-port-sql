@@ -1076,7 +1076,7 @@ module.exports = function({utPort}) {
                         });
                         binding.params && binding.params.forEach(param => {
                             (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
-                            if (isEncrypted(param)) {
+                            if (isEncrypted(param) && this.cbc) {
                                 param.encrypt = true;
                             };
                             if (param.def && param.def.type === 'table') {
