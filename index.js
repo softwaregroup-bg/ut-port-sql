@@ -103,6 +103,7 @@ module.exports = function({utPort}) {
                 skipTableType: [],
                 paramsOutName: 'out',
                 doc: false,
+                maxNesting: 5,
                 connection: {
                     options: {
                         debug: {
@@ -711,6 +712,7 @@ module.exports = function({utPort}) {
         }
         callSP(name, params, flatten, fileName) {
             let self = this;
+            let nesting = this.config.maxNesting;
             let outParams = [];
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
@@ -740,8 +742,10 @@ module.exports = function({utPort}) {
                     return data;
                 }
                 let result = {};
-                function recurse(cur, prop) {
-                    if (Object(cur) !== cur) {
+                function recurse(cur, prop, depth) {
+                    if (depth > nesting) throw new Error('Unsupported deep nesting for property ' + prop);
+                    if (typeof cur === 'function') {
+                    } else if (Object(cur) !== cur) {
                         result[prop] = cur;
                     } else if (Array.isArray(cur)) {
                         // for (let i = 0, l = cur.length; i < l; i += 1) {
@@ -755,14 +759,14 @@ module.exports = function({utPort}) {
                         let isEmpty = true;
                         for (let p in cur) {
                             isEmpty = false;
-                            recurse(cur[p], prop ? prop + delimiter + p : p);
+                            recurse(cur[p], prop ? prop + delimiter + p : p, depth + 1);
                         }
                         if (isEmpty && prop) {
                             result[prop] = {};
                         }
                     }
                 }
-                recurse(data, '');
+                recurse(data, '', 1);
                 return result;
             }
             function getValue(column, value, def, updated) {
