@@ -1,3 +1,7 @@
+## [7.9.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.9.1...v7.9.2) (2019-03-22)
+
+
+
 ## [7.9.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.9.0...v7.9.1) (2019-03-14)
 
 
