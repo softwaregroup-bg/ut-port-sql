@@ -812,7 +812,9 @@ module.exports = function({utPort}) {
                 if (value === undefined) {
                     return def;
                 } else if (value) {
-                    if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
+                    if (self.cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
+                        return self.cbc.encrypt(Buffer.from(value));
+                    } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
                         // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
                         return new Date(value);
                     } else if (column.type.declaration === 'time') {
