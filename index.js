@@ -140,11 +140,12 @@ module.exports = function({utPort}) {
                 })
                 .then(this.refreshView.bind(this, true))
                 .then(this.loadSchema.bind(this, null))
-                .then(this.updateSchema.bind(this))
+                .then(this.updateSchema.bind(this, {paths: 'schema', retry: this.config.retrySchemaUpdate, load: true}))
                 .then(this.refreshView.bind(this, false))
                 .then(this.linkSP.bind(this))
                 .then(this.doc.bind(this))
                 .then((v) => { this.connectionReady = true; return v; })
+                .then(this.updateSchema.bind(this, {paths: 'seed', retry: false, load: false}))
                 .catch((err) => {
                     try { this.connection.close(); } catch (e) {};
                     if (this.config.retry) {
@@ -312,33 +313,33 @@ module.exports = function({utPort}) {
                 });
             });
         }
-        getSchema() {
+        getPaths(name) {
             let result = [];
-            if (this.config.schema) {
-                let schema;
-                if (typeof (this.config.schema) === 'function') {
-                    schema = this.config.schema();
+            if (this.config[name]) {
+                let folder;
+                if (typeof (this.config[name]) === 'function') {
+                    folder = this.config[name]();
                 } else {
-                    schema = this.config.schema;
+                    folder = this.config[name];
                 }
-                if (Array.isArray(schema)) {
-                    result = schema.slice();
+                if (Array.isArray(folder)) {
+                    result = folder.slice();
                 } else {
-                    result.push({path: schema});
+                    result.push({path: folder});
                 }
             }
-            this.methods.importedMap && Array.from(this.methods.importedMap.entries()).forEach(function([name, value]) {
-                if (this.includesConfig('updates', name, true)) {
-                    value.schema && Array.prototype.push.apply(result, value.schema);
+            this.methods.importedMap && Array.from(this.methods.importedMap.entries()).forEach(function([imported, value]) {
+                if (this.includesConfig('updates', imported, true)) {
+                    value[name] && Array.prototype.push.apply(result, value[name]);
                 }
             }.bind(this));
-            return result.reduce((all, schema) => {
-                schema = (typeof schema === 'function') ? schema(this) : schema;
-                schema && all.push(schema);
+            return result.reduce((all, item) => {
+                item = (typeof item === 'function') ? item(this) : item;
+                item && all.push(item);
                 return all;
             }, []);
         }
-        updateSchema(schema) {
+        updateSchema({paths, retry, load}, schema) {
             this.checkConnection();
             let busConfig = this.bus.config;
 
@@ -482,8 +483,27 @@ module.exports = function({utPort}) {
                 }
             }
 
+            const addSP = (queries, {fileName, objectName, objectId, config}) => {
+                const params = require(fileName);
+                queries.push({
+                    fileName,
+                    objectName,
+                    objectId,
+                    callSP: () => this.methods[objectName].call(
+                        this,
+                        typeof params === 'function' ? params(config) : params,
+                        {
+                            auth: {
+                                actorId: 0
+                            },
+                            method: objectName,
+                            userName: 'SYSTEM'
+                        })
+                });
+            };
+
             function getObjectName(fileName) {
-                return fileName.replace(/\.sql$/i, '').replace(/^[^$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$]*\$/, ''); // remove "prefix$" and ".sql" suffix
             }
 
             function shouldCreateTT(tableName) {
@@ -533,16 +553,16 @@ module.exports = function({utPort}) {
             }
 
             let self = this;
-            let schemas = this.getSchema();
+            let folders = this.getPaths(paths);
             let failedQueries = [];
             let hashDropped = false;
-            if (!schemas || !schemas.length) {
+            if (!folders || !folders.length) {
                 return schema;
             }
             return new Promise((resolve, reject) => {
                 let objectList = [];
                 let promise = Promise.resolve();
-                schemas.forEach((schemaConfig) => {
+                folders.forEach((schemaConfig) => {
                     promise = promise
                         .then(() => {
                             return new Promise((resolve, reject) => {
@@ -572,37 +592,52 @@ module.exports = function({utPort}) {
                                         if (!fs.statSync(fileName).isFile()) {
                                             return;
                                         }
-                                        schemaConfig.linkSP && (objectList[objectId] = fileName);
-                                        let fileContent = fs.readFileSync(fileName).toString();
-                                        addQuery(queries, {
-                                            fileName: fileName,
-                                            objectName: objectName,
-                                            objectId: objectId,
-                                            fileContent: fileContent,
-                                            createStatement: getCreateStatement(fileContent, fileName, objectName)
-                                        });
-                                        if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                                            let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                            if (tt) {
+                                        switch (path.extname(fileName).toLowerCase()) {
+                                            case '.sql':
+                                                schemaConfig.linkSP && (objectList[objectId] = fileName);
+                                                let fileContent = fs.readFileSync(fileName).toString();
                                                 addQuery(queries, {
                                                     fileName: fileName,
-                                                    objectName: objectName + 'TT',
-                                                    objectId: objectId + 'tt',
-                                                    fileContent: tt,
-                                                    createStatement: tt
+                                                    objectName: objectName,
+                                                    objectId: objectId,
+                                                    fileContent: fileContent,
+                                                    createStatement: getCreateStatement(fileContent, fileName, objectName)
                                                 });
-                                            }
-                                            let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                            if (ttu) {
-                                                addQuery(queries, {
+                                                if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                                                    let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                                    if (tt) {
+                                                        addQuery(queries, {
+                                                            fileName: fileName,
+                                                            objectName: objectName + 'TT',
+                                                            objectId: objectId + 'tt',
+                                                            fileContent: tt,
+                                                            createStatement: tt
+                                                        });
+                                                    }
+                                                    let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                                    if (ttu) {
+                                                        addQuery(queries, {
+                                                            fileName: fileName,
+                                                            objectName: objectName + 'TTU',
+                                                            objectId: objectId + 'ttu',
+                                                            fileContent: ttu,
+                                                            createStatement: ttu
+                                                        });
+                                                    }
+                                                };
+                                                break;
+                                            case '.js':
+                                            case '.json':
+                                                addSP(queries, {
                                                     fileName: fileName,
-                                                    objectName: objectName + 'TTU',
-                                                    objectId: objectId + 'ttu',
-                                                    fileContent: ttu,
-                                                    createStatement: ttu
+                                                    objectName: objectName,
+                                                    objectId: objectId,
+                                                    config: schemaConfig.config
                                                 });
-                                            }
-                                        }
+                                                break;
+                                            default:
+                                                throw new Error('Unsupported file extension: ' + fileName);
+                                        };
                                     });
 
                                     let request = self.getRequest();
@@ -618,14 +653,14 @@ module.exports = function({utPort}) {
                                     }
                                     queries.forEach((query) => {
                                         innerPromise = innerPromise.then(() => {
-                                            return request
-                                                .batch(query.content)
+                                            let operation = query.callSP ? query.callSP() : request.batch(query.content);
+                                            return operation
                                                 .then(() => updated.push(query.objectName))
                                                 .catch((err) => {
                                                     err.message = err.message + ' (' + query.fileName + ':' + (err.lineNumber || 1) + ':1)';
                                                     let newError = sqlPortErrors['portSQL.updateSchema'](err);
                                                     newError.fileName = query.fileName;
-                                                    if (!this.config.retrySchemaUpdate) {
+                                                    if (!retry) {
                                                         throw newError;
                                                     } else {
                                                         failedQueries.push(query);
@@ -641,7 +676,7 @@ module.exports = function({utPort}) {
                                                 message: updated,
                                                 $meta: {
                                                     mtid: 'event',
-                                                    opcode: 'updateSchema'
+                                                    opcode: 'update.' + paths
                                                 }
                                             });
                                             return resolve();
@@ -663,6 +698,7 @@ module.exports = function({utPort}) {
                         .then(() => (objectList));
                 })
                 .then(function(objectList) {
+                    if (!load) return schema;
                     return self.loadSchema(objectList);
                 });
         }
@@ -1125,7 +1161,7 @@ module.exports = function({utPort}) {
         }
         loadSchema(objectList, hash) {
             let self = this;
-            let schema = this.getSchema();
+            let schema = this.getPaths('schema');
             let cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
             if (hash) {
                 let cacheFileName = cacheFile(hash);
@@ -1216,7 +1252,7 @@ module.exports = function({utPort}) {
         refreshView(drop, data) {
             this.checkConnection();
             if (this.config.offline) return drop ? this.config.offline : data;
-            let schema = this.getSchema();
+            let schema = this.getPaths('schema');
             if ((Array.isArray(schema) && !schema.length) || !schema) {
                 if (drop && this.config.cache) {
                     return this.getRequest()
@@ -1243,7 +1279,7 @@ module.exports = function({utPort}) {
             }
             this.checkConnection();
             let self = this;
-            let schemas = this.getSchema();
+            let schemas = this.getPaths('schema');
             let parserSP = require('./parsers/mssqlSP');
             return new Promise(function(resolve, reject) {
                 let docList = [];
