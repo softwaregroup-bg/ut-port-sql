@@ -1,3 +1,12 @@
+## [7.10.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.10.0...v7.10.1) (2019-03-27)
+
+
+### Bug Fixes
+
+* support encryption in TVP ([5a1ca7f](https://github.com/softwaregroup-bg/ut-port-sql/commit/5a1ca7f))
+
+
+
 # [7.10.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.9.2...v7.10.0) (2019-03-27)
 
 
