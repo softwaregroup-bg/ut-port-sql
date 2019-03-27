@@ -1,3 +1,12 @@
+# [7.10.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.9.2...v7.10.0) (2019-03-27)
+
+
+### Features
+
+* allow seed data coming from .js or .json ([b15d772](https://github.com/softwaregroup-bg/ut-port-sql/commit/b15d772))
+
+
+
 ## [7.9.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.9.1...v7.9.2) (2019-03-22)
 
 
