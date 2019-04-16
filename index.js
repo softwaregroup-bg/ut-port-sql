@@ -813,6 +813,7 @@ module.exports = function({utPort}) {
                     return def;
                 } else if (value) {
                     if (self.cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
+                        if (!Buffer.isBuffer(value) && typeof value === 'object') value = JSON.stringify(value);
                         return self.cbc.encrypt(Buffer.from(value));
                     } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
                         // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
