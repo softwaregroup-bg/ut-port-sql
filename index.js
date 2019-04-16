@@ -503,7 +503,7 @@ module.exports = function({utPort}) {
             };
 
             function getObjectName(fileName) {
-                return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
             }
 
             function shouldCreateTT(tableName) {
