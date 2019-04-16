@@ -1,3 +1,17 @@
+# [7.11.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.10.1...v7.11.0) (2019-04-16)
+
+
+### Bug Fixes
+
+* stringify objects when encrypting ([f7e3e8e](https://github.com/softwaregroup-bg/ut-port-sql/commit/f7e3e8e))
+
+
+### Features
+
+* allow using '-' as prefix separator ([41d2069](https://github.com/softwaregroup-bg/ut-port-sql/commit/41d2069))
+
+
+
 ## [7.10.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.10.0...v7.10.1) (2019-03-27)
 
 
