@@ -826,6 +826,8 @@ module.exports = function({utPort}) {
                         return xmlBuilder.buildObject(obj);
                     } else if (value.type === 'Buffer') {
                         return Buffer.from(value.data);
+                    } else if (typeof value === 'object') {
+                        return JSON.stringify(value);
                     }
                 }
                 return value;
