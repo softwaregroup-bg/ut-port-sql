@@ -1,3 +1,12 @@
+# [7.12.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.11.0...v7.12.0) (2019-04-17)
+
+
+### Features
+
+* convert objects parameters to JSON ([9800354](https://github.com/softwaregroup-bg/ut-port-sql/commit/9800354))
+
+
+
 # [7.11.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.10.1...v7.11.0) (2019-04-16)
 
 
