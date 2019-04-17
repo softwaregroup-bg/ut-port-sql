@@ -18,6 +18,8 @@ const VAR_RE = /\$\{([^}]*)\}/g;
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
+const dotprop = require('dot-prop');
+const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 
 // patch for https://github.com/tediousjs/tedious/pull/710
 require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
@@ -67,7 +69,14 @@ function changeRowVersionType(field) {
 }
 
 function interpolate(txt, params = {}) {
-    return txt.replace(VAR_RE, (placeHolder, label) => (params[label] || placeHolder));
+    return txt.replace(VAR_RE, (placeHolder, label) => {
+        let value = dotprop.get(params, label);
+        switch (typeof value) {
+            case 'undefined': return placeHolder;
+            case 'object': return JSON.stringify(value);
+            default: return value;
+        }
+    });
 };
 
 module.exports = function({utPort}) {
@@ -94,6 +103,7 @@ module.exports = function({utPort}) {
                 skipTableType: [],
                 paramsOutName: 'out',
                 doc: false,
+                maxNesting: 5,
                 connection: {
                     options: {
                         debug: {
@@ -130,11 +140,12 @@ module.exports = function({utPort}) {
                 })
                 .then(this.refreshView.bind(this, true))
                 .then(this.loadSchema.bind(this, null))
-                .then(this.updateSchema.bind(this))
+                .then(this.updateSchema.bind(this, {paths: 'schema', retry: this.config.retrySchemaUpdate, load: true}))
                 .then(this.refreshView.bind(this, false))
                 .then(this.linkSP.bind(this))
                 .then(this.doc.bind(this))
                 .then((v) => { this.connectionReady = true; return v; })
+                .then(this.updateSchema.bind(this, {paths: 'seed', retry: false, load: false}))
                 .catch((err) => {
                     try { this.connection.close(); } catch (e) {};
                     if (this.config.retry) {
@@ -149,7 +160,7 @@ module.exports = function({utPort}) {
         start() {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
-            this.methods.imported && Object.values(this.methods.imported).forEach(value => {
+            this.methods.importedMap && Array.from(this.methods.importedMap.values()).forEach(value => {
                 if (Array.isArray(value.skipTableType)) {
                     this.config.skipTableType = this.config.skipTableType.concat(value.skipTableType);
                 };
@@ -202,7 +213,7 @@ module.exports = function({utPort}) {
             $meta.debug = !!this.bus.config.debug;
             let methodName = ($meta && $meta.method);
             if (methodName) {
-                let parts = methodName.match(/^([^[]*)(\[[0+?^]?])?$/);
+                let parts = methodName.match(/^([^[#?]*)[^[]*(\[[0+?^]?])?$/);
                 let modifier;
                 if (parts) {
                     methodName = parts[1];
@@ -302,35 +313,35 @@ module.exports = function({utPort}) {
                 });
             });
         }
-        getSchema() {
+        getPaths(name) {
             let result = [];
-            if (this.config.schema) {
-                let schema;
-                if (typeof (this.config.schema) === 'function') {
-                    schema = this.config.schema();
+            if (this.config[name]) {
+                let folder;
+                if (typeof (this.config[name]) === 'function') {
+                    folder = this.config[name]();
                 } else {
-                    schema = this.config.schema;
+                    folder = this.config[name];
                 }
-                if (Array.isArray(schema)) {
-                    result = schema.slice();
+                if (Array.isArray(folder)) {
+                    result = folder.slice();
                 } else {
-                    result.push({path: schema});
+                    result.push({path: folder});
                 }
             }
-            this.methods.imported && Object.entries(this.methods.imported).forEach(function([name, value]) {
-                if (this.includesConfig('updates', name, true)) {
-                    value.schema && Array.prototype.push.apply(result, value.schema);
+            this.methods.importedMap && Array.from(this.methods.importedMap.entries()).forEach(function([imported, value]) {
+                if (this.includesConfig('updates', imported, true)) {
+                    value[name] && Array.prototype.push.apply(result, value[name]);
                 }
             }.bind(this));
-            return result.reduce((all, schema) => {
-                schema = (typeof schema === 'function') ? schema(this) : schema;
-                schema && all.push(schema);
+            return result.reduce((all, item) => {
+                item = (typeof item === 'function') ? item(this) : item;
+                item && all.push(item);
                 return all;
             }, []);
         }
-        updateSchema(schema) {
+        updateSchema({paths, retry, load}, schema) {
             this.checkConnection();
-            let busConfig = flatten(this.bus.config);
+            let busConfig = this.bus.config;
 
             function replaceAuditLog(statement) {
                 let parserSP = require('./parsers/mssqlSP');
@@ -472,8 +483,27 @@ module.exports = function({utPort}) {
                 }
             }
 
+            const addSP = (queries, {fileName, objectName, objectId, config}) => {
+                const params = require(fileName);
+                queries.push({
+                    fileName,
+                    objectName,
+                    objectId,
+                    callSP: () => this.methods[objectName].call(
+                        this,
+                        typeof params === 'function' ? params(config) : params,
+                        {
+                            auth: {
+                                actorId: 0
+                            },
+                            method: objectName,
+                            userName: 'SYSTEM'
+                        })
+                });
+            };
+
             function getObjectName(fileName) {
-                return fileName.replace(/\.sql$/i, '').replace(/^[^$]*\$/, ''); // remove "prefix$" and ".sql" suffix
+                return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
             }
 
             function shouldCreateTT(tableName) {
@@ -523,16 +553,16 @@ module.exports = function({utPort}) {
             }
 
             let self = this;
-            let schemas = this.getSchema();
+            let folders = this.getPaths(paths);
             let failedQueries = [];
             let hashDropped = false;
-            if (!schemas || !schemas.length) {
+            if (!folders || !folders.length) {
                 return schema;
             }
             return new Promise((resolve, reject) => {
                 let objectList = [];
                 let promise = Promise.resolve();
-                schemas.forEach((schemaConfig) => {
+                folders.forEach((schemaConfig) => {
                     promise = promise
                         .then(() => {
                             return new Promise((resolve, reject) => {
@@ -562,37 +592,52 @@ module.exports = function({utPort}) {
                                         if (!fs.statSync(fileName).isFile()) {
                                             return;
                                         }
-                                        schemaConfig.linkSP && (objectList[objectId] = fileName);
-                                        let fileContent = fs.readFileSync(fileName).toString();
-                                        addQuery(queries, {
-                                            fileName: fileName,
-                                            objectName: objectName,
-                                            objectId: objectId,
-                                            fileContent: fileContent,
-                                            createStatement: getCreateStatement(fileContent, fileName, objectName)
-                                        });
-                                        if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                                            let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                            if (tt) {
+                                        switch (path.extname(fileName).toLowerCase()) {
+                                            case '.sql':
+                                                schemaConfig.linkSP && (objectList[objectId] = fileName);
+                                                let fileContent = fs.readFileSync(fileName).toString();
                                                 addQuery(queries, {
                                                     fileName: fileName,
-                                                    objectName: objectName + 'TT',
-                                                    objectId: objectId + 'tt',
-                                                    fileContent: tt,
-                                                    createStatement: tt
+                                                    objectName: objectName,
+                                                    objectId: objectId,
+                                                    fileContent: fileContent,
+                                                    createStatement: getCreateStatement(fileContent, fileName, objectName)
                                                 });
-                                            }
-                                            let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                            if (ttu) {
-                                                addQuery(queries, {
+                                                if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                                                    let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                                    if (tt) {
+                                                        addQuery(queries, {
+                                                            fileName: fileName,
+                                                            objectName: objectName + 'TT',
+                                                            objectId: objectId + 'tt',
+                                                            fileContent: tt,
+                                                            createStatement: tt
+                                                        });
+                                                    }
+                                                    let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                                    if (ttu) {
+                                                        addQuery(queries, {
+                                                            fileName: fileName,
+                                                            objectName: objectName + 'TTU',
+                                                            objectId: objectId + 'ttu',
+                                                            fileContent: ttu,
+                                                            createStatement: ttu
+                                                        });
+                                                    }
+                                                };
+                                                break;
+                                            case '.js':
+                                            case '.json':
+                                                addSP(queries, {
                                                     fileName: fileName,
-                                                    objectName: objectName + 'TTU',
-                                                    objectId: objectId + 'ttu',
-                                                    fileContent: ttu,
-                                                    createStatement: ttu
+                                                    objectName: objectName,
+                                                    objectId: objectId,
+                                                    config: schemaConfig.config
                                                 });
-                                            }
-                                        }
+                                                break;
+                                            default:
+                                                throw new Error('Unsupported file extension: ' + fileName);
+                                        };
                                     });
 
                                     let request = self.getRequest();
@@ -608,14 +653,14 @@ module.exports = function({utPort}) {
                                     }
                                     queries.forEach((query) => {
                                         innerPromise = innerPromise.then(() => {
-                                            return request
-                                                .batch(query.content)
+                                            let operation = query.callSP ? query.callSP() : request.batch(query.content);
+                                            return operation
                                                 .then(() => updated.push(query.objectName))
                                                 .catch((err) => {
                                                     err.message = err.message + ' (' + query.fileName + ':' + (err.lineNumber || 1) + ':1)';
                                                     let newError = sqlPortErrors['portSQL.updateSchema'](err);
                                                     newError.fileName = query.fileName;
-                                                    if (!this.config.retrySchemaUpdate) {
+                                                    if (!retry) {
                                                         throw newError;
                                                     } else {
                                                         failedQueries.push(query);
@@ -631,7 +676,7 @@ module.exports = function({utPort}) {
                                                 message: updated,
                                                 $meta: {
                                                     mtid: 'event',
-                                                    opcode: 'updateSchema'
+                                                    opcode: 'update.' + paths
                                                 }
                                             });
                                             return resolve();
@@ -653,6 +698,7 @@ module.exports = function({utPort}) {
                         .then(() => (objectList));
                 })
                 .then(function(objectList) {
+                    if (!load) return schema;
                     return self.loadSchema(objectList);
                 });
         }
@@ -702,6 +748,7 @@ module.exports = function({utPort}) {
         }
         callSP(name, params, flatten, fileName) {
             let self = this;
+            let nesting = this.config.maxNesting;
             let outParams = [];
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
@@ -731,8 +778,10 @@ module.exports = function({utPort}) {
                     return data;
                 }
                 let result = {};
-                function recurse(cur, prop) {
-                    if (Object(cur) !== cur) {
+                function recurse(cur, prop, depth) {
+                    if (depth > nesting) throw new Error('Unsupported deep nesting for property ' + prop);
+                    if (typeof cur === 'function') {
+                    } else if (Object(cur) !== cur) {
                         result[prop] = cur;
                     } else if (Array.isArray(cur)) {
                         // for (let i = 0, l = cur.length; i < l; i += 1) {
@@ -746,14 +795,14 @@ module.exports = function({utPort}) {
                         let isEmpty = true;
                         for (let p in cur) {
                             isEmpty = false;
-                            recurse(cur[p], prop ? prop + delimiter + p : p);
+                            recurse(cur[p], prop ? prop + delimiter + p : p, depth + 1);
                         }
                         if (isEmpty && prop) {
                             result[prop] = {};
                         }
                     }
                 }
-                recurse(data, '');
+                recurse(data, '', 1);
                 return result;
             }
             function getValue(column, value, def, updated) {
@@ -763,7 +812,10 @@ module.exports = function({utPort}) {
                 if (value === undefined) {
                     return def;
                 } else if (value) {
-                    if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
+                    if (self.cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
+                        if (!Buffer.isBuffer(value) && typeof value === 'object') value = JSON.stringify(value);
+                        return self.cbc.encrypt(Buffer.from(value));
+                    } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
                         // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
                         return new Date(value);
                     } else if (column.type.declaration === 'time') {
@@ -774,6 +826,8 @@ module.exports = function({utPort}) {
                         return xmlBuilder.buildObject(obj);
                     } else if (value.type === 'Buffer') {
                         return Buffer.from(value.data);
+                    } else if (typeof value === 'object') {
+                        return JSON.stringify(value);
                     }
                 }
                 return value;
@@ -785,7 +839,17 @@ module.exports = function({utPort}) {
                 let debug = this.isDebug();
                 let debugParams = {};
                 request.multiple = true;
-                $meta.globalId = uuid.v1();
+                $meta.globalId = ($meta && $meta.requestHeaders && $meta.requestHeaders['x-requestuid']) || uuid.v1();
+                $meta.requestDateTime = ($meta &&
+                    $meta.requestHeaders &&
+                    $meta.requestHeaders['x-requestuiddatetime'] &&
+                    $meta.requestHeaders['x-requestuiddatetime'] != null &&
+                    $meta.requestHeaders['x-requestuiddatetime']) || new Date().getTime();
+                $meta.noAudit = ($meta &&
+                    $meta.requestHeaders &&
+                    $meta.requestHeaders['x-noaudit'] &&
+                    $meta.requestHeaders['x-noaudit'] != null &&
+                    $meta.requestHeaders['x-noaudit']) || 0;
                 params && params.forEach(function(param) {
                     let value;
                     if (param.name === 'meta') {
@@ -795,8 +859,8 @@ module.exports = function({utPort}) {
                     } else {
                         value = data[param.name];
                     }
-                    if (param.encrypt) {
-                        value = self.cbc.encrypt(value);
+                    if (param.encrypt && value != null) {
+                        value = self.cbc.encrypt(Buffer.from(value));
                     }
                     let hasValue = value !== void 0;
                     let type = sqlType(param.def);
@@ -894,7 +958,7 @@ module.exports = function({utPort}) {
                             Object.keys(resultset.columns).forEach(column => {
                                 switch (resultset.columns[column].type.declaration) {
                                     case 'varbinary':
-                                        if (self.cbc && resultset.columns[column].length % 16 === 0) {
+                                        if (self.cbc && isEncrypted(resultset.columns[column])) {
                                             encryptedColumns.push(column);
                                         }
                                         break;
@@ -1065,9 +1129,9 @@ module.exports = function({utPort}) {
                                 flatten = '_';
                             }
                         });
-                        binding.params && binding.params.forEach(function(param) {
+                        binding.params && binding.params.forEach(param => {
                             (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
-                            if (param.def && param.def.type === 'varbinary' && param.def.size % 16 === 0 && this.cbc) {
+                            if (isEncrypted(param) && this.cbc) {
                                 param.encrypt = true;
                             };
                             if (param.def && param.def.type === 'table') {
@@ -1103,7 +1167,7 @@ module.exports = function({utPort}) {
                                     return table;
                                 };
                             }
-                        }.bind(this));
+                        });
                         this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName);
                     }
                 }.bind(this));
@@ -1112,7 +1176,7 @@ module.exports = function({utPort}) {
         }
         loadSchema(objectList, hash) {
             let self = this;
-            let schema = this.getSchema();
+            let schema = this.getPaths('schema');
             let cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
             if (hash) {
                 let cacheFileName = cacheFile(hash);
@@ -1203,7 +1267,7 @@ module.exports = function({utPort}) {
         refreshView(drop, data) {
             this.checkConnection();
             if (this.config.offline) return drop ? this.config.offline : data;
-            let schema = this.getSchema();
+            let schema = this.getPaths('schema');
             if ((Array.isArray(schema) && !schema.length) || !schema) {
                 if (drop && this.config.cache) {
                     return this.getRequest()
@@ -1230,7 +1294,7 @@ module.exports = function({utPort}) {
             }
             this.checkConnection();
             let self = this;
-            let schemas = this.getSchema();
+            let schemas = this.getPaths('schema');
             let parserSP = require('./parsers/mssqlSP');
             return new Promise(function(resolve, reject) {
                 let docList = [];
@@ -1396,7 +1460,7 @@ module.exports = function({utPort}) {
             });
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
-            if (this.config.create) {
+            if (this.config.create && this.config.create.user) {
                 let conCreate = new mssql.ConnectionPool(
                     sanitize({...this.config.connection, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
                 );
@@ -1451,27 +1515,5 @@ module.exports = function({utPort}) {
             }
         });
         object[fieldName] = fieldValue;
-    }
-
-    function flatten(data) {
-        let result = {};
-        function recurse(cur, prop) {
-            if (Object(cur) !== cur) {
-                result[prop] = cur;
-            } else if (Array.isArray(cur) || typeof cur === 'function') {
-                result[prop] = cur;
-            } else {
-                let isEmpty = true;
-                Object.keys(cur).forEach(function(p) {
-                    isEmpty = false;
-                    recurse(cur[p], prop ? prop + '.' + p : p);
-                });
-                if (isEmpty && prop) {
-                    result[prop] = {};
-                }
-            }
-        }
-        recurse(data, '');
-        return result;
     }
 };
