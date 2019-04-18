@@ -1,3 +1,12 @@
+## [7.12.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.12.0...v7.12.1) (2019-04-18)
+
+
+### Bug Fixes
+
+* elasticsearch indexing ([9ba5da0](https://github.com/softwaregroup-bg/ut-port-sql/commit/9ba5da0))
+
+
+
 # [7.12.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.11.0...v7.12.0) (2019-04-17)
 
 
