@@ -1387,8 +1387,10 @@ module.exports = function({utPort}) {
                                     if (id === 255 || packet.isLast()) {
                                         this.log.trace({
                                             $meta: {mtid: 'event', opcode: 'port.pool.out'},
-                                            size: length + id * c.messageIo.packetSize(),
-                                            header: packet.headerToString()
+                                            message: {
+                                                size: length + id * c.messageIo.packetSize(),
+                                                header: packet.headerToString()
+                                            }
                                         });
                                     }
                                 }
@@ -1401,8 +1403,10 @@ module.exports = function({utPort}) {
                                     if (id === 255 || packet.isLast()) {
                                         this.log.trace({
                                             $meta: {mtid: 'event', opcode: 'port.pool.in'},
-                                            size: length + id * c.messageIo.packetSize(),
-                                            header: packet.headerToString()
+                                            message: {
+                                                size: length + id * c.messageIo.packetSize(),
+                                                header: packet.headerToString()
+                                            }
                                         });
                                     }
                                 }
@@ -1410,7 +1414,7 @@ module.exports = function({utPort}) {
                         };
                         c.debug.log = msg => {
                             if (this.log.debug && c.state && (c.state.name !== 'LoggedIn') && (c.state.name !== 'SentClientRequest')) {
-                                this.log.debug({$meta: {mtid: 'event', opcode: 'port.pool.state'}, message: msg, id, created});
+                                this.log.debug({$meta: {mtid: 'event', opcode: 'port.pool.state'}, message: {state: msg, id, created}});
                             }
                         };
                         c.once('connect', err => {
