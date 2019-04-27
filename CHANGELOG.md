@@ -1,3 +1,12 @@
+## [7.12.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.12.1...v7.12.2) (2019-04-27)
+
+
+### Bug Fixes
+
+* improve offline and cacheing ([6f95974](https://github.com/softwaregroup-bg/ut-port-sql/commit/6f95974))
+
+
+
 ## [7.12.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.12.0...v7.12.1) (2019-04-18)
 
 
