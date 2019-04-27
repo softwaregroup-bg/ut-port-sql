@@ -643,7 +643,7 @@ module.exports = function({utPort}) {
                                     let request = self.getRequest();
                                     let updated = [];
                                     let innerPromise = Promise.resolve();
-                                    if (queries.length && !hashDropped) {
+                                    if (queries.length && !hashDropped && load) {
                                         innerPromise = innerPromise
                                             .then(() => request.batch(mssqlQueries.dropHash())
                                                 .then(() => {
@@ -698,7 +698,7 @@ module.exports = function({utPort}) {
                         .then(() => (objectList));
                 })
                 .then(function(objectList) {
-                    if (!load) return schema;
+                    if (!load || self.config.offline) return schema;
                     return self.loadSchema(objectList);
                 });
         }
@@ -1279,7 +1279,7 @@ module.exports = function({utPort}) {
                 });
         }
         doc(schema) {
-            if (!this.config.doc) {
+            if (!this.config.doc || this.config.offline) {
                 return schema;
             }
             this.checkConnection();
