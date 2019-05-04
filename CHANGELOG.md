@@ -1,3 +1,12 @@
+# [7.13.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.12.2...v7.13.0) (2019-05-04)
+
+
+### Features
+
+* support json in columns and params ([e6bd124](https://github.com/softwaregroup-bg/ut-port-sql/commit/e6bd124))
+
+
+
 ## [7.12.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.12.1...v7.12.2) (2019-04-27)
 
 
