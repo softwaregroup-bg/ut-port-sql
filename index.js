@@ -863,6 +863,8 @@ module.exports = function({utPort}) {
                         value = xmlBuilder.buildObject(value);
                     } else if (param.def && param.def.type === 'rowversion' && value != null && !Buffer.isBuffer(value)) {
                         value = Buffer.from(value.data ? value.data : []);
+                    } else if (typeof value === 'object' && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
+                        value = JSON.stringify(value);
                     }
                     if (param.out) {
                         request.output(param.name, type, value);
@@ -945,7 +947,9 @@ module.exports = function({utPort}) {
                         result.recordsets.forEach(function(resultset) {
                             const encryptedColumns = [];
                             const xmlColumns = [];
+                            const jsonColumns = [];
                             Object.keys(resultset.columns).forEach(column => {
+                                if (/\.json$/i.test(column)) jsonColumns.push(column);
                                 switch (resultset.columns[column].type.declaration) {
                                     case 'varbinary':
                                         if (self.cbc && isEncrypted(resultset.columns[column])) {
@@ -959,11 +963,16 @@ module.exports = function({utPort}) {
                                         break;
                                 }
                             });
-                            if (xmlColumns.length || encryptedColumns.length) {
+                            if (xmlColumns.length || encryptedColumns.length || jsonColumns.length) {
                                 resultset.forEach(function(record) {
                                     encryptedColumns.forEach(function(key) {
                                         if (record[key]) { // value is not null
                                             record[key] = self.cbc.decrypt(record[key]);
+                                        }
+                                    });
+                                    jsonColumns.forEach(function(key) {
+                                        if (record[key]) { // value is not null
+                                            record[key.substr(0, key.length - 5)] = JSON.parse(record[key]);
                                         }
                                     });
                                     xmlColumns.forEach(function(key) {
