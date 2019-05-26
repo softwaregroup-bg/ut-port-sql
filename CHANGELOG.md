@@ -1,3 +1,13 @@
+## [7.13.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.13.0...v7.13.1) (2019-05-26)
+
+
+### Bug Fixes
+
+* set hash only when dropped ([39569ff](https://github.com/softwaregroup-bg/ut-port-sql/commit/39569ff))
+* show filename on error ([6d15a81](https://github.com/softwaregroup-bg/ut-port-sql/commit/6d15a81))
+
+
+
 # [7.13.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.12.2...v7.13.0) (2019-05-04)
 
 
