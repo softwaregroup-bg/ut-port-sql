@@ -704,7 +704,7 @@ module.exports = function({utPort}) {
                 })
                 .then(function(objectList) {
                     if (!load || self.config.offline) return schema;
-                    return self.loadSchema(objectList);
+                    return self.loadSchema(objectList, false, hashDropped);
                 });
         }
         execTemplate(template, params) {
@@ -1178,7 +1178,7 @@ module.exports = function({utPort}) {
             }
             return schema;
         }
-        loadSchema(objectList, hash) {
+        loadSchema(objectList, hash, setHash) {
             let self = this;
             let schema = this.getPaths('schema');
             let cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
@@ -1261,8 +1261,7 @@ module.exports = function({utPort}) {
                         let contentHash = crypto.hash(content);
                         fsplus.makeTreeSync(cacheFile());
                         fs.writeFileSync(cacheFile(contentHash), content);
-                        return request.query(mssqlQueries.setHash(contentHash))
-                            .then(() => schema);
+                        return setHash ? request.query(mssqlQueries.setHash(contentHash)).then(() => schema) : schema;
                     } else {
                         return schema;
                     }
