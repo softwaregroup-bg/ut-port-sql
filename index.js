@@ -589,55 +589,60 @@ module.exports = function({utPort}) {
                                         let objectName = getObjectName(file.name);
                                         let objectId = objectName.toLowerCase();
                                         let fileName = path.join(schemaConfig.path, file.originalName);
-                                        if (!fs.statSync(fileName).isFile()) {
-                                            return;
+                                        try {
+                                            if (!fs.statSync(fileName).isFile()) {
+                                                return;
+                                            }
+                                            switch (path.extname(fileName).toLowerCase()) {
+                                                case '.sql':
+                                                    schemaConfig.linkSP && (objectList[objectId] = fileName);
+                                                    let fileContent = fs.readFileSync(fileName).toString();
+                                                    addQuery(queries, {
+                                                        fileName: fileName,
+                                                        objectName: objectName,
+                                                        objectId: objectId,
+                                                        fileContent: fileContent,
+                                                        createStatement: getCreateStatement(fileContent, fileName, objectName)
+                                                    });
+                                                    if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                                                        let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                                        if (tt) {
+                                                            addQuery(queries, {
+                                                                fileName: fileName,
+                                                                objectName: objectName + 'TT',
+                                                                objectId: objectId + 'tt',
+                                                                fileContent: tt,
+                                                                createStatement: tt
+                                                            });
+                                                        }
+                                                        let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                                        if (ttu) {
+                                                            addQuery(queries, {
+                                                                fileName: fileName,
+                                                                objectName: objectName + 'TTU',
+                                                                objectId: objectId + 'ttu',
+                                                                fileContent: ttu,
+                                                                createStatement: ttu
+                                                            });
+                                                        }
+                                                    };
+                                                    break;
+                                                case '.js':
+                                                case '.json':
+                                                    addSP(queries, {
+                                                        fileName: fileName,
+                                                        objectName: objectName,
+                                                        objectId: objectId,
+                                                        config: schemaConfig.config
+                                                    });
+                                                    break;
+                                                default:
+                                                    throw new Error('Unsupported file extension');
+                                            };
+                                        } catch (error) {
+                                            error.message = error.message + ' (' + fileName + ')';
+                                            throw error;
                                         }
-                                        switch (path.extname(fileName).toLowerCase()) {
-                                            case '.sql':
-                                                schemaConfig.linkSP && (objectList[objectId] = fileName);
-                                                let fileContent = fs.readFileSync(fileName).toString();
-                                                addQuery(queries, {
-                                                    fileName: fileName,
-                                                    objectName: objectName,
-                                                    objectId: objectId,
-                                                    fileContent: fileContent,
-                                                    createStatement: getCreateStatement(fileContent, fileName, objectName)
-                                                });
-                                                if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                                                    let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                                    if (tt) {
-                                                        addQuery(queries, {
-                                                            fileName: fileName,
-                                                            objectName: objectName + 'TT',
-                                                            objectId: objectId + 'tt',
-                                                            fileContent: tt,
-                                                            createStatement: tt
-                                                        });
-                                                    }
-                                                    let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                                    if (ttu) {
-                                                        addQuery(queries, {
-                                                            fileName: fileName,
-                                                            objectName: objectName + 'TTU',
-                                                            objectId: objectId + 'ttu',
-                                                            fileContent: ttu,
-                                                            createStatement: ttu
-                                                        });
-                                                    }
-                                                };
-                                                break;
-                                            case '.js':
-                                            case '.json':
-                                                addSP(queries, {
-                                                    fileName: fileName,
-                                                    objectName: objectName,
-                                                    objectId: objectId,
-                                                    config: schemaConfig.config
-                                                });
-                                                break;
-                                            default:
-                                                throw new Error('Unsupported file extension: ' + fileName);
-                                        };
                                     });
 
                                     let request = self.getRequest();
