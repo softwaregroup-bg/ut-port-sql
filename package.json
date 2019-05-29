@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.13.3",
+  "version": "7.13.4",
   "main": "./index.js",
   "dependencies": {
     "dot-prop": "4.2.0",

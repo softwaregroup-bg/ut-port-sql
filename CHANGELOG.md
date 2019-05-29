@@ -1,3 +1,12 @@
+## [7.13.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.13.3...v7.13.4) (2019-05-29)
+
+
+### Bug Fixes
+
+* do not stringify dates ([4647e31](https://github.com/softwaregroup-bg/ut-port-sql/commit/4647e31))
+
+
+
 ## [7.13.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.13.2...v7.13.3) (2019-05-29)
 
 
