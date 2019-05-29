@@ -868,7 +868,7 @@ module.exports = function({utPort}) {
                         value = xmlBuilder.buildObject(value);
                     } else if (param.def && param.def.type === 'rowversion' && value != null && !Buffer.isBuffer(value)) {
                         value = Buffer.from(value.data ? value.data : []);
-                    } else if (typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
+                    } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
                         value = JSON.stringify(value);
                     }
                     if (param.out) {
