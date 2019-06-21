@@ -1334,6 +1334,15 @@ module.exports = function({utPort}) {
                                                     }
                                                 });
                                             } else {
+                                                if (binding.doc) {
+                                                    docList.push({
+                                                        type0: 'SCHEMA',
+                                                        name0: binding.schema,
+                                                        type1: 'TABLE',
+                                                        name1: binding.table,
+                                                        doc: binding.doc
+                                                    });
+                                                }
                                                 binding.fields.forEach((field) => {
                                                     if (field.doc) {
                                                         docList.push({
