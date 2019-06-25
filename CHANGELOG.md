@@ -1,3 +1,13 @@
+# [7.14.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.13.4...v7.14.0) (2019-06-25)
+
+
+### Features
+
+* add procedure description to sql extended properties ([7c2a359](https://github.com/softwaregroup-bg/ut-port-sql/commit/7c2a359))
+* add table description to sql extende properties ([befbc4c](https://github.com/softwaregroup-bg/ut-port-sql/commit/befbc4c))
+
+
+
 ## [7.13.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.13.3...v7.13.4) (2019-05-29)
 
 
