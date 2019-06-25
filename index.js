@@ -1321,6 +1321,15 @@ module.exports = function({utPort}) {
                                             let binding = parserSP.parse(fileContent);
                                             if (binding.type === 'procedure') {
                                                 binding.params.forEach((param) => {
+                                                    if (binding.doc) {
+                                                        docList.push({
+                                                            type0: 'SCHEMA',
+                                                            name0: binding.schema,
+                                                            type1: 'PROCEDURE',
+                                                            name1: binding.table,
+                                                            doc: binding.doc
+                                                        });
+                                                    }
                                                     if (param.doc) {
                                                         docList.push({
                                                             type0: 'SCHEMA',
@@ -1334,6 +1343,15 @@ module.exports = function({utPort}) {
                                                     }
                                                 });
                                             } else {
+                                                if (binding.doc) {
+                                                    docList.push({
+                                                        type0: 'SCHEMA',
+                                                        name0: binding.schema,
+                                                        type1: 'TABLE',
+                                                        name1: binding.table,
+                                                        doc: binding.doc
+                                                    });
+                                                }
                                                 binding.fields.forEach((field) => {
                                                     if (field.doc) {
                                                         docList.push({
