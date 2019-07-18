@@ -1,3 +1,12 @@
+## [7.14.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.14.0...v7.14.1) (2019-07-18)
+
+
+### Bug Fixes
+
+* check if stored procedure is linked before calling it ([b29ee62](https://github.com/softwaregroup-bg/ut-port-sql/commit/b29ee62))
+
+
+
 # [7.14.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.13.4...v7.14.0) (2019-06-25)
 
 
