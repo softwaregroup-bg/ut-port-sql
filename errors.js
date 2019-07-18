@@ -24,6 +24,7 @@ module.exports = ({defineError, getError, fetchErrors}) => {
         defineError('minOneRowExpected', PortSQL, 'Minimum one row was expected in the result');
         defineError('absolutePath', PortSQL, 'Absolute path error');
         defineError('invalidFileLocation', PortSQL, 'Writing outside of base directory is forbidden');
+        defineError('spNotFound', PortSQL, 'Stored Procedure not found: {name}');
     }
 
     return fetchErrors('portSQL');

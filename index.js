@@ -489,16 +489,23 @@ module.exports = function({utPort}) {
                     fileName,
                     objectName,
                     objectId,
-                    callSP: () => this.methods[objectName].call(
-                        this,
-                        typeof params === 'function' ? params(config) : params,
-                        {
-                            auth: {
-                                actorId: 0
-                            },
-                            method: objectName,
-                            userName: 'SYSTEM'
-                        })
+                    callSP: () => {
+                        if (typeof this.methods[objectName] !== 'function') {
+                            throw sqlPortErrors['portSQL.spNotFound']({params: {name: objectName}});
+                        }
+
+                        return this.methods[objectName].call(
+                            this,
+                            typeof params === 'function' ? params(config) : params,
+                            {
+                                auth: {
+                                    actorId: 0
+                                },
+                                method: objectName,
+                                userName: 'SYSTEM'
+                            }
+                        );
+                    }
                 });
             };
 
