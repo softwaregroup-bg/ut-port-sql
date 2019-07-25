@@ -1,3 +1,12 @@
+# [7.15.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.14.1...v7.15.0) (2019-07-25)
+
+
+### Features
+
+* add config schema ([efee6b8](https://github.com/softwaregroup-bg/ut-port-sql/commit/efee6b8))
+
+
+
 ## [7.14.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.14.0...v7.14.1) (2019-07-18)
 
 
