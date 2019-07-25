@@ -117,6 +117,54 @@ module.exports = function({utPort}) {
                 }
             };
         }
+        get schema() {
+            return {
+                type: 'object',
+                properties: {
+                    logLevel: {
+                        type: 'string',
+                        enum: ['error', 'warning', 'info', 'debug', 'trace'],
+                        default: 'info'
+                    },
+                    connection: {
+                        type: 'object',
+                        properties: {
+                            server: {
+                                type: 'string'
+                            },
+                            database: {
+                                type: 'string'
+                            },
+                            user: {
+                                type: 'string'
+                            },
+                            password: {
+                                type: 'string'
+                            },
+                            connectionTimeout: {
+                                type: ['integer', 'null'],
+                                title: 'Connection timeout (ms)'
+                            },
+                            requestTimeout: {
+                                type: ['integer', 'null'],
+                                title: 'Request timeout (ms)'
+                            }
+                        },
+                        required: ['server', 'database', 'user', 'password']
+                    }
+                },
+                required: ['connection']
+            };
+        }
+        get uiSchema() {
+            return {
+                connection: {
+                    password: {
+                        'ui:widget': 'password'
+                    }
+                }
+            };
+        }
         async init() {
             const result = await super.init(...arguments);
             this.latency = this.counter && this.counter('average', 'lt', 'Latency');
