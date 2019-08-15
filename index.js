@@ -903,7 +903,12 @@ module.exports = function({utPort}) {
                 params && params.forEach(function(param) {
                     let value;
                     if (param.name === 'meta') {
-                        value = Object.assign({}, $meta.forward, $meta);
+                        value = Object.assign(
+                            {},
+                            $meta.forward,
+                            $meta,
+                            $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId}
+                        );
                     } else if (param.update) {
                         value = data[param.name] || data.hasOwnProperty(param.update);
                     } else {
