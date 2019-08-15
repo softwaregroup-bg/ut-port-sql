@@ -1,3 +1,12 @@
+## [7.15.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.0...v7.15.1) (2019-08-15)
+
+
+### Bug Fixes
+
+* skip unneeded auth properties ([87910e5](https://github.com/softwaregroup-bg/ut-port-sql/commit/87910e5))
+
+
+
 # [7.15.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.14.1...v7.15.0) (2019-07-25)
 
 
