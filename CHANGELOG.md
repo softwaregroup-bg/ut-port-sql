@@ -1,3 +1,13 @@
+<a name="7.2.2"></a>
+## [7.2.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.1...v7.2.2) (2019-08-16)
+
+
+### Bug Fixes
+
+* pass connection properties to db.create ([7d8bcd9](https://github.com/softwaregroup-bg/ut-port-sql/commit/7d8bcd9))
+
+
+
 <a name="7.2.1"></a>
 ## [7.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.0...v7.2.1) (2018-05-09)
 
