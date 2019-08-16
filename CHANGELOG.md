@@ -1,3 +1,8 @@
+<a name="7.2.3"></a>
+## [7.2.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.2...v7.2.3) (2019-08-16)
+
+
+
 <a name="7.2.2"></a>
 ## [7.2.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.1...v7.2.2) (2019-08-16)
 
