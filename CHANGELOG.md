@@ -1,3 +1,13 @@
+<a name="7.2.4"></a>
+## [7.2.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.3...v7.2.4) (2019-08-16)
+
+
+### Bug Fixes
+
+* use correct property name ([6e0d0a4](https://github.com/softwaregroup-bg/ut-port-sql/commit/6e0d0a4))
+
+
+
 <a name="7.2.3"></a>
 ## [7.2.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.2...v7.2.3) (2019-08-16)
 
