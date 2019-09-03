@@ -1,3 +1,12 @@
+## [7.15.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.1...v7.15.2) (2019-09-03)
+
+
+### Bug Fixes
+
+* handle linux newline format ([cb3a41d](https://github.com/softwaregroup-bg/ut-port-sql/commit/cb3a41d))
+
+
+
 ## [7.15.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.0...v7.15.1) (2019-08-15)
 
 
