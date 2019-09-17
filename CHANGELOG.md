@@ -1,3 +1,12 @@
+## [7.15.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.2...v7.15.3) (2019-09-17)
+
+
+### Bug Fixes
+
+* align event logging ([fd35a22](https://github.com/softwaregroup-bg/ut-port-sql/commit/fd35a22))
+
+
+
 ## [7.15.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.1...v7.15.2) (2019-09-03)
 
 
