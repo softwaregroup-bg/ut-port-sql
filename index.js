@@ -580,7 +580,8 @@ module.exports = function({utPort}) {
                                     self.log.warn && self.log.warn({
                                         fileName: schema.fileName,
                                         $meta: {
-                                            opcode: 'portSQL.retrySuccess'
+                                            mtid: 'event',
+                                            method: 'portSQL.retrySuccess'
                                         }
                                     });
                                     return true;
@@ -736,7 +737,7 @@ module.exports = function({utPort}) {
                                                 message: updated,
                                                 $meta: {
                                                     mtid: 'event',
-                                                    opcode: 'update.' + paths
+                                                    method: 'update.' + paths
                                                 }
                                             });
                                             return resolve();
@@ -802,7 +803,7 @@ module.exports = function({utPort}) {
         getRequest() {
             let request = new mssql.Request(this.connection);
             request.on('info', (info) => {
-                this.log.warn && this.log.warn({ $meta: { mtid: 'event', opcode: 'message' }, message: info });
+                this.log.warn && this.log.warn({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
             });
             return request;
         }
@@ -1467,7 +1468,7 @@ module.exports = function({utPort}) {
                         let created = new Date();
                         let context = {id, created};
                         let notify = (event, connection) => {
-                            this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.pool.' + event}, connection});
+                            this.log.info && this.log.info({$meta: {mtid: 'event', method: 'port.pool.' + event}, connection});
                         };
                         c.debug.packet = (direction, packet) => {
                             if (direction === 'Sent') {
@@ -1477,7 +1478,7 @@ module.exports = function({utPort}) {
                                     let id = packet.packetId();
                                     if (id === 255 || packet.isLast()) {
                                         this.log.trace({
-                                            $meta: {mtid: 'event', opcode: 'port.pool.out'},
+                                            $meta: {mtid: 'event', method: 'port.pool.out'},
                                             message: {
                                                 size: length + id * c.messageIo.packetSize(),
                                                 header: packet.headerToString()
@@ -1493,7 +1494,7 @@ module.exports = function({utPort}) {
                                     let id = packet.packetId();
                                     if (id === 255 || packet.isLast()) {
                                         this.log.trace({
-                                            $meta: {mtid: 'event', opcode: 'port.pool.in'},
+                                            $meta: {mtid: 'event', method: 'port.pool.in'},
                                             message: {
                                                 size: length + id * c.messageIo.packetSize(),
                                                 header: packet.headerToString()
@@ -1505,7 +1506,7 @@ module.exports = function({utPort}) {
                         };
                         c.debug.log = msg => {
                             if (this.log.debug && c.state && (c.state.name !== 'LoggedIn') && (c.state.name !== 'SentClientRequest')) {
-                                this.log.debug({$meta: {mtid: 'event', opcode: 'port.pool.state'}, message: {state: msg, id, created}});
+                                this.log.debug({$meta: {mtid: 'event', method: 'port.pool.state'}, message: {state: msg, id, created}});
                             }
                         };
                         c.once('connect', err => {
