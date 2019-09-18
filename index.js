@@ -1031,9 +1031,8 @@ module.exports = function({utPort}) {
                                         }
                                     });
                                     jsonColumns.forEach(function(key) {
-                                        if (record[key]) { // value is not null
-                                            record[key.substr(0, key.length - 5)] = JSON.parse(record[key]);
-                                        }
+                                        record[key.substr(0, key.length - 5)] = JSON.parse(record[key]);
+                                        delete record[key];
                                     });
                                     xmlColumns.forEach(function(key) {
                                         if (record[key]) { // value is not null
