@@ -1,3 +1,12 @@
+## [7.15.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.3...v7.15.4) (2019-09-18)
+
+
+### Bug Fixes
+
+* always delete ***.json columns from resultSet ([#83](https://github.com/softwaregroup-bg/ut-port-sql/issues/83)) ([3fec6be](https://github.com/softwaregroup-bg/ut-port-sql/commit/3fec6be))
+
+
+
 ## [7.15.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.2...v7.15.3) (2019-09-17)
 
 
