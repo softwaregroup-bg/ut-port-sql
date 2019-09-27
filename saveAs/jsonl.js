@@ -1,13 +1,16 @@
 const Format = require('./format');
 
-module.exports = class JsonL extends Format {
-    constructor(request, config) {
-        super(request, config);
+module.exports = class JsonLFormat extends Format {
+    constructor(port, request, config) {
+        super(port, request, config);
+        this.resultSet = {};
         if (typeof this.config.lineSeparator !== 'string') this.config.lineSeparator = '\r\n';
     }
+    onResultSet(resultSet) {
+        this.resultSet = resultSet;
+    }
     onRow(row) {
-        super.onRow(row);
-        const line = JSON.stringify({[this.resultSetName]: row});
-        this.stream.push(`${line}${this.config.lineSeparator}`);
+        const line = JSON.stringify({[this.resultSet.resultSetName]: row});
+        this.write(`${line}${this.config.lineSeparator}`);
     }
 };

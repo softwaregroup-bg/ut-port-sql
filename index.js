@@ -807,6 +807,53 @@ module.exports = function({utPort}) {
             });
             return request;
         }
+        getRowTransformer(columns = {}) {
+            if (columns.resultSetName) return;
+
+            const pipeline = [];
+            Object.entries(columns).forEach(([key, column]) => {
+                if (column.type.declaration === 'varbinary') {
+                    if (this.cbc && isEncrypted(column)) {
+                        pipeline.push(record => {
+                            if (record[key]) { // value is not null
+                                record[key] = this.cbc.decrypt(record[key]);
+                            }
+                        });
+                    }
+                } else if (column.type.declaration === 'xml') {
+                    pipeline.push(record => {
+                        if (record[key]) { // value is not null
+                            return new Promise(function(resolve, reject) {
+                                xmlParser.parseString(record[key], function(err, result) {
+                                    if (err) {
+                                        reject(sqlPortErrors['portSQL.wrongXmlFormat']({
+                                            xml: record[key]
+                                        }));
+                                    } else {
+                                        record[key] = result;
+                                        resolve();
+                                    }
+                                });
+                            });
+                        }
+                    });
+                }
+                if (/\.json$/i.test(key)) {
+                    pipeline.push(record => {
+                        record[key.substr(0, key.length - 5)] = record[key] ? JSON.parse(record[key]) : record[key];
+                        delete record[key];
+                    });
+                };
+            });
+            if (pipeline.length) {
+                return async record => {
+                    for (let i = 0, n = pipeline.length; i < n; i += 1) {
+                        await pipeline[i](record);
+                    }
+                    return record;
+                };
+            }
+        }
         callSP(name, params, flatten, fileName) {
             let self = this;
             let nesting = this.config.maxNesting;
@@ -991,7 +1038,7 @@ module.exports = function({utPort}) {
                         .then(function(resolve, reject) {
                             request.stream = true;
                             let ws = fs.createWriteStream(newFilename);
-                            saveAs(request, $meta.saveAs).pipe(ws);
+                            saveAs(self, request, $meta.saveAs).pipe(ws);
                             request.execute(name);
                             return new Promise(function(resolve, reject) {
                                 ws.on('finish', function() {
@@ -1009,60 +1056,10 @@ module.exports = function({utPort}) {
                 }
                 return request.execute(name)
                     .then(function(result) {
-                        let promise = Promise.resolve();
-                        result.recordsets.forEach(function(resultset) {
-                            const encryptedColumns = [];
-                            const xmlColumns = [];
-                            const jsonColumns = [];
-                            Object.keys(resultset.columns).forEach(column => {
-                                if (/\.json$/i.test(column)) jsonColumns.push(column);
-                                switch (resultset.columns[column].type.declaration) {
-                                    case 'varbinary':
-                                        if (self.cbc && isEncrypted(resultset.columns[column])) {
-                                            encryptedColumns.push(column);
-                                        }
-                                        break;
-                                    case 'xml':
-                                        xmlColumns.push(column);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            });
-                            if (xmlColumns.length || encryptedColumns.length || jsonColumns.length) {
-                                resultset.forEach(function(record) {
-                                    encryptedColumns.forEach(function(key) {
-                                        if (record[key]) { // value is not null
-                                            record[key] = self.cbc.decrypt(record[key]);
-                                        }
-                                    });
-                                    jsonColumns.forEach(function(key) {
-                                        record[key.substr(0, key.length - 5)] = record[key] ? JSON.parse(record[key]) : record[key];
-                                        delete record[key];
-                                    });
-                                    xmlColumns.forEach(function(key) {
-                                        if (record[key]) { // value is not null
-                                            promise = promise
-                                                .then(function() {
-                                                    return new Promise(function(resolve, reject) {
-                                                        xmlParser.parseString(record[key], function(err, result) {
-                                                            if (err) {
-                                                                reject(sqlPortErrors['portSQL.wrongXmlFormat']({
-                                                                    xml: record[key]
-                                                                }));
-                                                            } else {
-                                                                record[key] = result;
-                                                                resolve();
-                                                            }
-                                                        });
-                                                    });
-                                                });
-                                        }
-                                    });
-                                });
-                            }
-                        });
-                        return promise.then(() => result.recordsets);
+                        return Promise.all(result.recordsets.map(recordset => {
+                            const transformRow = self.getRowTransformer(recordset.columns);
+                            return transformRow ? Promise.all(recordset.map(transformRow)) : recordset;
+                        }));
                     })
                     .then(function(resultSets) {
                         function isNamingResultSet(element) {

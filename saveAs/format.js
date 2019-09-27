@@ -1,73 +1,60 @@
 const { Readable } = require('readable-stream');
+
+const queue = ({
+    concurrency = 1
+} = {}) => {
+    let running = 0;
+    const tasks = [];
+
+    const run = async task => {
+        running++;
+        await task();
+        running--;
+        if (tasks.length > 0) run(tasks.shift());
+    };
+
+    const push = task => running < concurrency ? run(task) : tasks.push(task);
+
+    const wrap = fn => (...params) => push(() => fn(...params));
+
+    return {
+        push,
+        wrap
+    };
+};
+
 class Stream extends Readable {
     _read() {}
 }
+
 module.exports = class Transform {
-    constructor(request, config) {
+    constructor(port, request, config = {}) {
         this.config = config;
-        this.stream = new Stream();
-        let transform = row => row;
-        request.on('recordset', columns => {
-            if (columns.resultSetName) return;
-            const middleware = [];
-            Object.entries(columns).forEach(([key, {type: {declaration}}]) => {
-                if (declaration === 'varbinary') {
-                    // if (self.cbc && isEncrypted(columns[column])) {
-                    //     middleware.push(record => {
-                    //         if (record[key]) { // value is not null
-                    //             record[key] = self.cbc.decrypt(record[key]);
-                    //         }
-                    //     });
-                    // }
-                } else if (declaration === 'xml') {
-                    // middleware.push(record => {
-                    //     if (record[key]) { // value is not null
-                    //         return new Promise(function(resolve, reject) {
-                    //             xmlParser.parseString(record[key], function(err, result) {
-                    //                 if (err) {
-                    //                     reject(sqlPortErrors['portSQL.wrongXmlFormat']({
-                    //                         xml: record[key]
-                    //                     }));
-                    //                 } else {
-                    //                     record[key] = result;
-                    //                     resolve();
-                    //                 }
-                    //             });
-                    //         });
-                    //     }
-                    // });
-                }
-                if (/\.json$/i.test(key)) {
-                    // middleware.push(record => {
-                    //     record[key.substr(0, key.length - 5)] = record[key] ? JSON.parse(record[key]) : record[key];
-                    //     delete record[key];
-                    // });
-                };
-                if (middleware.length) {
-                    // transform = async row => {
-                    //     for (let i = 0, n = middleware.length; i < n; i += 1) {
-                    //         await middleware[i](row);
-                    //     }
-                    // };
-                }
-                this.onRecordSet();
-            });
-        });
-        request.on('row', row => {
+        const stream = new Stream();
+        this.pipe = (...params) => stream.pipe(...params);
+        this.write = chunk => stream.push(chunk);
+        const { wrap } = queue();
+        let transformRow;
+        request.on('recordset', wrap(columns => {
+            transformRow = port.getRowTransformer(columns);
+        }));
+        request.on('row', wrap(async row => {
             if (row.resultSetName) {
-                this.resultSetName = row.resultSetName;
-                this.single = row.single;
-                return;
+                this.onResultSet(row);
+            } else if (transformRow) {
+                this.onRow(await transformRow(row));
+            } else {
+                this.onRow(row);
             }
-            this.onRow(transform(row));
-        });
-        request.on('error', error => this.onError(error));
-        request.on('done', result => this.onDone(result));
+        }));
+        request.on('error', wrap(error => this.onError(error)));
+        request.on('done', wrap(result => {
+            this.onDone(result);
+            this.write(null);
+        }));
     }
-    onRecordSet() {}
+    onResultSet() {}
     onRow() {}
     onError() {}
-    onDone() {
-        this.stream.push(null);
-    }
+    onDone() {}
 };
