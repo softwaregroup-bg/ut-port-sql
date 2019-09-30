@@ -19,6 +19,7 @@ const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
 const dotprop = require('dot-prop');
+const asyncQueue = require('./asyncQueue');
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 
 // patch for https://github.com/tediousjs/tedious/pull/710
@@ -104,6 +105,7 @@ module.exports = function({utPort}) {
                 paramsOutName: 'out',
                 doc: false,
                 maxNesting: 5,
+                transformConcurrency: 50,
                 connection: {
                     options: {
                         debug: {
@@ -125,6 +127,11 @@ module.exports = function({utPort}) {
                         type: 'string',
                         enum: ['error', 'warning', 'info', 'debug', 'trace'],
                         default: 'info'
+                    },
+                    transformConcurrency: {
+                        type: 'number',
+                        description: 'per row concurrency for decoding / parsing resultsets',
+                        default: 50
                     },
                     connection: {
                         type: 'object',
@@ -809,7 +816,7 @@ module.exports = function({utPort}) {
         }
         getRowTransformer(columns = {}) {
             if (columns.resultSetName) return;
-
+            let isAsync = false;
             const pipeline = [];
             Object.entries(columns).forEach(([key, column]) => {
                 if (column.type.declaration === 'varbinary') {
@@ -821,6 +828,7 @@ module.exports = function({utPort}) {
                         });
                     }
                 } else if (column.type.declaration === 'xml') {
+                    isAsync = true;
                     pipeline.push(record => {
                         if (record[key]) { // value is not null
                             return new Promise(function(resolve, reject) {
@@ -846,12 +854,19 @@ module.exports = function({utPort}) {
                 };
             });
             if (pipeline.length) {
-                return async record => {
-                    for (let i = 0, n = pipeline.length; i < n; i += 1) {
-                        await pipeline[i](record);
-                    }
-                    return record;
-                };
+                if (isAsync) {
+                    return async record => {
+                        for (let i = 0, n = pipeline.length; i < n; i += 1) {
+                            await pipeline[i](record);
+                        }
+                        return record;
+                    };
+                } else {
+                    return record => {
+                        pipeline.forEach(fn => fn(record));
+                        return record;
+                    };
+                }
             }
         }
         callSP(name, params, flatten, fileName) {
@@ -1055,12 +1070,27 @@ module.exports = function({utPort}) {
                     return [];
                 }
                 return request.execute(name)
-                    .then(function(result) {
-                        return Promise.all(result.recordsets.map(recordset => {
-                            const transformRow = self.getRowTransformer(recordset.columns);
-                            return transformRow ? Promise.all(recordset.map(transformRow)) : recordset;
-                        }));
-                    })
+                    .then(({recordsets}) => new Promise((resolve, reject) => {
+                        let queue;
+                        recordsets.forEach(recordset => {
+                            const transform = self.getRowTransformer(recordset.columns);
+                            if (typeof transform === 'function') {
+                                if (transform.constructor.name === 'AsyncFunction') {
+                                    if (!queue) {
+                                        queue = asyncQueue({
+                                            onError: reject,
+                                            concurrency: self.config.transformConcurrency
+                                        });
+                                    };
+                                    recordset.map(record => queue.push(() => transform(record)));
+                                } else {
+                                    recordset.map(transform);
+                                }
+                            }
+                        });
+
+                        return queue ? queue.push(() => resolve(recordsets)) : resolve(recordsets);
+                    }))
                     .then(function(resultSets) {
                         function isNamingResultSet(element) {
                             return Array.isArray(element) &&
