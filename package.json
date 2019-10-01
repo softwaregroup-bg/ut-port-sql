@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "tap": "^12.6.0",
-    "ut-tools": "^6.14.1",
+    "ut-tools": "^6.25.3",
     "pegjs": "0.10.0"
   },
   "peerDependencies": {
