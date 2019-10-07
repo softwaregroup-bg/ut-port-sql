@@ -19,7 +19,6 @@ const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
 const dotprop = require('dot-prop');
-const asyncQueue = require('./asyncQueue');
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 
 // patch for https://github.com/tediousjs/tedious/pull/710
@@ -1070,27 +1069,21 @@ module.exports = function({utPort}) {
                     return [];
                 }
                 return request.execute(name)
-                    .then(({recordsets}) => new Promise((resolve, reject) => {
-                        let queue;
-                        recordsets.forEach(recordset => {
-                            const transform = self.getRowTransformer(recordset.columns);
+                    .then(async({recordsets}) => {
+                        for (let i = 0, n = recordsets.length; i < n; i += 1) {
+                            const transform = self.getRowTransformer(recordsets[i].columns);
                             if (typeof transform === 'function') {
                                 if (transform.constructor.name === 'AsyncFunction') {
-                                    if (!queue) {
-                                        queue = asyncQueue({
-                                            onError: reject,
-                                            concurrency: self.config.transformConcurrency
-                                        });
-                                    };
-                                    recordset.map(record => queue.push(() => transform(record)));
+                                    for (let j = 0, m = recordsets[i].length; j < m; j += 1) {
+                                        await transform(recordsets[i][j]);
+                                    }
                                 } else {
-                                    recordset.map(transform);
+                                    recordsets[i].forEach(transform);
                                 }
                             }
-                        });
-
-                        return queue ? queue.push(() => resolve(recordsets)) : resolve(recordsets);
-                    }))
+                        }
+                        return recordsets;
+                    })
                     .then(function(resultSets) {
                         function isNamingResultSet(element) {
                             return Array.isArray(element) &&
