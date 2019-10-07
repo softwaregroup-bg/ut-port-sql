@@ -22,7 +22,7 @@ module.exports = {
             CASE o.[type]
                 WHEN 'SN' THEN 'DROP SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name +
                                 '] CREATE SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name + '] FOR ' +  s.base_object_name
-                ELSE ${partial ? `LEFT(c.text, CASE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) WHEN 0 THEN 2500 ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) + 10 END)` : 'c.text'}
+                ELSE ${partial ? `LEFT(c.text, CASE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) WHEN 0 THEN CASE CHARINDEX(CHAR(10)+'AS'+CHAR(10), c.text) WHEN 0 THEN 2500 ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(10), c.text) + 10 END ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) + 10 END)` : 'c.text'}
             END AS [source]
 
         FROM
