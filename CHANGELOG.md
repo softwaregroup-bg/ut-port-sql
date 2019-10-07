@@ -1,3 +1,13 @@
+<a name="7.2.5"></a>
+## [7.2.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.4...v7.2.5) (2019-10-07)
+
+
+### Bug Fixes
+
+* handle linux line endings ([47783ca](https://github.com/softwaregroup-bg/ut-port-sql/commit/47783ca))
+
+
+
 <a name="7.2.4"></a>
 ## [7.2.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.2.3...v7.2.4) (2019-08-16)
 
