@@ -1,5 +1,4 @@
 const { Readable } = require('readable-stream');
-const asyncQueue = require('../asyncQueue');
 
 class Stream extends Readable {
     _read() {}
@@ -11,25 +10,34 @@ module.exports = class Transform {
         const stream = new Stream();
         this.pipe = (...params) => stream.pipe(...params);
         this.write = chunk => stream.push(chunk);
-        const { wrap } = asyncQueue();
         let transform;
-        request.on('recordset', wrap(columns => {
+        request.on('recordset', columns => {
             transform = port.getRowTransformer(columns);
-        }));
-        request.on('row', wrap(async row => {
+        });
+        request.on('row', row => {
             if (row.resultSetName) {
                 this.onResultSet(row);
-            } else if (typeof transform === 'function') {
-                this.onRow(await transform(row));
             } else {
+                if (typeof transform === 'function') {
+                    if (transform.constructor.name === 'AsyncFunction') {
+                        request.pause();
+                        return (async() => {
+                            await transform(row);
+                            this.onRow(row);
+                            request.resume();
+                        })();
+                    } else {
+                        transform(row);
+                    }
+                }
                 this.onRow(row);
             }
-        }));
-        request.on('error', wrap(error => this.onError(error)));
-        request.on('done', wrap(result => {
+        });
+        request.on('error', error => this.onError(error));
+        request.on('done', result => {
             this.onDone(result);
             this.write(null);
-        }));
+        });
     }
     onResultSet() {}
     onRow() {}
