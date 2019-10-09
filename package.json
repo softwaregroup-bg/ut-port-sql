@@ -7,14 +7,13 @@
     "fs-plus": "3.0.2",
     "json-stringify-deterministic": "1.0.1",
     "mssql": "5.1.0",
-    "readable-stream": "2.3.3",
     "uuid": "3.3.2",
     "xml2js": "0.4.19"
   },
   "devDependencies": {
+    "pegjs": "0.10.0",
     "tap": "^12.6.0",
-    "ut-tools": "^6.25.3",
-    "pegjs": "0.10.0"
+    "ut-tools": "^6.25.6"
   },
   "peerDependencies": {
     "ut-bus": "^7.1.1"
