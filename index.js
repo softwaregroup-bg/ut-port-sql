@@ -22,46 +22,6 @@ const serverRequire = require;
 const dotprop = require('dot-prop');
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 
-// patch for https://github.com/tediousjs/tedious/pull/710
-require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
-    if (parameter.value != null) {
-        var time = new Date(+parameter.value);
-
-        var timestamp = void 0;
-        if (options.useUTC) {
-            timestamp = ((time.getUTCHours() * 60 + time.getUTCMinutes()) * 60 + time.getUTCSeconds()) * 1000 + time.getUTCMilliseconds();
-        } else {
-            timestamp = ((time.getHours() * 60 + time.getMinutes()) * 60 + time.getSeconds()) * 1000 + time.getMilliseconds();
-        }
-
-        timestamp = timestamp * Math.pow(10, parameter.scale - 3);
-        timestamp += (parameter.value.nanosecondDelta != null ? parameter.value.nanosecondDelta : 0) * Math.pow(10, parameter.scale);
-        timestamp = Math.round(timestamp);
-
-        switch (parameter.scale) {
-            case 0:
-            case 1:
-            case 2:
-                buffer.writeUInt8(3);
-                buffer.writeUInt24LE(timestamp);
-                break;
-            case 3:
-            case 4:
-                buffer.writeUInt8(4);
-                buffer.writeUInt32LE(timestamp);
-                break;
-            case 5:
-            case 6:
-            case 7:
-                buffer.writeUInt8(5);
-                buffer.writeUInt40LE(timestamp);
-        }
-    } else {
-        buffer.writeUInt8(0);
-    }
-};
-// end patch
-
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
         field.type = ROW_VERSION_INNER_TYPE;
