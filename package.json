@@ -17,8 +17,7 @@
     "pegjs": "0.10.0"
   },
   "peerDependencies": {
-    "ut-bus": "^7.1.1",
-    "tedious": "^2.7.1"
+    "ut-bus": "^7.1.1"
   },
   "scripts": {
     "lint": "ut-lint .",
