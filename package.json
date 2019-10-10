@@ -1,24 +1,22 @@
 {
   "name": "ut-port-sql",
-  "version": "7.15.4",
+  "version": "7.16.0-saveAs.2",
   "main": "./index.js",
   "dependencies": {
     "dot-prop": "4.2.0",
     "fs-plus": "3.0.2",
     "json-stringify-deterministic": "1.0.1",
-    "through2": "2.0.3",
-    "mssql": "4.3.1",
+    "mssql": "5.1.0",
     "uuid": "3.3.2",
     "xml2js": "0.4.19"
   },
   "devDependencies": {
+    "pegjs": "0.10.0",
     "tap": "^12.6.0",
-    "ut-tools": "^6.14.1",
-    "pegjs": "0.10.0"
+    "ut-tools": "^6.25.6"
   },
   "peerDependencies": {
-    "ut-bus": "^7.1.1",
-    "tedious": "^2.7.1"
+    "ut-bus": "^7.1.1"
   },
   "scripts": {
     "lint": "ut-lint .",
