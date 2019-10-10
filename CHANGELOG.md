@@ -1,3 +1,12 @@
+# [7.16.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.4...v7.16.0) (2019-10-10)
+
+
+### Bug Fixes
+
+* unify saveAs and resultsets processing ([c9fe4a0](https://github.com/softwaregroup-bg/ut-port-sql/commit/c9fe4a0))
+
+
+
 ## [7.15.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.3...v7.15.4) (2019-09-18)
 
 
