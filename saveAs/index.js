@@ -93,9 +93,7 @@ module.exports = async(port, request, { saveAs }, name) => {
 
         request.on('error', reply);
 
-        request.on('done', wrap(() => {
-            reply();
-        }));
+        request.on('done', () => reply());
 
         request.execute(name);
     });

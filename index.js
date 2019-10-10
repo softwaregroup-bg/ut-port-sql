@@ -290,7 +290,7 @@ module.exports = function({utPort, registerErrors}) {
                     // todo record execution time
                     if (err) {
                         debug && (err.query = message.query);
-                        let error = port.errors[err.message && err.message.split('\n').shift()] || port.errors.portSQL;
+                        let error = port.errors.getError(err.message && err.message.split('\n').shift()) || port.errors.portSQL;
                         reject(error(err));
                     } else {
                         $meta.mtid = 'response';
@@ -1091,7 +1091,7 @@ module.exports = function({utPort, registerErrors}) {
                     .catch(function(err) {
                         let errorLines = err.message && err.message.split('\n');
                         err.message = errorLines.shift();
-                        let error = self.errors[err.type || err.message] || self.errors.portSQL;
+                        let error = self.errors.getError(err.type || err.message) || self.errors.portSQL;
                         if (error.type === err.message) {
                             // use default message
                             delete err.message;
