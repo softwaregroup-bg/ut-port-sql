@@ -64,7 +64,6 @@ module.exports = function({utPort, registerErrors}) {
                 paramsOutName: 'out',
                 doc: false,
                 maxNesting: 5,
-                transformConcurrency: 50,
                 connection: {
                     options: {
                         debug: {
@@ -86,11 +85,6 @@ module.exports = function({utPort, registerErrors}) {
                         type: 'string',
                         enum: ['error', 'warning', 'info', 'debug', 'trace'],
                         default: 'info'
-                    },
-                    transformConcurrency: {
-                        type: 'number',
-                        description: 'per row concurrency for decoding / parsing resultsets',
-                        default: 50
                     },
                     connection: {
                         type: 'object',
