@@ -1,3 +1,12 @@
+## [7.16.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.16.0...v7.16.1) (2019-10-10)
+
+
+### Bug Fixes
+
+* use getError for variable errors ([9706d1d](https://github.com/softwaregroup-bg/ut-port-sql/commit/9706d1d))
+
+
+
 # [7.16.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.15.4...v7.16.0) (2019-10-10)
 
 
