@@ -772,7 +772,13 @@ module.exports = function({utPort, registerErrors}) {
             let isAsync = false;
             const pipeline = [];
             Object.entries(columns).forEach(([key, column]) => {
-                if (column.type.declaration === 'varbinary') {
+                if (column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
+                    pipeline.push(record => {
+                        if (record[key]) { // value is not null
+                            record[key] = record[key].toString('hex');
+                        }
+                    });
+                } else if (column.type.declaration === 'varbinary') {
                     if (this.cbc && isEncrypted(column)) {
                         pipeline.push(record => {
                             if (record[key]) { // value is not null
