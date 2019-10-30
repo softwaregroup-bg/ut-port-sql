@@ -1,3 +1,12 @@
+## [7.16.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.16.1...v7.16.2) (2019-10-30)
+
+
+### Bug Fixes
+
+* handle rowversion fields ([f1a9717](https://github.com/softwaregroup-bg/ut-port-sql/commit/f1a9717))
+
+
+
 ## [7.16.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.16.0...v7.16.1) (2019-10-10)
 
 
