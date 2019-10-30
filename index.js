@@ -900,6 +900,8 @@ module.exports = function({utPort, registerErrors}) {
                     } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
                         // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
                         return new Date(value);
+                    } else if (typeof value === 'string' && column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
+                        return /^[0-9A-Fa-f]+$/.test(value) ? Buffer.from(value, 'hex') : Buffer.from(value, 'utf-8');
                     } else if (column.type.declaration === 'time') {
                         return new Date('1970-01-01T' + value + 'Z');
                     } else if (column.type.declaration === 'xml') {
