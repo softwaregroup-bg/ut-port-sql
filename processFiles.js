@@ -9,6 +9,7 @@ const path = require('path');
 const dotProp = require('dot-prop');
 const fs = require('fs');
 const parserSP = require('./parsers/mssqlSP');
+const includes = require('ut-function.includes');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -142,9 +143,8 @@ function getObjectName(fileName) {
     return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
 }
 
-function shouldCreateTT(tableName) {
-    return true;
-    // return (self.config.createTT === true || self.includesConfig('tableToType', tableName, false)) && !self.includesConfig('skipTableType', tableName, false);
+function shouldCreateTT(schemaConfig, tableName) {
+    return (includes(schemaConfig.createTT, tableName)) && !includes(schemaConfig.skipTableType, tableName);
 }
 
 function interpolate(txt, params = {}) {
@@ -164,7 +164,7 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
         fileName,
         objectName,
         objectId,
-        callSP: () => {
+        callSP: function callSPFromJson() {
             if (typeof this.methods[objectName] !== 'function') {
                 throw this.errors['portSQL.spNotFound']({params: {name: objectName}});
             }
@@ -222,7 +222,7 @@ function processFiles(schema, busConfig, schemaConfig, files) {
                         fileContent: fileContent,
                         createStatement: getCreateStatement(binding, fileContent, fileName, objectName)
                     });
-                    if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
+                    if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
                         const tt = tableToType(binding);
                         if (tt) {
                             addQuery(schema, queries, {
@@ -293,7 +293,11 @@ function processFiles(schema, busConfig, schemaConfig, files) {
                     throw new Error('Unsupported file extension');
             };
         } catch (error) {
-            error.message = error.message + ' (' + fileName + ')';
+            error.message = error.message +
+                ' (' +
+                fileName +
+                (error.location ? `:${error.location.start.line}:${error.location.start.column}` : '') +
+                ')';
             throw error;
         }
     });

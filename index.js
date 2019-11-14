@@ -38,11 +38,8 @@ module.exports = function({utPort, registerErrors}) {
                 type: 'sql',
                 cache: false,
                 offline: false,
-                createTT: false,
                 allowQuery: false,
                 retry: 10000,
-                tableToType: {},
-                skipTableType: [],
                 paramsOutName: 'out',
                 doc: false,
                 maxNesting: 5,
@@ -151,17 +148,20 @@ module.exports = function({utPort, registerErrors}) {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
             this.hmac = this.config.hmac && crypto.hmac(this.config.hmac);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
+            if (this.config.createTT != null) this.log.warn && this.log.warn('Property createTT should be moved in schema array');
             this.methods.importedMap && Array.from(this.methods.importedMap.values()).forEach(value => {
                 if (Array.isArray(value.skipTableType)) {
-                    this.config.skipTableType = this.config.skipTableType.concat(value.skipTableType);
+                    this.log.warn && this.log.warn('Property skipTableType should be moved in schema array');
+                    value.schema.forEach(schema => {
+                        schema.skipTableType = (schema.skipTableType || []).concat(value.skipTableType);
+                    });
                 };
+                if (this.config.createTT != null && value.schema) {
+                    value.schema.forEach(schema => {
+                        if (schema.createTT == null) schema.createTT = this.config.createTT;
+                    });
+                }
             });
-            if (Array.isArray(this.config.createTT)) {
-                Object.assign(this.config.tableToType, this.config.createTT.reduce(function(obj, tableName) {
-                    obj[tableName.toLowerCase()] = true;
-                    return obj;
-                }, {}));
-            }
             return Promise.resolve()
                 .then(() => super.start(...arguments))
                 .then(this.connect.bind(this))
@@ -408,7 +408,7 @@ module.exports = function({utPort, registerErrors}) {
                             }
                             queries.forEach((query) => {
                                 innerPromise = innerPromise.then(() => {
-                                    let operation = query.callSP ? query.callSP() : request.batch(query.content);
+                                    let operation = query.callSP ? query.callSP.apply(self) : request.batch(query.content);
                                     return operation
                                         .then(() => updated.push(query.objectName))
                                         .catch((err) => {

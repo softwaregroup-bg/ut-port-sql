@@ -2673,7 +2673,7 @@ function peg$parse(input, options) {
     var s0, s1, s2;
 
     s0 = peg$currPos;
-    s1 = peg$parsews1();
+    s1 = peg$parsews();
     if (s1 !== peg$FAILED) {
       if (input.substr(peg$currPos, 4).toLowerCase() === peg$c93) {
         s2 = input.substr(peg$currPos, 4);

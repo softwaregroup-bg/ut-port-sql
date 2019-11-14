@@ -266,7 +266,7 @@ term = [^()]+ / "(" expression? ")"
 
 param_type = table_type / scalar_type
 
-not_nullable = ws1 x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
+not_nullable = ws x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
 identity = ws1 "IDENTITY" a:identity_arguments? {return a || {}}
 identity_arguments = ws lparen ws s:signed_number ws comma ws i:signed_number ws rparen {return {seed: s, increment: i}}
 table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
