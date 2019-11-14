@@ -5,12 +5,12 @@ const defIV = '1234567890123456';
 
 module.exports = {
     encrypt: (text, algorithm, password, iv) => {
-        let cipher = crypto.createCipheriv(algorithm, password || defPassword, iv || defIV);
+        const cipher = crypto.createCipheriv(algorithm, password || defPassword, iv || defIV);
 
         return new Promise((resolve, reject) => {
             let encrypted = '';
             cipher.on('readable', () => {
-                let data = cipher.read();
+                const data = cipher.read();
                 if (data) {
                     encrypted += data.toString('hex');
                 }
@@ -24,12 +24,12 @@ module.exports = {
         });
     },
     decrypt: (text, algorithm, password, iv) => {
-        let decipher = crypto.createDecipheriv(algorithm, password || defPassword, iv || defIV);
+        const decipher = crypto.createDecipheriv(algorithm, password || defPassword, iv || defIV);
 
         return new Promise((resolve, reject) => {
             let decrypted = '';
             decipher.on('readable', () => {
-                let data = decipher.read();
+                const data = decipher.read();
                 if (data) {
                     decrypted += data.toString('utf8');
                 }
@@ -61,5 +61,6 @@ module.exports = {
             encrypt: value => Buffer.concat([enc.update(crypto.randomFillSync(iv)), enc.update(pad(value))]),
             decrypt: value => dec.update(Buffer.concat([value, iv])).toString('utf8', 32).trim()
         };
-    }
+    },
+    hmac: key => value => crypto.createHmac('sha256', Buffer.from(key, 'hex')).update(value).digest()
 };

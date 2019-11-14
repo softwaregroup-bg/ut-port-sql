@@ -17,6 +17,9 @@
         return size
     }
   }
+  function parseJSON(text) {
+    return /(^\{.*}$)|(^\[.*]$)/s.test(text.trim()) ? JSON.parse(text) : text;
+  }
 }
 
 create = procedure / tableValue / table
@@ -48,16 +51,17 @@ tableValue
     }
 
 table
-  = ws createoralter ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen ws{
+  = ws createoralter ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen wsnocomment? options:Comment? ws{
       return {
           type: 'table',
-            name: '['+schema+'].['+table+']',
-            schema: schema,
-            table: table,
-            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
-            fields: fc.filter(function(x){return x.isField}),
-            constraints: fc.filter(function(x){return x.isConstraint})
-        }
+          name: '['+schema+'].['+table+']',
+          schema: schema,
+          table: table,
+          doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+          options: options && parseJSON(options.multi || options.single || ''),
+          fields: fc.filter(function(x){return x.isField}),
+          constraints: fc.filter(function(x){return x.isConstraint})
+      }
     }
 
 name =
@@ -293,6 +297,7 @@ decimal_point = "."
 E = "E"i
 ws = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)* {return ws.filter(function(x){return x})}
 ws1 = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)+ {return ws.filter(function(x){return x})}
+wsnocomment = ws:(WhiteSpace {return } / LineTerminatorSequence {return })* {return ws.filter(function(x){return x})}
 CREATE =  "CREATE"i
 TYPE = "TYPE"i
 PROCEDURE = "PROCEDURE"i

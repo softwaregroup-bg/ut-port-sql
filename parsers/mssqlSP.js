@@ -165,16 +165,17 @@ function peg$parse(input, options) {
                   fields:fields
               }
           },
-      peg$c6 = function(schema, table, doc, fc) {
+      peg$c6 = function(schema, table, doc, fc, options) {
             return {
                 type: 'table',
-                  name: '['+schema+'].['+table+']',
-                  schema: schema,
-                  table: table,
-                  doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
-                  fields: fc.filter(function(x){return x.isField}),
-                  constraints: fc.filter(function(x){return x.isConstraint})
-              }
+                name: '['+schema+'].['+table+']',
+                schema: schema,
+                table: table,
+                doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+                options: options && parseJSON(options.multi || options.single || ''),
+                fields: fc.filter(function(x){return x.isField}),
+                constraints: fc.filter(function(x){return x.isConstraint})
+            }
           },
       peg$c7 = "[",
       peg$c8 = peg$literalExpectation("[", false),
@@ -877,7 +878,7 @@ function peg$parse(input, options) {
   }
 
   function peg$parsetable() {
-    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14;
+    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16;
 
     s0 = peg$currPos;
     s1 = peg$parsews();
@@ -909,11 +910,29 @@ function peg$parse(input, options) {
                           if (s12 !== peg$FAILED) {
                             s13 = peg$parserparen();
                             if (s13 !== peg$FAILED) {
-                              s14 = peg$parsews();
+                              s14 = peg$parsewsnocomment();
+                              if (s14 === peg$FAILED) {
+                                s14 = null;
+                              }
                               if (s14 !== peg$FAILED) {
-                                peg$savedPos = s0;
-                                s1 = peg$c6(s6, s7, s10, s11);
-                                s0 = s1;
+                                s15 = peg$parseComment();
+                                if (s15 === peg$FAILED) {
+                                  s15 = null;
+                                }
+                                if (s15 !== peg$FAILED) {
+                                  s16 = peg$parsews();
+                                  if (s16 !== peg$FAILED) {
+                                    peg$savedPos = s0;
+                                    s1 = peg$c6(s6, s7, s10, s11, s15);
+                                    s0 = s1;
+                                  } else {
+                                    peg$currPos = s0;
+                                    s0 = peg$FAILED;
+                                  }
+                                } else {
+                                  peg$currPos = s0;
+                                  s0 = peg$FAILED;
+                                }
                               } else {
                                 peg$currPos = s0;
                                 s0 = peg$FAILED;
@@ -3391,6 +3410,55 @@ function peg$parse(input, options) {
     return s0;
   }
 
+  function peg$parsewsnocomment() {
+    var s0, s1, s2, s3;
+
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = peg$currPos;
+    s3 = peg$parseWhiteSpace();
+    if (s3 !== peg$FAILED) {
+      peg$savedPos = s2;
+      s3 = peg$c119();
+    }
+    s2 = s3;
+    if (s2 === peg$FAILED) {
+      s2 = peg$currPos;
+      s3 = peg$parseLineTerminatorSequence();
+      if (s3 !== peg$FAILED) {
+        peg$savedPos = s2;
+        s3 = peg$c119();
+      }
+      s2 = s3;
+    }
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      s2 = peg$currPos;
+      s3 = peg$parseWhiteSpace();
+      if (s3 !== peg$FAILED) {
+        peg$savedPos = s2;
+        s3 = peg$c119();
+      }
+      s2 = s3;
+      if (s2 === peg$FAILED) {
+        s2 = peg$currPos;
+        s3 = peg$parseLineTerminatorSequence();
+        if (s3 !== peg$FAILED) {
+          peg$savedPos = s2;
+          s3 = peg$c119();
+        }
+        s2 = s3;
+      }
+    }
+    if (s1 !== peg$FAILED) {
+      peg$savedPos = s0;
+      s1 = peg$c120(s1);
+    }
+    s0 = s1;
+
+    return s0;
+  }
+
   function peg$parseCREATE() {
     var s0;
 
@@ -4139,6 +4207,9 @@ function peg$parse(input, options) {
         default:
           return size
       }
+    }
+    function parseJSON(text) {
+      return /(^\{.*}$)|(^\[.*]$)/s.test(text.trim()) ? JSON.parse(text) : text;
     }
 
 

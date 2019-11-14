@@ -10,17 +10,10 @@ const xml2js = require('xml2js');
 const uuid = require('uuid');
 const path = require('path');
 const xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
-const xmlBuilder = new xml2js.Builder({headless: true});
 const saveAs = require('./saveAs');
-const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
-const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
-const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
-const VAR_RE = /\$\{([^}]*)\}/g;
-const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const serverRequire = require;
-const dotprop = require('dot-prop');
-const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
+const {setParam, isEncrypted, flattenMessage} = require('./params');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -28,17 +21,6 @@ function changeRowVersionType(field) {
         field.length = 8;
     }
 }
-
-function interpolate(txt, params = {}) {
-    return txt.replace(VAR_RE, (placeHolder, label) => {
-        let value = dotprop.get(params, label);
-        switch (typeof value) {
-            case 'undefined': return placeHolder;
-            case 'object': return JSON.stringify(value);
-            default: return value;
-        }
-    });
-};
 
 module.exports = function({utPort, registerErrors}) {
     return class SqlPort extends utPort {
@@ -167,6 +149,7 @@ module.exports = function({utPort, registerErrors}) {
         }
         start() {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
+            this.hmac = this.config.hmac && crypto.hmac(this.config.hmac);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
             this.methods.importedMap && Array.from(this.methods.importedMap.values()).forEach(value => {
                 if (Array.isArray(value.skipTableType)) {
@@ -349,181 +332,7 @@ module.exports = function({utPort, registerErrors}) {
         }
         updateSchema({paths, retry, load}, schema) {
             this.checkConnection();
-            let busConfig = this.bus.config;
-
-            function replaceAuditLog(statement) {
-                let parserSP = require('./parsers/mssqlSP');
-                let binding = parserSP.parse(statement);
-                return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
-            }
-
-            function replaceCallParams(statement) {
-                let parserSP = require('./parsers/mssqlSP');
-                let binding = parserSP.parse(statement);
-                return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding));
-            }
-
-            function replaceCoreError(statement, fileName, objectName, params) {
-                return statement
-                    .split('\n')
-                    .map((line, index) => (line.replace(CORE_ERROR,
-                        `DECLARE @CORE_ERROR_FILE_${index} sysname='${fileName.replace(/'/g, '\'\'')}' ` +
-                        `DECLARE @CORE_ERROR_LINE_${index} int='${index + 1}' ` +
-                        `EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}`)))
-                    .join('\n');
-            }
-
-            const preProcess = (statement, fileName, objectName) => {
-                statement = interpolate(statement, busConfig);
-
-                if (this.cbc) {
-                    statement = statement.replace(ENCRYPT_RE, (match, value) => '0x' + this.cbc.encrypt(value).toString('hex'));
-                }
-
-                if (statement.match(AUDIT_LOG)) {
-                    statement = replaceAuditLog(statement);
-                }
-                let params = 'NULL';
-                if (statement.match(CALL_PARAMS)) {
-                    statement = replaceCallParams(statement);
-                    params = '@callParams';
-                }
-                if (statement.match(CORE_ERROR)) {
-                    statement = replaceCoreError(statement, fileName, objectName, params);
-                }
-                return statement;
-            };
-
-            function getAlterStatement(statement, fileName, objectName) {
-                statement = preProcess(statement, fileName, objectName);
-                if (statement.trim().match(/^CREATE\s+TYPE/i)) {
-                    return statement.trim();
-                } else {
-                    return statement.trim().replace(/^CREATE /i, 'ALTER ');
-                }
-            }
-
-            function tableToType(statement) {
-                if (statement.match(/^CREATE\s+TABLE/i)) {
-                    statement = interpolate(statement, busConfig);
-                    let parserSP = require('./parsers/mssqlSP');
-                    let binding = parserSP.parse(statement);
-                    if (binding.type === 'table') {
-                        let name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
-                        let columns = binding.fields.map(function(field) {
-                            changeRowVersionType(field);
-                            return `[${field.column}] [${field.type}]` +
-                                (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
-                                (field.length !== null && field.scale === null ? `(${field.length})` : '') +
-                                (typeof field.default === 'number' ? ` DEFAULT(${field.default})` : '') +
-                                (typeof field.default === 'string' ? ` DEFAULT('${field.default.replace(/'/g, '\'\'')}')` : '');
-                        });
-                        return 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
-                    }
-                }
-                return '';
-            }
-
-            function tableToTTU(statement) {
-                let result = '';
-                if (statement.match(/^CREATE\s+TABLE/i)) {
-                    statement = interpolate(statement, busConfig);
-                    let parserSP = require('./parsers/mssqlSP');
-                    let binding = parserSP.parse(statement);
-                    if (binding.type === 'table') {
-                        let name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
-                        let columns = binding.fields.map(function(field) {
-                            changeRowVersionType(field);
-                            return ('[' + field.column + '] [' + field.type + ']' +
-                                (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
-                                (field.length !== null && field.scale === null ? `(${field.length})` : '') +
-                                ',\r\n' + field.column + 'Updated bit');
-                        });
-                        result = 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
-                    }
-                }
-                return result;
-            }
-
-            function getCreateStatement(statement, fileName, objectName) {
-                return preProcess(statement, fileName, objectName).trim()
-                    .replace(/^ALTER /i, 'CREATE ')
-                    .replace(/^DROP SYNONYM .* CREATE SYNONYM/i, 'CREATE SYNONYM');
-            }
-
-            function getSource(statement, fileName, objectName) {
-                statement = preProcess(statement, fileName, objectName);
-                if (statement.trim().match(/^CREATE\s+TYPE/i)) {
-                    let parserSP = require('./parsers/mssqlSP');
-                    let binding = parserSP.parse(statement);
-                    if (binding && binding.type === 'table type') {
-                        return binding.fields.map(fieldSource).join('\r\n');
-                    }
-                }
-                return statement.trim().replace(/^ALTER /i, 'CREATE ');
-            }
-
-            function addQuery(queries, params) {
-                if (schema.source[params.objectId] === undefined) {
-                    queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: params.createStatement});
-                } else {
-                    if (schema.source[params.objectId].length &&
-                        (getSource(params.fileContent, params.fileName, params.objectName) !== schema.source[params.objectId])) {
-                        let deps = schema.deps[params.objectId];
-                        if (deps) {
-                            deps.names.forEach(function(dep) {
-                                delete schema.source[dep];
-                            });
-                            queries.push({
-                                fileName: params.fileName,
-                                objectName: params.objectName + ' drop dependencies',
-                                objectId: params.objectId,
-                                content: deps.drop.join('\r\n')
-                            });
-                        }
-                        queries.push({
-                            fileName: params.fileName,
-                            objectName: params.objectName,
-                            objectId: params.objectId,
-                            content: getAlterStatement(params.fileContent, params.fileName, params.objectName)
-                        });
-                    }
-                }
-            }
-
-            const addSP = (queries, {fileName, objectName, objectId, config}) => {
-                const params = require(fileName);
-                queries.push({
-                    fileName,
-                    objectName,
-                    objectId,
-                    callSP: () => {
-                        if (typeof this.methods[objectName] !== 'function') {
-                            throw this.errors['portSQL.spNotFound']({params: {name: objectName}});
-                        }
-
-                        return this.methods[objectName].call(
-                            this,
-                            typeof params === 'function' ? params(config) : params,
-                            {
-                                auth: {
-                                    actorId: 0
-                                },
-                                method: objectName,
-                                userName: 'SYSTEM'
-                            }
-                        );
-                    }
-                });
-            };
-
-            function getObjectName(fileName) {
-                return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
-            }
-
-            function shouldCreateTT(tableName) {
-                return (self.config.createTT === true || self.includesConfig('tableToType', tableName, false)) && !self.includesConfig('skipTableType', tableName, false);
-            }
+            const busConfig = this.bus.config;
 
             function retrySchemaUpdate(failedQueue) {
                 let newFailedQueue = [];
@@ -575,142 +384,62 @@ module.exports = function({utPort, registerErrors}) {
             if (!folders || !folders.length) {
                 return schema;
             }
-            return new Promise((resolve, reject) => {
-                let objectList = [];
-                let promise = Promise.resolve();
-                folders.forEach((schemaConfig) => {
-                    promise = promise
-                        .then(() => {
-                            return new Promise((resolve, reject) => {
-                                fs.readdir(schemaConfig.path, (err, files) => {
-                                    if (err) {
-                                        reject(err);
-                                        return;
-                                    }
-                                    let queries = [];
-                                    files = files.sort().map(file => {
-                                        return {
-                                            originalName: file,
-                                            name: interpolate(file, busConfig)
-                                        };
-                                    });
-                                    if (schemaConfig.exclude && schemaConfig.exclude.length > 0) {
-                                        files = files.filter((file) => !(schemaConfig.exclude.indexOf(file.name) >= 0));
-                                    }
-                                    let objectIds = files.reduce(function(prev, cur) {
-                                        prev[getObjectName(cur.name).toLowerCase()] = true;
-                                        return prev;
-                                    }, {});
-                                    files.forEach(function(file) {
-                                        let objectName = getObjectName(file.name);
-                                        let objectId = objectName.toLowerCase();
-                                        let fileName = path.join(schemaConfig.path, file.originalName);
-                                        try {
-                                            if (!fs.statSync(fileName).isFile()) {
-                                                return;
-                                            }
-                                            switch (path.extname(fileName).toLowerCase()) {
-                                                case '.sql':
-                                                    schemaConfig.linkSP && (objectList[objectId] = fileName);
-                                                    let fileContent = fs.readFileSync(fileName).toString();
-                                                    addQuery(queries, {
-                                                        fileName: fileName,
-                                                        objectName: objectName,
-                                                        objectId: objectId,
-                                                        fileContent: fileContent,
-                                                        createStatement: getCreateStatement(fileContent, fileName, objectName)
-                                                    });
-                                                    if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                                                        let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                                        if (tt) {
-                                                            addQuery(queries, {
-                                                                fileName: fileName,
-                                                                objectName: objectName + 'TT',
-                                                                objectId: objectId + 'tt',
-                                                                fileContent: tt,
-                                                                createStatement: tt
-                                                            });
-                                                        }
-                                                        let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
-                                                        if (ttu) {
-                                                            addQuery(queries, {
-                                                                fileName: fileName,
-                                                                objectName: objectName + 'TTU',
-                                                                objectId: objectId + 'ttu',
-                                                                fileContent: ttu,
-                                                                createStatement: ttu
-                                                            });
-                                                        }
-                                                    };
-                                                    break;
-                                                case '.js':
-                                                case '.json':
-                                                    addSP(queries, {
-                                                        fileName: fileName,
-                                                        objectName: objectName,
-                                                        objectId: objectId,
-                                                        config: schemaConfig.config
-                                                    });
-                                                    break;
-                                                default:
-                                                    throw new Error('Unsupported file extension');
-                                            };
-                                        } catch (error) {
-                                            error.message = error.message + ' (' + fileName + ')';
-                                            throw error;
-                                        }
-                                    });
+            const processFiles = require('./processFiles');
+            return folders.reduce((promise, schemaConfig) =>
+                promise.then(allDbObjects =>
+                    new Promise((resolve, reject) => {
+                        fs.readdir(schemaConfig.path, (err, files) => {
+                            if (err) {
+                                reject(err);
+                                return;
+                            }
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files);
 
-                                    let request = self.getRequest();
-                                    let updated = [];
-                                    let innerPromise = Promise.resolve();
-                                    if (queries.length && !hashDropped && load) {
-                                        innerPromise = innerPromise
-                                            .then(() => request.batch(mssqlQueries.dropHash())
-                                                .then(() => {
-                                                    hashDropped = true;
-                                                    return true;
-                                                }));
-                                    }
-                                    queries.forEach((query) => {
-                                        innerPromise = innerPromise.then(() => {
-                                            let operation = query.callSP ? query.callSP() : request.batch(query.content);
-                                            return operation
-                                                .then(() => updated.push(query.objectName))
-                                                .catch((err) => {
-                                                    err.message = err.message + ' (' + query.fileName + ':' + (err.lineNumber || 1) + ':1)';
-                                                    let newError = self.errors['portSQL.updateSchema'](err);
-                                                    newError.fileName = query.fileName;
-                                                    if (!retry) {
-                                                        throw newError;
-                                                    } else {
-                                                        failedQueries.push(query);
-                                                        self.log.error && self.log.error(newError);
-                                                        return false;
-                                                    }
-                                                });
+                            let request = self.getRequest();
+                            let updated = [];
+                            let innerPromise = Promise.resolve();
+                            if (queries.length && !hashDropped && load) {
+                                innerPromise = innerPromise
+                                    .then(() => request.batch(mssqlQueries.dropHash())
+                                        .then(() => {
+                                            hashDropped = true;
+                                            return true;
+                                        }));
+                            }
+                            queries.forEach((query) => {
+                                innerPromise = innerPromise.then(() => {
+                                    let operation = query.callSP ? query.callSP() : request.batch(query.content);
+                                    return operation
+                                        .then(() => updated.push(query.objectName))
+                                        .catch((err) => {
+                                            err.message = err.message + ' (' + query.fileName + ':' + (err.lineNumber || 1) + ':1)';
+                                            let newError = self.errors['portSQL.updateSchema'](err);
+                                            newError.fileName = query.fileName;
+                                            if (!retry) {
+                                                throw newError;
+                                            } else {
+                                                failedQueries.push(query);
+                                                self.log.error && self.log.error(newError);
+                                                return false;
+                                            }
                                         });
-                                    });
-                                    return innerPromise
-                                        .then(function() {
-                                            updated.length && self.log.info && self.log.info({
-                                                message: updated,
-                                                $meta: {
-                                                    mtid: 'event',
-                                                    method: 'update.' + paths
-                                                }
-                                            });
-                                            return resolve();
-                                        })
-                                        .catch(reject);
                                 });
                             });
+                            return innerPromise
+                                .then(function() {
+                                    updated.length && self.log.info && self.log.info({
+                                        message: updated,
+                                        $meta: {
+                                            mtid: 'event',
+                                            method: 'update.' + paths
+                                        }
+                                    });
+                                    return resolve({...allDbObjects, ...dbObjects});
+                                })
+                                .catch(reject);
                         });
-                });
-                return promise
-                    .then(() => resolve(objectList))
-                    .catch(reject);
-            })
+                    })
+                ), Promise.resolve({}))
                 .then((objectList) => {
                     if (!failedQueries.length) {
                         return objectList;
@@ -829,99 +558,21 @@ module.exports = function({utPort, registerErrors}) {
             }
         }
         callSP(name, params, flatten, fileName) {
-            let self = this;
-            let nesting = this.config.maxNesting;
-            let outParams = [];
+            const self = this;
+            const nesting = this.config.maxNesting;
+            const outParams = [];
+            const ngram = params.find(param => param.name === 'ngram' && param.def.type === 'table');
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
             });
 
-            function sqlType(def) {
-                let type;
-                if (def.type === 'table') {
-                    type = def.create();
-                } else if (def.type === 'rowversion') {
-                    type = mssql[ROW_VERSION_INNER_TYPE](8);
-                } else {
-                    type = mssql[def.type.toUpperCase()];
-                }
-                if (def.size) {
-                    if (Array.isArray(def.size)) {
-                        type = type(def.size[0], def.size[1]);
-                    } else {
-                        type = (def.size === 'max') ? type(mssql.MAX) : type(def.size);
-                    }
-                }
-                return type;
-            }
-
-            function flattenMessage(data, delimiter) {
-                if (!delimiter) {
-                    return data;
-                }
-                let result = {};
-                function recurse(cur, prop, depth) {
-                    if (depth > nesting) throw new Error('Unsupported deep nesting for property ' + prop);
-                    if (typeof cur === 'function') {
-                    } else if (Object(cur) !== cur) {
-                        result[prop] = cur;
-                    } else if (Array.isArray(cur)) {
-                        // for (let i = 0, l = cur.length; i < l; i += 1) {
-                        //     recurse(cur[i], prop + '[' + i + ']');
-                        // }
-                        // if (l === 0) {
-                        //     result[prop] = [];
-                        // }
-                        result[prop] = cur;
-                    } else {
-                        let isEmpty = true;
-                        for (let p in cur) {
-                            isEmpty = false;
-                            recurse(cur[p], prop ? prop + delimiter + p : p, depth + 1);
-                        }
-                        if (isEmpty && prop) {
-                            result[prop] = {};
-                        }
-                    }
-                }
-                recurse(data, '', 1);
-                return result;
-            }
-            function getValue(column, value, def, updated) {
-                if (updated) {
-                    return updated;
-                }
-                if (value === undefined) {
-                    return def;
-                } else if (value) {
-                    if (self.cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
-                        if (!Buffer.isBuffer(value) && typeof value === 'object') value = JSON.stringify(value);
-                        return self.cbc.encrypt(Buffer.from(value));
-                    } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
-                        // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
-                        return new Date(value);
-                    } else if (typeof value === 'string' && column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
-                        return /^[0-9A-Fa-f]+$/.test(value) ? Buffer.from(value, 'hex') : Buffer.from(value, 'utf-8');
-                    } else if (column.type.declaration === 'time') {
-                        return new Date('1970-01-01T' + value + 'Z');
-                    } else if (column.type.declaration === 'xml') {
-                        let obj = {};
-                        obj[column.name] = value;
-                        return xmlBuilder.buildObject(obj);
-                    } else if (value.type === 'Buffer') {
-                        return Buffer.from(value.data);
-                    } else if (typeof value === 'object' && !(value instanceof Date)) {
-                        return JSON.stringify(value);
-                    }
-                }
-                return value;
-            }
             return function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
                 let request = self.getRequest();
-                let data = flattenMessage(msg, flatten);
+                let data = flattenMessage(msg, flatten, nesting);
                 let debug = this.isDebug();
                 let debugParams = {};
+                const ngramParam = ngram && ngram.def.create();
                 request.multiple = true;
                 $meta.globalId = uuid.v1();
                 params && params.forEach(function(param) {
@@ -933,66 +584,20 @@ module.exports = function({utPort, registerErrors}) {
                             $meta,
                             $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId}
                         );
+                    } else if (param.name === 'ngram') {
+                        value = param.options && Object.keys(param.options).map(name => data[name] && [name, data[name]]).filter(Boolean);
                     } else if (param.update) {
                         value = data[param.name] || data.hasOwnProperty(param.update);
                     } else {
                         value = data[param.name];
                     }
-                    if (param.encrypt && value != null) {
-                        value = self.cbc.encrypt(Buffer.from(value));
-                    }
-                    let hasValue = value !== void 0;
-                    let type = sqlType(param.def);
+                    value = setParam(self.cbc, self.hmac, ngram && {
+                        options: ngram.options,
+                        add: (...params) => ngramParam.rows.add(...params)
+                    }, request, param, value, nesting);
                     debug && (debugParams[param.name] = value);
-                    if (param.def && param.def.type === 'time' && value != null) {
-                        value = new Date('1970-01-01T' + value);
-                    } else if (param.def && /datetime/.test(param.def.type) && value != null && !(value instanceof Date)) {
-                        value = new Date(value);
-                    } else if (param.def && param.def.type === 'xml' && value != null) {
-                        value = xmlBuilder.buildObject(value);
-                    } else if (param.def && param.def.type === 'rowversion' && value != null && !Buffer.isBuffer(value)) {
-                        value = Buffer.from(value.data ? value.data : []);
-                    } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
-                        value = JSON.stringify(value);
-                    }
-                    if (param.out) {
-                        request.output(param.name, type, value);
-                    } else {
-                        if (param.def && param.def.type === 'table') {
-                            if (value) {
-                                if (Array.isArray(value)) {
-                                    value.forEach(function(row) {
-                                        row = flattenMessage(row, param.flatten);
-                                        if (typeof row === 'object') {
-                                            type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                                prev.push(getValue(type.columns[i], row[cur.column], cur.default, cur.update && row.hasOwnProperty(cur.update)));
-                                                return prev;
-                                            }, []));
-                                        } else {
-                                            type.rows.add.apply(type.rows, [getValue(type.columns[0], row, param.columns[0].default, false)]
-                                                .concat(new Array(param.columns.length - 1)));
-                                        }
-                                    });
-                                } else if (typeof value === 'object') {
-                                    value = flattenMessage(value, param.flatten);
-                                    type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                        prev.push(getValue(type.columns[i], value[cur.column], cur.default, cur.update && value.hasOwnProperty(cur.update)));
-                                        return prev;
-                                    }, []));
-                                } else {
-                                    value = flattenMessage(value, param.flatten);
-                                    type.rows.add.apply(type.rows, [getValue(type.columns[0], value, param.columns[0].default, false)]
-                                        .concat(new Array(param.columns.length - 1)));
-                                }
-                            }
-                            request.input(param.name, type);
-                        } else {
-                            if (!param.default || hasValue) {
-                                request.input(param.name, type, value);
-                            }
-                        }
-                    }
                 });
+                if (ngramParam) request.input('ngram', ngramParam);
 
                 if ($meta.saveAs) return saveAs(self, request, $meta, name);
 
@@ -1148,6 +753,10 @@ module.exports = function({utPort, registerErrors}) {
                             if (isEncrypted(param) && this.cbc) {
                                 param.encrypt = true;
                             };
+                            if (param.doc && /(^\{.*}$)|(^\[.*]$)/s.test(param.doc.trim())) {
+                                param.options = JSON.parse(param.doc);
+                                param.doc = param.options.docs;
+                            }
                             if (param.def && param.def.type === 'table') {
                                 let columns = schema.types[param.def.typeName.toLowerCase()];
                                 param.columns = [];
