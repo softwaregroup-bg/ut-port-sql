@@ -7,6 +7,7 @@
     "fs-plus": "3.0.2",
     "json-stringify-deterministic": "1.0.1",
     "mssql": "5.1.0",
+    "ut-function.includes": "^1.2.0",
     "uuid": "3.3.2",
     "xml2js": "0.4.19"
   },
