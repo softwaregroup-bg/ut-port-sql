@@ -384,7 +384,7 @@ function peg$parse(input, options) {
         },
       peg$c80 = "unique",
       peg$c81 = peg$literalExpectation("UNIQUE", true),
-      peg$c82 = function(n) {
+      peg$c82 = function(c, n) {
               return {
                 type: "UNIQUE",
                   columns: n
@@ -2391,7 +2391,7 @@ function peg$parse(input, options) {
   }
 
   function peg$parseunique_constraint() {
-    var s0, s1, s2, s3, s4, s5, s6, s7;
+    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9;
 
     s0 = peg$currPos;
     if (input.substr(peg$currPos, 6).toLowerCase() === peg$c80) {
@@ -2404,19 +2404,34 @@ function peg$parse(input, options) {
     if (s1 !== peg$FAILED) {
       s2 = peg$parsews();
       if (s2 !== peg$FAILED) {
-        s3 = peg$parselparen();
+        s3 = peg$parseclustered();
+        if (s3 === peg$FAILED) {
+          s3 = null;
+        }
         if (s3 !== peg$FAILED) {
           s4 = peg$parsews();
           if (s4 !== peg$FAILED) {
-            s5 = peg$parsenames();
+            s5 = peg$parselparen();
             if (s5 !== peg$FAILED) {
               s6 = peg$parsews();
               if (s6 !== peg$FAILED) {
-                s7 = peg$parserparen();
+                s7 = peg$parsenames();
                 if (s7 !== peg$FAILED) {
-                  peg$savedPos = s0;
-                  s1 = peg$c82(s5);
-                  s0 = s1;
+                  s8 = peg$parsews();
+                  if (s8 !== peg$FAILED) {
+                    s9 = peg$parserparen();
+                    if (s9 !== peg$FAILED) {
+                      peg$savedPos = s0;
+                      s1 = peg$c82(s3, s7);
+                      s0 = s1;
+                    } else {
+                      peg$currPos = s0;
+                      s0 = peg$FAILED;
+                    }
+                  } else {
+                    peg$currPos = s0;
+                    s0 = peg$FAILED;
+                  }
                 } else {
                   peg$currPos = s0;
                   s0 = peg$FAILED;

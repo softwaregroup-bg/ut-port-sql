@@ -246,7 +246,7 @@ fk_clause_actions = q:(w:ws ac:fk_clause_action {return [w, ac]})* {
   }
 
 unique_constraint
-   = "UNIQUE"i ws lparen ws n:names ws rparen {
+   = "UNIQUE"i ws c:clustered? ws lparen ws n:names ws rparen {
         return {
           type: "UNIQUE",
             columns: n
