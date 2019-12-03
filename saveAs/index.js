@@ -6,6 +6,17 @@ const formats = {
     json: require('./formats/json'),
     csv: require('./formats/csv')
 };
+const randomString = len => {
+    let str = '';
+    while (len > 0) {
+        const chunk = Math.random().toString(36).slice(2);
+        str += chunk.length > len ? chunk.slice(-len) : chunk;
+        len -= chunk.length;
+    }
+    return str;
+};
+
+const crypto = require('crypto');
 
 module.exports = async(port, request, { saveAs }, name) => {
     const config = typeof saveAs === 'string' ? { filename: saveAs } : saveAs;
@@ -28,11 +39,14 @@ module.exports = async(port, request, { saveAs }, name) => {
     const ext = config.filename.split('.').pop();
     const Format = formats[ext] || formats.jsonl;
     const formatter = new Format(config);
-    const writer = fs.createWriteStream(outputFilePath);
+    const algorithm = 'aes-256-cbc';
+    const key = randomString(32);
+    const iv = randomString(16);
+    const writer = crypto.createCipheriv(algorithm, key, iv);
+    writer.pipe(fs.createWriteStream(outputFilePath));
 
     return new Promise((resolve, reject) => {
         let replied = false;
-
         const reply = err => {
             if (replied) return;
             replied = true;
@@ -40,7 +54,7 @@ module.exports = async(port, request, { saveAs }, name) => {
             if (!err) {
                 try {
                     formatter.onDone();
-                    return resolve({outputFilePath});
+                    return resolve({outputFilePath, encryption: {algorithm, key, iv}});
                 } catch (e) {
                     err = e;
                 }
