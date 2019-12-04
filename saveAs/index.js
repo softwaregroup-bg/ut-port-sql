@@ -6,16 +6,6 @@ const formats = {
     json: require('./formats/json'),
     csv: require('./formats/csv')
 };
-const randomString = len => {
-    let str = '';
-    while (len > 0) {
-        const chunk = Math.random().toString(36).slice(2);
-        str += chunk.length > len ? chunk.slice(-len) : chunk;
-        len -= chunk.length;
-    }
-    return str;
-};
-
 const crypto = require('crypto');
 
 module.exports = async(port, request, { saveAs }, name) => {
@@ -40,8 +30,8 @@ module.exports = async(port, request, { saveAs }, name) => {
     const Format = formats[ext] || formats.jsonl;
     const formatter = new Format(config);
     const algorithm = 'aes-256-cbc';
-    const key = randomString(32);
-    const iv = randomString(16);
+    const key = crypto.randomBytes(32);
+    const iv = crypto.randomBytes(16);
     const writer = crypto.createCipheriv(algorithm, key, iv);
     writer.pipe(fs.createWriteStream(outputFilePath));
 
