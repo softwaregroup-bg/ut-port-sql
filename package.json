@@ -41,6 +41,9 @@
     "gitlab": "ut-gitlab"
   },
   "description": "UT port sql module",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:softwaregroup-bg/ut-port-sql.git"
