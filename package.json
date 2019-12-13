@@ -9,7 +9,7 @@
     "mssql": "5.1.0",
     "ut-function.includes": "^1.2.0",
     "uuid": "3.3.2",
-    "xml2js": "0.4.19"
+    "xml2js": "0.4.22"
   },
   "devDependencies": {
     "pegjs": "0.10.0",
