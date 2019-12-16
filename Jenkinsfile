@@ -4,4 +4,3 @@ library identifier: 'jenkinsfile@master', retriever: modernSCM([
 ])
 
 ut buildImage: 'softwaregroup/ut-docker'
-
