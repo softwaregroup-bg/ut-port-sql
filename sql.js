@@ -1,4 +1,7 @@
 'use strict';
+
+const upper0 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
 module.exports = {
     getHash: function() {
         return `IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL SELECT dbo.utSchemaHash() hash`;
@@ -243,6 +246,30 @@ module.exports = {
         END
         `;
     },
+    ngramIndex: (schema, table) => `CREATE TABLE [${schema}].[${table}Index] ( -- ngram index
+        ngram VARBINARY(32) NOT NULL,
+        id BIGINT,
+        CONSTRAINT [pk${upper0(schema)}${upper0(table)}Index] PRIMARY KEY CLUSTERED(ngram, id)
+    )`,
+    ngramTT: (schema) => `CREATE TYPE [${schema}].[ngramTT] AS TABLE (
+        [row] INT,
+        [param] VARCHAR(128),
+        [ngram] VARBINARY (32) NOT NULL
+    )`,
+    ngramSearch: (schema, table) => `CREATE FUNCTION [${schema}].[${table}Search] (
+        @ngram [${schema}].[ngramTT] READONLY,
+        @fuzzy FLOAT
+    ) RETURNS TABLE AS RETURN
+        SELECT
+            n.id, COUNT(*) cnt
+        FROM
+            @ngram s
+        JOIN
+            [${schema}].[${table}Index] n ON n.ngram = s.ngram
+        GROUP BY
+            n.id
+        HAVING
+            COUNT(*) >= (SELECT COUNT(*) * @fuzzy FROM @ngram)`,
     enableDatabaseDiagrams: function(name) {
         return `
         USE [${name}]

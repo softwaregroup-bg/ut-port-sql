@@ -426,3 +426,149 @@ This will thow an error of type `someModule.someError`, which will also have pro
 If the specified error type is known, an instance of that error will be thrown.
 Otherwise `PortSQL` error will be thrown, with its cause property set to the returned error.
 
+## Storing and retrieving JSON
+
+Storing of JSON happens automatically as objects are automatically serialized to
+JSON when needed. So if a parameter is not based on `xml` or some form of `date`
+or `time`, the parameter value is passed to JSON.stringify in cases it is an `Object`
+which is not a `Buffer`.
+
+Converting such JSON to object can also happen automatically, if the column name
+in the result set has suffix `.json`. In this case the column value is parsed with
+JSON.parse and stored in a property without the `.json` suffix. This enables easier
+consumption of stored JSON by just renaming the columns in the result set.
+
+## Encryption of SP parameters
+
+SQL server port will automatically encrypt values of stored procedure parameters
+in these cases:
+
+- parameter type is varbinary and size is multiple of 16
+- parameter name starts with `'encrypted'`
+- if parameter type is table, values of these columns will be encrypted in these
+  cases:
+  - column type is varbinary and size is multiple of 16
+  - column name starts with `'encrypted'`
+
+Since usually the stored procedures use auto generated table types, the
+encryption of parameters is achieved easily by just defining columns in the
+table, for example:
+
+```sql
+CREATE TABLE [schemaName].[tableName](
+    [text] VARBINARY(2048),
+    [encryptedAttachments] VARBINARY(MAX),
+    [encryptedDetails] VARBINARY(MAX),
+)
+```
+
+## Decryption of SP results
+
+SQL server port will automatically decrypt columns in the result set if:
+
+column type is varbinary and size is multiple of 16
+column name starts with `'encrypted'`, in this case the result will include a
+column without this prefix.
+
+## Indexing of encrypted values
+
+To enable easier indexing of encrypted values, SQL port will look for
+annotations in the `*.sql` files that define the tables and procedures. These
+annotations allow creation and usage of n-gram hashes to index and search the
+encrypted values.
+
+### Annotating tables
+
+Annotation of tables allows automatic creation of some helper objects.
+Annotation uses JSON within multiline comment after the table definition:
+
+```sql
+CREATE TABLE [schemaName].[tableName](
+    -- list of columns, constraints, etc.
+)
+/*{
+    "ngram": {
+        "index": true,
+        "search": true
+    }
+}*/
+```
+
+- Setting the `ngram` property will create table type named `[schemaName].[ngramTT]`
+that can be used in the stored procedures that want to receive n-grams
+- Setting the `ngram.index` to true will create a table named
+`[schemaName].[tableNameIndex]` for storing the n-grams
+- Setting the `ngram.search` to true will create a function named
+`[schemaName].[tableNameSearch]` for searching the n-grams index
+
+### Annotating stored procedure parameters
+
+Annotation of stored procedure parameters allows n-grams to be generated and
+passed to the stored procedure. Annotation uses JSON within multiline comment
+after the parameter definition:
+
+```sql
+CREATE PROCEDURE [schemaName].[method]
+    @paramName [schemaName].[tableNameTT] READONLY
+/*{
+    "paramName.text": true
+}*/
+    @ngram [schemaName].[ngramTT] READONLY
+AS
+```
+
+The JSON properties define how each encrypted column is to be indexed. It can
+include parameters to the n-gram generation. Passing just true activates the
+most common one - trigram generation. All generated n-grams will be passed in
+the `@ngram` parameter. Each row in the `@ngram` variable will include information
+for the parameter name and table row number used during n-gram generation.
+
+Stored procedure must use the `@ngram` parameter to save the passed data to the
+corresponding index table. If the procedure modified more than one row, it
+should use. For example if a variable named `@inserted` contains the rows inserted
+in the main table, the following code could be used to save the n-grams in the index:
+
+```sql
+INSERT INTO
+    [schemaName].tableNameIndex(id, ngram)
+SELECT
+    i.id, n.ngram
+FROM
+    (SELECT id, RANK() OVER (ORDER BY id) rnk FROM @inserted) i
+JOIN
+    @ngram n ON n.row = i.rnk AND n.param = 'paramName'
+```
+
+### Searching in n-gram index
+
+To search in the n-gram index, a procedure must annotate a parameter in a way
+similar to the procedures that modifies data. Then it can use the automatically
+created function or write alternative one to search using the passed n-gram
+hashes. Here is an example how the automatically created function can be used:
+
+```sql
+CREATE PROCEDURE [schemaName].[search]
+    @paramName [schemaName].[tableTT] READONLY
+/*{
+    "paramName.text": true
+}*/
+    @ngram [schemaName].[ngramTT] READONLY
+AS
+DECLARE @ngramCount INT = (SELECT COUNT(*) FROM @ngram)
+SELECT
+    t.id, t.text
+FROM
+    [schemaName].[tableName] t
+WHERE
+    (
+        @ngramCount = 0 OR
+        t.id IN (SELECT id FROM [schemaName].[tableNameSearch](@ngram, 1))
+    )
+```
+
+The automatically created search function expects 2 parameters:
+
+- `@ngram` - list of n-gram hashes to search for
+- `@fuzzy` - a float value, that specifies how many of the n-grams must match,
+  where 1 means 100%. The function returns the list of keys that contain the
+  passed n-grams

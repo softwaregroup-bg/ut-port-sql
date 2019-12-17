@@ -17,6 +17,9 @@
         return size
     }
   }
+  function parseJSON(text) {
+    return /(^\{.*}$)|(^\[.*]$)/s.test(text.trim()) ? JSON.parse(text) : text;
+  }
 }
 
 create = procedure / tableValue / table
@@ -48,16 +51,17 @@ tableValue
     }
 
 table
-  = ws createoralter ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen ws{
+  = ws createoralter ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen wsnocomment? options:Comment? ws{
       return {
           type: 'table',
-            name: '['+schema+'].['+table+']',
-            schema: schema,
-            table: table,
-            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
-            fields: fc.filter(function(x){return x.isField}),
-            constraints: fc.filter(function(x){return x.isConstraint})
-        }
+          name: '['+schema+'].['+table+']',
+          schema: schema,
+          table: table,
+          doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+          options: options && parseJSON(options.multi || options.single || ''),
+          fields: fc.filter(function(x){return x.isField}),
+          constraints: fc.filter(function(x){return x.isConstraint})
+      }
     }
 
 name =
@@ -242,7 +246,7 @@ fk_clause_actions = q:(w:ws ac:fk_clause_action {return [w, ac]})* {
   }
 
 unique_constraint
-   = "UNIQUE"i ws lparen ws n:names ws rparen {
+   = "UNIQUE"i ws c:clustered? ws lparen ws n:names ws rparen {
         return {
           type: "UNIQUE",
             columns: n
@@ -262,7 +266,7 @@ term = [^()]+ / "(" expression? ")"
 
 param_type = table_type / scalar_type
 
-not_nullable = ws1 x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
+not_nullable = ws x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
 identity = ws1 "IDENTITY" a:identity_arguments? {return a || {}}
 identity_arguments = ws lparen ws s:signed_number ws comma ws i:signed_number ws rparen {return {seed: s, increment: i}}
 table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
@@ -293,6 +297,7 @@ decimal_point = "."
 E = "E"i
 ws = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)* {return ws.filter(function(x){return x})}
 ws1 = ws:(WhiteSpace {return } / LineTerminatorSequence {return } / Comment)+ {return ws.filter(function(x){return x})}
+wsnocomment = ws:(WhiteSpace {return } / LineTerminatorSequence {return })* {return ws.filter(function(x){return x})}
 CREATE =  "CREATE"i
 TYPE = "TYPE"i
 PROCEDURE = "PROCEDURE"i
