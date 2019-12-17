@@ -1,3 +1,12 @@
+# [7.17.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.16.2...v7.17.0) (2019-12-04)
+
+
+### Features
+
+* encrypt file when exporting ([#89](https://github.com/softwaregroup-bg/ut-port-sql/issues/89)) ([6b12622](https://github.com/softwaregroup-bg/ut-port-sql/commit/6b12622))
+
+
+
 ## [7.16.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.16.1...v7.16.2) (2019-10-30)
 
 
