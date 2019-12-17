@@ -1,3 +1,12 @@
+# [7.18.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.17.0...v7.18.0) (2019-12-17)
+
+
+### Features
+
+* ngram indexing ([a763414](https://github.com/softwaregroup-bg/ut-port-sql/commit/a763414))
+
+
+
 # [7.17.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.16.2...v7.17.0) (2019-12-04)
 
 
