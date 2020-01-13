@@ -12,15 +12,19 @@
     "xml2js": "0.4.22"
   },
   "devDependencies": {
+    "json-schema-to-markdown": "^1.1.1",
     "pegjs": "0.10.0",
     "tap": "^12.6.0",
-    "ut-tools": "^6.29.11"
+    "ut-run": "^10.16.1",
+    "ut-tools": "^6.29.11",
+    "why-is-node-running": "2.1.0"
   },
   "peerDependencies": {
     "ut-bus": "^7.1.1"
   },
   "scripts": {
     "lint": "ut-lint .",
+    "doc": "ut-doc",
     "release": "ut-release",
     "genParser": "pegjs parsers/mssqlSP.pegjs",
     "changelog": "ut-changelog",
