@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
     main: require('..'),
     method: 'unit',
