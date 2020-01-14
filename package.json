@@ -14,7 +14,7 @@
   "devDependencies": {
     "json-schema-to-markdown": "1.1.1",
     "pegjs": "0.10.0",
-    "tap": "^14.6.2",
+    "tap": "^12.7.0",
     "ut-run": "^10.17.2",
     "ut-tools": "^6.30.2"
   },
