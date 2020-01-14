@@ -16,7 +16,8 @@
     "pegjs": "0.10.0",
     "tap": "^12.7.0",
     "ut-run": "^10.17.2",
-    "ut-tools": "^6.30.3"
+    "ut-tools": "^6.30.3",
+     "why-is-node-running": "^2.1.0"
   },
   "peerDependencies": {
     "ut-bus": "^7.1.1"
