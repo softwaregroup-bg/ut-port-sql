@@ -14,9 +14,9 @@
   "devDependencies": {
     "json-schema-to-markdown": "^1.1.1",
     "pegjs": "0.10.0",
-    "tap": "^12.6.0",
-    "ut-run": "^10.16.1",
-    "ut-tools": "^6.29.11",
+    "tap": "^14.6.2",
+    "ut-run": "^10.17.0",
+    "ut-tools": "^6.30.1",
     "why-is-node-running": "2.1.0"
   },
   "peerDependencies": {
