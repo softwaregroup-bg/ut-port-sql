@@ -15,12 +15,12 @@
     "json-schema-to-markdown": "1.1.1",
     "pegjs": "0.10.0",
     "tap": "^14.10.6",
-    "ut-run": "^10.19.0",
+    "ut-run": "^10.19.1",
     "ut-tools": "^6.31.2",
     "why-is-node-running": "^2.1.0"
   },
   "peerDependencies": {
-    "ut-run": "^10.19.0"
+    "ut-run": "^10.19.1"
   },
   "scripts": {
     "lint": "ut-lint .",
