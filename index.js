@@ -12,7 +12,6 @@ const path = require('path');
 const xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
-const serverRequire = require;
 const {setParam, isEncrypted, flattenMessage} = require('./params');
 
 function changeRowVersionType(field) {
