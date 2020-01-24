@@ -1,3 +1,17 @@
+# [7.19.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.18.3...v7.19.0) (2020-01-24)
+
+
+### Bug Fixes
+
+* do not read cache with require() ([8466081](https://github.com/softwaregroup-bg/ut-port-sql/commit/8466081))
+
+
+### Features
+
+* include sql files in compiled app ([3f60d55](https://github.com/softwaregroup-bg/ut-port-sql/commit/3f60d55))
+
+
+
 ## [7.18.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.18.2...v7.18.3) (2020-01-24)
 
 
