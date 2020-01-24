@@ -22,7 +22,8 @@ function changeRowVersionType(field) {
     }
 }
 
-module.exports = function({utPort, registerErrors}) {
+module.exports = function({utPort, registerErrors, vfs}) {
+    if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
     return class SqlPort extends utPort {
         constructor() {
             super(...arguments);
@@ -388,12 +389,12 @@ module.exports = function({utPort, registerErrors}) {
             return folders.reduce((promise, schemaConfig) =>
                 promise.then(allDbObjects =>
                     new Promise((resolve, reject) => {
-                        fs.readdir(schemaConfig.path, (err, files) => {
+                        vfs.readdir(schemaConfig.path, (err, files) => {
                             if (err) {
                                 reject(err);
                                 return;
                             }
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files);
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, vfs);
 
                             let request = self.getRequest();
                             let updated = [];
@@ -925,17 +926,17 @@ module.exports = function({utPort, registerErrors}) {
                     promise = promise
                         .then(function() {
                             return new Promise(function(resolve, reject) {
-                                fs.readdir(schemaConfig.path, function(err, files) {
+                                vfs.readdir(schemaConfig.path, function(err, files) {
                                     if (err) {
                                         return reject(err);
                                     }
                                     files = files.sort();
                                     files.forEach(function(file) {
-                                        let fileName = schemaConfig.path + '/' + file;
-                                        if (!fs.statSync(fileName).isFile()) {
+                                        let fileName = path.join(schemaConfig.path, file);
+                                        if (!vfs.isFile(fileName)) {
                                             return;
                                         }
-                                        let fileContent = fs.readFileSync(fileName).toString();
+                                        let fileContent = vfs.readFileSync(fileName).toString();
                                         if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
                                             let binding = parserSP.parse(fileContent);
                                             if (binding.type === 'procedure') {
