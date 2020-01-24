@@ -17,7 +17,7 @@
     "ut-tools": "^6.29.11"
   },
   "peerDependencies": {
-    "ut-run": "^7.19.0"
+    "ut-run": "^10.19.0"
   },
   "scripts": {
     "lint": "ut-lint .",
