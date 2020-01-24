@@ -805,7 +805,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             if (hash) {
                 let cacheFileName = cacheFile(hash);
                 if (fs.existsSync(cacheFileName)) {
-                    return serverRequire(cacheFileName);
+                    return JSON.parse(fs.readFileSync(cacheFileName));
                 }
             }
             if (((Array.isArray(schema) && !schema.length) || !schema) && !this.config.linkSP) {
