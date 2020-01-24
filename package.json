@@ -14,7 +14,7 @@
   "devDependencies": {
     "pegjs": "0.10.0",
     "tap": "^12.6.0",
-    "ut-tools": "^6.29.11"
+    "ut-tools": "^6.31.2"
   },
   "peerDependencies": {
     "ut-run": "^10.19.0"
