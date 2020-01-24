@@ -7,7 +7,6 @@ const ROW_VERSION_INNER_TYPE = 'BINARY';
 const VAR_RE = /\$\{([^}]*)\}/g;
 const path = require('path');
 const dotProp = require('dot-prop');
-const fs = require('fs');
 const parserSP = require('./parsers/mssqlSP');
 const includes = require('ut-function.includes');
 
@@ -184,7 +183,7 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
     });
 };
 
-function processFiles(schema, busConfig, schemaConfig, files) {
+function processFiles(schema, busConfig, schemaConfig, files, vfs) {
     files = files.sort().map(file => {
         return {
             originalName: file,
@@ -205,13 +204,13 @@ function processFiles(schema, busConfig, schemaConfig, files) {
         const objectId = objectName.toLowerCase();
         const fileName = path.join(schemaConfig.path, file.originalName);
         try {
-            if (!fs.statSync(fileName).isFile()) {
+            if (!vfs.isFile(fileName)) {
                 return;
             }
             switch (path.extname(fileName).toLowerCase()) {
                 case '.sql':
                     schemaConfig.linkSP && (dbObjects[objectId] = fileName);
-                    const fileContent = interpolate(fs.readFileSync(fileName).toString(), busConfig);
+                    const fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
                     const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
 
                     addQuery(schema, queries, {

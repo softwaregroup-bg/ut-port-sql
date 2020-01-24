@@ -20,7 +20,7 @@
     "why-is-node-running": "^2.1.0"
   },
   "peerDependencies": {
-    "ut-bus": "^7.11.3"
+    "ut-run": "^10.19.0"
   },
   "scripts": {
     "lint": "ut-lint .",
