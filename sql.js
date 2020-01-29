@@ -826,5 +826,15 @@ module.exports = {
 
         IF OBJECT_ID(N'dbo.sp_upgraddiagrams') IS NULL and IS_MEMBER('db_owner') = 1
             DROP PROCEDURE dbo.sp_upgraddiagrams`;
+    },
+    permissionCheck: function() {
+        return `
+        DECLARE @actionID VARCHAR(100) = OBJECT_SCHEMA_NAME(@@PROCID) + '.' + OBJECT_NAME(@@PROCID), @return INT = 0
+        EXEC @return = [user].[permission.check] @actionId = @actionID, @objectId = NULL, @meta = @meta
+        IF @return != 0
+        BEGIN
+            RETURN 55555
+        END
+        `;
     }
 };
