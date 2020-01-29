@@ -1,6 +1,7 @@
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
+const PERMISSION_CHECK = /^[\s+]{0,}--ut-permission-check$/m;
 const mssqlQueries = require('./sql');
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
@@ -210,15 +211,17 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs) {
             switch (path.extname(fileName).toLowerCase()) {
                 case '.sql':
                     schemaConfig.linkSP && (dbObjects[objectId] = fileName);
-                    const fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
+                    let fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
                     const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
-
+                    if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
+                        fileContent = fileContent.replace(PERMISSION_CHECK, mssqlQueries.permissionCheck());
+                    }
                     addQuery(schema, queries, {
                         binding,
                         fileName,
-                        objectName: objectName,
-                        objectId: objectId,
-                        fileContent: fileContent,
+                        objectName,
+                        objectId,
+                        fileContent,
                         createStatement: getCreateStatement(binding, fileContent, fileName, objectName)
                     });
                     if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {

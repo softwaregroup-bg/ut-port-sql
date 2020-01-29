@@ -155,6 +155,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                                 cbc,
                                 hmac,
                                 ngram,
+                                1,
                                 param,
                                 type.columns[0],
                                 row,
