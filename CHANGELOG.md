@@ -1,3 +1,12 @@
+## [7.20.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.20.0...v7.20.1) (2020-01-29)
+
+
+### Bug Fixes
+
+* add rowIndex ([ee77421](https://github.com/softwaregroup-bg/ut-port-sql/commit/ee77421))
+
+
+
 # [7.20.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.19.1...v7.20.0) (2020-01-29)
 
 
