@@ -317,6 +317,88 @@ E.g. if table's name is **schema.name** then it's corresponding user defined typ
 
 In case a user defined table type with the same name is manually defined in the schema folder then it will have a priority over the automatic one upon schema initialization/upgrade.
 
+## **Automatic insertion of permission check snippets**
+
+The SQL port schemas have a configuration property named `permissionCheck`.
+This property can be set to boolean or an array of strings,
+specifying whether stored procedures defined in the schema
+should automatically check the caller permissions.
+Note that in addition to this configuration each
+stored procedure should have a specific comment
+(--ut-permission-check) in its body which to be replaced
+with the respective snippet. There are several scenarios:
+
+- If the property is set to **true** then the permission check snippet
+will be enabled for all the stored procedures which
+have the --ut-permission-check comment somewhere within their body.
+e.g
+
+  ```js
+    const path = require('path');
+
+    module.exports = function sql() {
+        return {
+          schema: [
+            {
+              path: path.join(__dirname, 'schema'),
+              permissionCheck: true
+            }
+          ]
+        };
+    };
+  ```
+
+- If the property is set to an array of strings the permission check snippet
+will be enabled for those stored procedures only.
+
+  ```js
+    const path = require('path');
+
+    module.exports = function sql() {
+        return {
+          schema: [
+            {
+              path: path.join(__dirname, 'schema'),
+              permissionCheck: [
+                'schema1.entity1.action1',
+                'schema1.entity1.action2'
+              ]
+            }
+          ]
+        };
+    };
+  ```
+
+- if the property is omitted or set to **false**
+then no permission checking will be enabled.
+
+```sql
+--ut-permission-check
+
+/*
+  The comment above will be
+  automatically replaced with the code below
+  (
+    note that all the code will be output
+    on 1 row so that the line numbers correctness
+    in the stack traces can be preserved
+  ):
+*/
+
+DECLARE
+  @actionID VARCHAR(100) = OBJECT_SCHEMA_NAME(@@PROCID) + '.' + OBJECT_NAME(@@PROCID),
+  @return INT = 0;
+
+EXEC @return = [user].[permission.check]
+  @actionId = @actionID,
+  @objectId = NULL,
+  @meta = @meta;
+
+IF (@return != 0)
+  BEGIN RETURN 55555;
+END
+```
+
 ## **Table and column comments**
 
 Table and column comments are parsed and inserted as description in MSSQL. Single line comment '**--**' after every parameter, field, column or constraint will be added as description for itself.
