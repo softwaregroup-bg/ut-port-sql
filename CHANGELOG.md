@@ -1,3 +1,12 @@
+# [7.20.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.19.1...v7.20.0) (2020-01-29)
+
+
+### Features
+
+* permission.check ([1d22de0](https://github.com/softwaregroup-bg/ut-port-sql/commit/1d22de0))
+
+
+
 ## [7.19.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.19.0...v7.19.1) (2020-01-24)
 
 
