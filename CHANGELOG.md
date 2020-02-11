@@ -1,3 +1,12 @@
+# [7.21.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.20.1...v7.21.0) (2020-02-11)
+
+
+### Features
+
+* support yaml files in schema folders ([7e52b30](https://github.com/softwaregroup-bg/ut-port-sql/commit/7e52b30d494d747a30256ecbd2d71409961a121b))
+
+
+
 ## [7.20.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.20.0...v7.20.1) (2020-01-29)
 
 
