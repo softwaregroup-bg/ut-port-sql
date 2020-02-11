@@ -113,7 +113,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         ngram && addNgram(hmac, ngram, 1, param.name, param.name, value);
         value = cbc.encrypt(Buffer.from(value));
     }
-    const hasValue = value !== void 0;
+    const hasValue = value !== undefined;
     const type = sqlType(param.def);
     if (param.def && param.def.type === 'time' && value != null) {
         value = new Date('1970-01-01T' + value);
@@ -148,7 +148,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                                 type.columns[index],
                                 row[column.column],
                                 column.default,
-                                column.update && row.hasOwnProperty(column.update)
+                                column.update && Object.prototype.hasOwnProperty.call(row, column.update)
                             )));
                         } else {
                             type.rows.add(getValue(
@@ -175,7 +175,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                         type.columns[index],
                         value[column.column],
                         column.default,
-                        column.update && value.hasOwnProperty(column.update)
+                        column.update && Object.prototype.hasOwnProperty.call(value, column.update)
                     )));
                 } else {
                     value = flattenMessage(value, param.flatten, limit);

@@ -9,6 +9,7 @@ module.exports = class Transform {
             return this;
         };
     }
+
     onResultSet() {}
     onRow() {}
     onDone() {}

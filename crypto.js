@@ -44,13 +44,13 @@ module.exports = {
     },
     hash: content => crypto.createHash('sha256').update(content).digest('hex'),
     cbc: key => {
-        var iv = Buffer.alloc(16);
+        const iv = Buffer.alloc(16);
         crypto.randomFillSync(iv);
         if (typeof key === 'string') {
             key = Buffer.from(key, 'hex');
         }
-        var enc = crypto.createCipheriv('aes-256-cbc', key, iv);
-        var dec = crypto.createDecipheriv('aes-256-cbc', key, iv);
+        const enc = crypto.createCipheriv('aes-256-cbc', key, iv);
+        const dec = crypto.createDecipheriv('aes-256-cbc', key, iv);
         dec.update(iv);
 
         function pad(s) {

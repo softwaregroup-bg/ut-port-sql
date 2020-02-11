@@ -6,9 +6,11 @@ module.exports = class JsonLFormat extends Format {
         this.resultSet = {};
         if (typeof this.config.lineSeparator !== 'string') this.config.lineSeparator = '\r\n';
     }
+
     onResultSet(resultSet) {
         this.resultSet = resultSet;
     }
+
     onRow(row) {
         const line = JSON.stringify({[this.resultSet.resultSetName]: row});
         this.write(`${line}${this.config.lineSeparator}`);

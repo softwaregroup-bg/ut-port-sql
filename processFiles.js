@@ -10,6 +10,8 @@ const path = require('path');
 const dotProp = require('dot-prop');
 const parserSP = require('./parsers/mssqlSP');
 const includes = require('ut-function.includes');
+const yaml = require('yaml');
+const fs = require('fs');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -140,7 +142,7 @@ function addQuery(schema, queries, params) {
 }
 
 function getObjectName(fileName) {
-    return fileName.replace(/\.(sql|js|json)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
+    return fileName.replace(/\.(sql|js|json|yaml)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
 }
 
 function shouldCreateTT(schemaConfig, tableName) {
@@ -159,7 +161,9 @@ function interpolate(txt, params = {}) {
 };
 
 const addSP = (queries, {fileName, objectName, objectId, config}) => {
-    const params = require(fileName);
+    const params = path.extname(fileName).toLowerCase() === '.yaml'
+        ? yaml.parse(fs.readFileSync(fileName, 'utf8'))
+        : require(fileName);
     queries.push({
         fileName,
         objectName,
@@ -209,7 +213,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs) {
                 return;
             }
             switch (path.extname(fileName).toLowerCase()) {
-                case '.sql':
+                case '.sql': {
                     schemaConfig.linkSP && (dbObjects[objectId] = fileName);
                     let fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
                     const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
@@ -282,8 +286,10 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs) {
                         }
                     }
                     break;
+                }
                 case '.js':
                 case '.json':
+                case '.yaml':
                     addSP(queries, {
                         fileName,
                         objectName: objectName,

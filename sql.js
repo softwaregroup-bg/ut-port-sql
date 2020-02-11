@@ -4,13 +4,13 @@ const upper0 = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 module.exports = {
     getHash: function() {
-        return `IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL SELECT dbo.utSchemaHash() hash`;
+        return "IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL SELECT dbo.utSchemaHash() hash";
     },
     setHash: function(hash) {
         return `CREATE FUNCTION dbo.utSchemaHash() RETURNS VARCHAR(64) AS BEGIN RETURN '${hash}' END`;
     },
     dropHash: function() {
-        return `IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL DROP FUNCTION dbo.utSchemaHash`;
+        return "IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL DROP FUNCTION dbo.utSchemaHash";
     },
     loadSchema: function(partial) {
         return `
@@ -25,7 +25,7 @@ module.exports = {
             CASE o.[type]
                 WHEN 'SN' THEN 'DROP SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name +
                                 '] CREATE SYNONYM [' + SCHEMA_NAME(o.schema_id) + '].[' + o.Name + '] FOR ' +  s.base_object_name
-                ELSE ${partial ? `LEFT(c.text, CASE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) WHEN 0 THEN CASE CHARINDEX(CHAR(10)+'AS'+CHAR(10), c.text) WHEN 0 THEN 2500 ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(10), c.text) + 10 END ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) + 10 END)` : 'c.text'}
+                ELSE ${partial ? "LEFT(c.text, CASE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) WHEN 0 THEN CASE CHARINDEX(CHAR(10)+'AS'+CHAR(10), c.text) WHEN 0 THEN 2500 ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(10), c.text) + 10 END ELSE CHARINDEX(CHAR(10)+'AS'+CHAR(13), c.text) + 10 END)" : 'c.text'}
             END AS [source]
 
         FROM
@@ -35,7 +35,7 @@ module.exports = {
         LEFT JOIN
             sys.synonyms s on s.object_id = o.object_id
         WHERE
-            o.type IN (${partial ? `'P'` : `'V', 'P', 'FN','F','IF','SN','TF','TR','U'`}) AND
+            o.type IN (${partial ? "'P'" : "'V', 'P', 'FN','F','IF','SN','TF','TR','U'"}) AND
             user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo') AND
             objectproperty(o.object_id, 'IsMSShipped') = 0 AND
             SCHEMA_NAME(o.schema_id) != 'dbo'
@@ -185,7 +185,7 @@ module.exports = {
         if (!statement.params) {
             return;
         }
-        var sql = '    DECLARE @callParams XML = ( SELECT ';
+        let sql = '    DECLARE @callParams XML = ( SELECT ';
         statement.params.map(function(param) {
             if (param.def.type === 'table') {
                 sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) [${param.name}], `;
@@ -201,7 +201,7 @@ module.exports = {
         if (!statement.params) {
             return;
         }
-        var sql = 'DECLARE @callParams XML = ( SELECT ';
+        let sql = 'DECLARE @callParams XML = ( SELECT ';
         statement.params.map(function(param) {
             if (param.def.type === 'table') {
                 sql += `(SELECT * from @${param.name} rows FOR XML AUTO, TYPE) [${param.name}], `;
