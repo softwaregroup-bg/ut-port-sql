@@ -1,3 +1,13 @@
+## [7.21.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.0...v7.21.1) (2020-02-20)
+
+
+### Bug Fixes
+
+* allow logging of binary columns ([0e99365](https://github.com/softwaregroup-bg/ut-port-sql/commit/0e99365589dc94bd24e0860a6b0b981046670038))
+* do not try to create ngramtt again ([6043f60](https://github.com/softwaregroup-bg/ut-port-sql/commit/6043f60414eecda015dc2e175d1d2997445b57e9))
+
+
+
 # [7.21.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.20.1...v7.21.0) (2020-02-11)
 
 
