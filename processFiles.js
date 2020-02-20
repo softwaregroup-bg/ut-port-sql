@@ -263,6 +263,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs) {
                             fileContent: tt,
                             createStatement: tt
                         });
+                        schema.source[namespace + '.ngramtt'] = true;
                         if (binding.options.ngram.index) {
                             const index = mssqlQueries.ngramIndex(namespace, table);
                             addQuery(schema, queries, {
