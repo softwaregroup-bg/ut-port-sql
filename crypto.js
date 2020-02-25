@@ -59,7 +59,7 @@ module.exports = {
 
         return {
             encrypt: value => Buffer.concat([enc.update(crypto.randomFillSync(iv)), enc.update(pad(value))]),
-            decrypt: value => dec.update(Buffer.concat([value, iv])).toString('utf8', 32).trim()
+            decrypt: value => dec.update(Buffer.concat([value, iv.slice(value.length % 16)])).toString('utf8', 32).trim()
         };
     },
     hmac: key => value => crypto.createHmac('sha256', Buffer.from(key, 'hex')).update(value).digest()
