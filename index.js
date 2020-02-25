@@ -404,7 +404,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 reject(err);
                                 return;
                             }
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, vfs);
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc);
 
                             const request = self.getRequest();
                             const updated = [];
