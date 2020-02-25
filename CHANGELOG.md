@@ -1,3 +1,12 @@
+## [7.21.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.1...v7.21.2) (2020-02-25)
+
+
+### Bug Fixes
+
+* pass cbc to processFiles function ([#94](https://github.com/softwaregroup-bg/ut-port-sql/issues/94)) ([019771d](https://github.com/softwaregroup-bg/ut-port-sql/commit/019771d54ada9b3dacd05edaa01f08681509e377))
+
+
+
 ## [7.21.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.0...v7.21.1) (2020-02-20)
 
 
