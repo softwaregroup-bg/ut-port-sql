@@ -1,3 +1,12 @@
+## [7.21.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.2...v7.21.3) (2020-02-25)
+
+
+### Bug Fixes
+
+* cbc.decrypt: handle gracefully bad length ([650524e](https://github.com/softwaregroup-bg/ut-port-sql/commit/650524e64b328912009c9ca9e79f12cb69000698))
+
+
+
 ## [7.21.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.1...v7.21.2) (2020-02-25)
 
 
