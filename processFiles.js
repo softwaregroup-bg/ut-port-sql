@@ -38,9 +38,9 @@ function replaceCoreError(statement, fileName, objectName, params) {
         .join('\n');
 }
 
-const preProcess = (binding, statement, fileName, objectName) => {
-    if (this.cbc) {
-        statement = statement.replace(ENCRYPT_RE, (match, value) => '0x' + this.cbc.encrypt(value).toString('hex'));
+const preProcess = (binding, statement, fileName, objectName, cbc) => {
+    if (cbc) {
+        statement = statement.replace(ENCRYPT_RE, (match, value) => '0x' + cbc.encrypt(value).toString('hex'));
     }
 
     if (statement.match(AUDIT_LOG)) {
@@ -93,8 +93,8 @@ function tableToTTU(binding) {
     return 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
 }
 
-function getCreateStatement(binding, statement, fileName, objectName) {
-    return preProcess(binding, statement, fileName, objectName).trim()
+function getCreateStatement(binding, statement, fileName, objectName, cbc) {
+    return preProcess(binding, statement, fileName, objectName, cbc).trim()
         .replace(/^ALTER /i, 'CREATE ')
         .replace(/^DROP SYNONYM .* CREATE SYNONYM/i, 'CREATE SYNONYM');
 }
@@ -188,7 +188,7 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
     });
 };
 
-function processFiles(schema, busConfig, schemaConfig, files, vfs) {
+function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
     files = files.sort().map(file => {
         return {
             originalName: file,
@@ -226,7 +226,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs) {
                         objectName,
                         objectId,
                         fileContent,
-                        createStatement: getCreateStatement(binding, fileContent, fileName, objectName)
+                        createStatement: getCreateStatement(binding, fileContent, fileName, objectName, cbc)
                     });
                     if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
                         const tt = tableToType(binding);
