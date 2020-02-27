@@ -4,25 +4,28 @@ const mssql = require('mssql');
 const xmlBuilder = new xml2js.Builder({headless: true});
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 const WORDS = /[^\s\-\\\]`~!@#$%^&*()_=+[{};:'"|<>,./?]+/g;
+const LETTER = /\p{Letter}/gu;
 
-function addNgram(hmac, ngram, index, param, name, string) {
-    const options = ngram.options && ngram.options[name];
-    if (!options) return ngram;
+function addNgram(hmac, ngramParam, add, row, param, column, string) {
+    const options = ngramParam.options && ngramParam.options[column];
+    if (!options) return ngramParam;
+    const id = typeof options === 'number' ? options : options.id;
     const unique = new Set();
     string.toLowerCase().match(WORDS).forEach(word => {
+        word = word.match(LETTER);
         const {min = 3, max = 3, depth = word.length - min} = options;
         const length = word.length;
         if (min >= length) {
-            unique.add(word);
+            unique.add(word.join(''));
         } else {
             for (let i = 0; i <= depth && i <= length; i++) {
                 for (let j = min; j <= max && i + j <= length; j++) {
-                    unique.add(word.substring(i, i + j));
+                    unique.add(word.slice(i, i + j).join(''));
                 }
             }
         }
     });
-    unique.forEach(string => ngram.add(index, param, hmac(name + ' ' + string)));
+    unique.forEach(ngram => add(row, id || 0, param, hmac(column + ' ' + ngram)));
 }
 
 function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
@@ -34,7 +37,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
     } else if (value) {
         if (cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
             if (!Buffer.isBuffer(value) && typeof value === 'object') value = JSON.stringify(value);
-            ngram && addNgram(hmac, ngram, index, param.name, param.name + '.' + column.name, value);
+            ngram && addNgram(hmac, ngram, ngram.add, index, param.name, param.name + '.' + column.name, value);
             return cbc.encrypt(Buffer.from(value));
         } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
             // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
@@ -110,7 +113,7 @@ function sqlType(def) {
 
 function setParam(cbc, hmac, ngram, request, param, value, limit) {
     if (param.encrypt && value != null) {
-        ngram && addNgram(hmac, ngram, 1, param.name, param.name, value);
+        ngram && addNgram(hmac, ngram, ngram.add, 1, param.name, param.name, value);
         value = cbc.encrypt(Buffer.from(value));
     }
     const hasValue = value !== undefined;
@@ -133,8 +136,8 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
             if (value) {
                 if (Array.isArray(value)) {
                     value.forEach(function(row, rowIndex) {
-                        if (param.name === 'ngram') {
-                            addNgram(hmac, ngram, 1, 'search', row[0], row[1]);
+                        if (param.def.typeName && param.def.typeName.endsWith('.ngramTT')) {
+                            addNgram(hmac, param, (...columns) => type.rows.add(...columns), 1, 'search', row[0], row[1]);
                             return;
                         }
                         row = flattenMessage(row, param.flatten, limit);

@@ -248,11 +248,13 @@ module.exports = {
     },
     ngramIndex: (schema, table) => `CREATE TABLE [${schema}].[${table}Index] ( -- ngram index
         ngram VARBINARY(32) NOT NULL,
+        field TINYINT,
         id BIGINT,
-        CONSTRAINT [pk${upper0(schema)}${upper0(table)}Index] PRIMARY KEY CLUSTERED(ngram, id)
+        CONSTRAINT [pk${upper0(schema)}${upper0(table)}Index] PRIMARY KEY CLUSTERED(ngram, field, id)
     )`,
     ngramTT: (schema) => `CREATE TYPE [${schema}].[ngramTT] AS TABLE (
         [row] INT,
+        [field] TINYINT,
         [param] VARCHAR(128),
         [ngram] VARBINARY (32) NOT NULL
     )`,
@@ -265,7 +267,7 @@ module.exports = {
         FROM
             @ngram s
         JOIN
-            [${schema}].[${table}Index] n ON n.ngram = s.ngram
+            [${schema}].[${table}Index] n ON n.ngram = s.ngram AND n.field = s.field
         GROUP BY
             n.id
         HAVING

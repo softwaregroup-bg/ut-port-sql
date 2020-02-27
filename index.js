@@ -601,7 +601,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                             $meta,
                             $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId}
                         );
-                    } else if (param.name === 'ngram') {
+                    } else if (param.def && param.def.typeName && param.def.typeName.endsWith('.ngramTT')) {
                         value = param.options && Object.keys(param.options).map(name => data[name] && [name, data[name]]).filter(Boolean);
                     } else if (param.update) {
                         value = data[param.name] || Object.prototype.hasOwnProperty.call(data, param.update);
