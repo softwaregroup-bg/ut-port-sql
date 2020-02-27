@@ -1,3 +1,12 @@
+## [7.22.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.22.1...v7.22.2) (2020-02-27)
+
+
+### Bug Fixes
+
+* allow digits in words ([e077312](https://github.com/softwaregroup-bg/ut-port-sql/commit/e0773123aa48091eee2d23d9c166708b246b68a9))
+
+
+
 ## [7.22.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.22.0...v7.22.1) (2020-02-27)
 
 
