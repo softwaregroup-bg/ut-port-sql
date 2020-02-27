@@ -1,3 +1,12 @@
+## [7.22.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.22.0...v7.22.1) (2020-02-27)
+
+
+### Bug Fixes
+
+* skip empty words ([aa7cf2d](https://github.com/softwaregroup-bg/ut-port-sql/commit/aa7cf2d74e03d967b58e66782f0190c769d8bc2c))
+
+
+
 # [7.22.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.3...v7.22.0) (2020-02-27)
 
 
