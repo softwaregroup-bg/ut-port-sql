@@ -3,8 +3,8 @@ const xml2js = require('xml2js');
 const mssql = require('mssql');
 const xmlBuilder = new xml2js.Builder({headless: true});
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
-const WORDS = /[^\s\-\\\]`~!@#$%^&*()_=+[{};:'"|<>,./?]+/g;
-const LETTER = /\p{Letter}/gu;
+const WORDS = /(\p{Letter}|\d)+/gu;
+const LETTER = /\p{Letter}|\d/gu;
 
 function addNgram(hmac, ngramParam, add, row, param, column, string) {
     const options = ngramParam.options && ngramParam.options[column];
