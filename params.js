@@ -13,14 +13,16 @@ function addNgram(hmac, ngramParam, add, row, param, column, string) {
     const unique = new Set();
     string.toLowerCase().match(WORDS).forEach(word => {
         word = word.match(LETTER);
-        const {min = 3, max = 3, depth = word.length - min} = options;
-        const length = word.length;
-        if (min >= length) {
-            unique.add(word.join(''));
-        } else {
-            for (let i = 0; i <= depth && i <= length; i++) {
-                for (let j = min; j <= max && i + j <= length; j++) {
-                    unique.add(word.slice(i, i + j).join(''));
+        if (word) {
+            const {min = 3, max = 3, depth = word.length - min} = options;
+            const length = word.length;
+            if (min >= length) {
+                unique.add(word.join(''));
+            } else {
+                for (let i = 0; i <= depth && i <= length; i++) {
+                    for (let j = min; j <= max && i + j <= length; j++) {
+                        unique.add(word.slice(i, i + j).join(''));
+                    }
                 }
             }
         }
