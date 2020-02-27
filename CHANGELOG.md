@@ -1,3 +1,12 @@
+# [7.22.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.3...v7.22.0) (2020-02-27)
+
+
+### Features
+
+* add field id in ngram index, support unicode ([4482a49](https://github.com/softwaregroup-bg/ut-port-sql/commit/4482a4956d51ab07badbdc9012cddc0d05d6bdc2))
+
+
+
 ## [7.21.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.21.2...v7.21.3) (2020-02-25)
 
 
