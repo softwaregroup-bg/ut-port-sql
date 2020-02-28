@@ -1,3 +1,12 @@
+# [7.23.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.22.2...v7.23.0) (2020-02-28)
+
+
+### Features
+
+* encrypt stable and date ([8cacc24](https://github.com/softwaregroup-bg/ut-port-sql/commit/8cacc242097e1464213aad5cfed966a58f26aa57))
+
+
+
 ## [7.22.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.22.1...v7.22.2) (2020-02-27)
 
 
