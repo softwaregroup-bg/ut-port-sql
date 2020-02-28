@@ -2,6 +2,7 @@
 const crypto = require('crypto');
 const defPassword = '12345678901234567890123456789012';
 const defIV = '1234567890123456';
+const zeroes = Buffer.alloc(16);
 
 module.exports = {
     encrypt: (text, algorithm, password, iv) => {
@@ -54,12 +55,23 @@ module.exports = {
         dec.update(iv);
 
         function pad(s) {
-            return s + ' '.repeat(16 - s.length % 16);
+            return s + ' '.repeat((16 - s.length % 16) % 16);
         }
 
+        const encrypt = value => Buffer.concat([enc.update(zeroes), enc.update(pad(value))]);
+        const decrypt = value => dec.update(Buffer.concat([value, iv.slice(value.length % 16)])).toString('utf8', 32).trim();
+        const encryptStable = value => {
+            const cipher = crypto.createCipheriv('aes-256-cbc', key, zeroes);
+            return Buffer.concat([cipher.update(value), cipher.final()]);
+        };
+        const decryptStable = value => {
+            const decipher = crypto.createDecipheriv('aes-256-cbc', key, zeroes);
+            return decipher.update(value).toString('utf8') + decipher.final('utf8');
+        };
+
         return {
-            encrypt: value => Buffer.concat([enc.update(crypto.randomFillSync(iv)), enc.update(pad(value))]),
-            decrypt: value => dec.update(Buffer.concat([value, iv.slice(value.length % 16)])).toString('utf8', 32).trim()
+            encrypt: (value, stable) => stable ? encryptStable(value) : encrypt(value),
+            decrypt: (value, stable) => stable ? decryptStable(value) : decrypt(value)
         };
     },
     hmac: key => value => crypto.createHmac('sha256', Buffer.from(key, 'hex')).update(value).digest()

@@ -40,7 +40,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
         if (cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
             if (!Buffer.isBuffer(value) && typeof value === 'object') value = JSON.stringify(value);
             ngram && addNgram(hmac, ngram, ngram.add, index, param.name, param.name + '.' + column.name, value);
-            return cbc.encrypt(Buffer.from(value));
+            return cbc.encrypt(Buffer.from(value), column.name);
         } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
             // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
             return new Date(value);
@@ -116,7 +116,7 @@ function sqlType(def) {
 function setParam(cbc, hmac, ngram, request, param, value, limit) {
     if (param.encrypt && value != null) {
         ngram && addNgram(hmac, ngram, ngram.add, 1, param.name, param.name, value);
-        value = cbc.encrypt(Buffer.from(value));
+        value = cbc.encrypt(Buffer.from(value), param.name);
     }
     const hasValue = value !== undefined;
     const type = sqlType(param.def);

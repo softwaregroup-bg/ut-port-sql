@@ -4,6 +4,7 @@ const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const PERMISSION_CHECK = /^[\s+]{0,}--ut-permission-check$/m;
 const mssqlQueries = require('./sql');
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
+const ENCRYPTSTABLE_RE = /(?:NULL|0x.*)\/\*encryptStable (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const VAR_RE = /\$\{([^}]*)\}/g;
 const path = require('path');
@@ -41,6 +42,7 @@ function replaceCoreError(statement, fileName, objectName, params) {
 const preProcess = (binding, statement, fileName, objectName, cbc) => {
     if (cbc) {
         statement = statement.replace(ENCRYPT_RE, (match, value) => '0x' + cbc.encrypt(value).toString('hex'));
+        statement = statement.replace(ENCRYPTSTABLE_RE, (match, value) => '0x' + cbc.encrypt(value, true).toString('hex'));
     }
 
     if (statement.match(AUDIT_LOG)) {

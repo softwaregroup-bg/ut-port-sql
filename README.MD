@@ -713,7 +713,7 @@ CREATE PROCEDURE [schemaName].[search]
 /*{
     "paramName.text": true
 }*/
-    @ngram [schemaName].[ngramTT] READONLY
+    @ngramTableName [schemaName].[ngramTT] READONLY
 AS
 DECLARE @ngramCount INT = (SELECT COUNT(*) FROM @ngram)
 SELECT

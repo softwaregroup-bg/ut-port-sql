@@ -44,6 +44,8 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 paramsOutName: 'out',
                 doc: false,
                 maxNesting: 5,
+                cbcStable: {},
+                cbcDate: {},
                 connection: {
                     options: {
                         debug: {
@@ -151,7 +153,21 @@ module.exports = function({utPort, registerErrors, vfs}) {
         }
 
         start() {
-            this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
+            if (this.config.cbc) {
+                const {encrypt, decrypt} = crypto.cbc(this.config.cbc);
+                this.cbc = {
+                    encrypt: (value, field) => encrypt(
+                        this.config.cbcDate[field]
+                            ? new Date(value).getTime().toString()
+                            : value,
+                        field && (field === true || this.config.cbcStable[field])
+                    ),
+                    decrypt: (value, field) => {
+                        value = decrypt(value, field && this.config.cbcStable[field]);
+                        return this.config.cbcDate[field] ? new Date(parseInt(value)) : value;
+                    }
+                };
+            }
             this.hmac = this.config.hmac && crypto.hmac(this.config.hmac);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
             if (this.config.createTT != null) this.log.warn && this.log.warn('Property createTT should be moved in schema array');
@@ -167,6 +183,8 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         if (schema.createTT == null) schema.createTT = this.config.createTT;
                     });
                 }
+                if (Array.isArray(value.cbcStable)) value.cbcStable.forEach(key => { this.config.cbcStable[key] = true; });
+                if (Array.isArray(value.cbcDate)) value.cbcDate.forEach(key => { this.config.cbcDate[key] = true; });
             });
             return Promise.resolve()
                 .then(() => super.start(...arguments))
@@ -527,7 +545,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     if (this.cbc && isEncrypted(column)) {
                         pipeline.push(record => {
                             if (record[key]) { // value is not null
-                                record[key] = this.cbc.decrypt(record[key]);
+                                record[key] = this.cbc.decrypt(record[key], column.name);
                             }
                         });
                     }
