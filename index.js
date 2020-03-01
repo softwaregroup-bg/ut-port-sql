@@ -592,7 +592,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             }
         }
 
-        callSP(name, params, flatten, fileName) {
+        callSP(name, params, flatten, fileName, method) {
             const self = this;
             const nesting = this.config.maxNesting;
             const outParams = [];
@@ -744,7 +744,12 @@ module.exports = function({utPort, registerErrors, vfs}) {
                             // use default message
                             delete err.message;
                         }
-                        const errToThrow = error(err);
+                        const errToThrow = error({
+                            cause: err,
+                            params: {
+                                method
+                            }
+                        });
                         if (debug) {
                             err.storedProcedure = name;
                             err.params = debugParams;
@@ -827,7 +832,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 };
                             }
                         });
-                        this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName);
+                        this.methods[flatName] = this.callSP(binding.name, binding.params, flatten, procedure.fileName, flatName);
                     }
                 }.bind(this));
             }
