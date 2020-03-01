@@ -1,3 +1,12 @@
+# [7.24.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.23.0...v7.24.0) (2020-03-01)
+
+
+### Features
+
+* pass method for error interpolation ([ab92a36](https://github.com/softwaregroup-bg/ut-port-sql/commit/ab92a36548e92a1ba406968c25be42eb48733adb))
+
+
+
 # [7.23.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.22.2...v7.23.0) (2020-02-28)
 
 
