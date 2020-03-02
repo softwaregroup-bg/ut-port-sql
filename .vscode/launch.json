@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "Test",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceRoot}/test/exec.test.js",
+        "args": [],
+        "cwd": "${workspaceRoot}",
+        "console": "integratedTerminal",
+        "runtimeArgs": [
+            "--preserve-symlinks",
+            "--nolazy",
+            "--max_old_space_size=500000"
+        ],
+        "env": {
+            "UT_ENV": "test",
+            "NODE_PATH": "dev"
+        },
+        "outputCapture": "std"
+    }]
+}

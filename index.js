@@ -64,11 +64,6 @@ module.exports = function({utPort, registerErrors, vfs}) {
             return {
                 type: 'object',
                 properties: {
-                    logLevel: {
-                        type: 'string',
-                        enum: ['error', 'warning', 'info', 'debug', 'trace'],
-                        default: 'info'
-                    },
                     connection: {
                         type: 'object',
                         properties: {
