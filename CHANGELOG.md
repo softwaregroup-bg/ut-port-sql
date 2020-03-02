@@ -1,3 +1,7 @@
+## [7.24.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.24.0...v7.24.1) (2020-03-02)
+
+
+
 # [7.24.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.23.0...v7.24.0) (2020-03-01)
 
 
