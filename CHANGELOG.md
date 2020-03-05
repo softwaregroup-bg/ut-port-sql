@@ -1,3 +1,12 @@
+## [7.25.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.1...v7.25.2) (2020-03-05)
+
+
+### Bug Fixes
+
+* do not auto create lowercase objects ([503b177](https://github.com/softwaregroup-bg/ut-port-sql/commit/503b1779aa3d426d0f069e39872ff50ba6a2975c))
+
+
+
 ## [7.25.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.0...v7.25.1) (2020-03-05)
 
 
