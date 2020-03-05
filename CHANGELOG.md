@@ -1,3 +1,12 @@
+## [7.25.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.0...v7.25.1) (2020-03-05)
+
+
+### Bug Fixes
+
+* ngramIndexTT typo ([15b414d](https://github.com/softwaregroup-bg/ut-port-sql/commit/15b414d86999f2b8538b56729ad31931bce70ffc))
+
+
+
 # [7.25.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.24.1...v7.25.0) (2020-03-05)
 
 
