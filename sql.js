@@ -252,7 +252,7 @@ module.exports = {
         id BIGINT,
         CONSTRAINT [pk${upper0(schema)}${upper0(table)}Index] PRIMARY KEY CLUSTERED(ngram, field, id)
     )`,
-    ngramIndexTT: (schema) => `CREATE TYPE [${schema}].[ngramTT] AS TABLE (
+    ngramIndexTT: (schema) => `CREATE TYPE [${schema}].[ngramIndexTT] AS TABLE (
         [ngram] [VARBINARY](32),
         [field] [TINYINT],
         [id] [BIGINT]
