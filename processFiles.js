@@ -255,7 +255,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                         }
                     };
                     if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
-                        const [namespace, table] = objectId.split('.');
+                        const [namespace, table] = objectName.split('.');
                         const ngramTT = mssqlQueries.ngramTT(namespace, table);
                         addQuery(schema, queries, {
                             binding: parserSP.parse(ngramTT),
