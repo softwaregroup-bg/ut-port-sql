@@ -1,3 +1,12 @@
+# [7.25.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.24.1...v7.25.0) (2020-03-05)
+
+
+### Features
+
+* auto create IndexMerge SP ([0c4aa55](https://github.com/softwaregroup-bg/ut-port-sql/commit/0c4aa55be08f94c92d299f68caf85c59fb15e452))
+
+
+
 ## [7.24.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.24.0...v7.24.1) (2020-03-02)
 
 
