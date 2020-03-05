@@ -256,35 +256,53 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                     };
                     if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
                         const [namespace, table] = objectId.split('.');
-                        const tt = mssqlQueries.ngramTT(namespace, table);
+                        const ngramTT = mssqlQueries.ngramTT(namespace, table);
                         addQuery(schema, queries, {
-                            binding: parserSP.parse(tt),
+                            binding: parserSP.parse(ngramTT),
                             fileName,
                             objectName: namespace + '.ngramTT',
                             objectId: namespace + '.ngramtt',
-                            fileContent: tt,
-                            createStatement: tt
+                            fileContent: ngramTT,
+                            createStatement: ngramTT
                         });
                         schema.source[namespace + '.ngramtt'] = true;
                         if (binding.options.ngram.index) {
-                            const index = mssqlQueries.ngramIndex(namespace, table);
+                            const ngramIndex = mssqlQueries.ngramIndex(namespace, table);
                             addQuery(schema, queries, {
-                                binding: parserSP.parse(index),
+                                binding: parserSP.parse(ngramIndex),
                                 fileName,
                                 objectName: objectName + 'Index',
                                 objectId: objectId + 'index',
-                                fileContent: index,
-                                createStatement: index
+                                fileContent: ngramIndex,
+                                createStatement: ngramIndex
+                            });
+                            const ngramIndexTT = mssqlQueries.ngramIndexTT(namespace);
+                            addQuery(schema, queries, {
+                                binding: parserSP.parse(ngramIndexTT),
+                                fileName,
+                                objectName: namespace + '.ngramIndexTT',
+                                objectId: namespace + '.ngramindextt',
+                                fileContent: ngramIndexTT,
+                                createStatement: ngramIndexTT
+                            });
+                            schema.source[namespace + '.ngramindextt'] = true;
+                            const ngramMerge = mssqlQueries.ngramMerge(namespace, table);
+                            addQuery(schema, queries, {
+                                fileName,
+                                objectName: objectName + 'IndexMerge',
+                                objectId: objectId + 'indexmerge',
+                                fileContent: ngramMerge,
+                                createStatement: ngramMerge
                             });
                         }
                         if (binding.options.ngram.search) {
-                            const search = mssqlQueries.ngramSearch(namespace, table);
+                            const ngramSearch = mssqlQueries.ngramSearch(namespace, table);
                             addQuery(schema, queries, {
                                 fileName,
                                 objectName: objectName + 'Search',
                                 objectId: objectId + 'search',
-                                fileContent: search,
-                                createStatement: search
+                                fileContent: ngramSearch,
+                                createStatement: ngramSearch
                             });
                         }
                     }

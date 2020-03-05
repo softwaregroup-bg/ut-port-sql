@@ -252,12 +252,35 @@ module.exports = {
         id BIGINT,
         CONSTRAINT [pk${upper0(schema)}${upper0(table)}Index] PRIMARY KEY CLUSTERED(ngram, field, id)
     )`,
+    ngramIndexTT: (schema) => `CREATE TYPE [${schema}].[ngramTT] AS TABLE (
+        [ngram] [VARBINARY](32),
+        [field] [TINYINT],
+        [id] [BIGINT]
+    )`,
     ngramTT: (schema) => `CREATE TYPE [${schema}].[ngramTT] AS TABLE (
         [row] INT,
         [field] TINYINT,
         [param] VARCHAR(128),
         [ngram] VARBINARY (32) NOT NULL
     )`,
+    ngramMerge: (schema, table) => `CREATE PROCEDURE [${schema}].[${table}IndexMerge]
+            @ngramIndex [${schema}].[ngramIndexTT] READONLY
+        AS
+        WITH target AS (
+            SELECT ngram, field, id FROM [${schema}].[${table}Index] pi WHERE EXISTS (
+                SELECT 1 FROM @ngramIndex ni WHERE pi.id = ni.id AND pi.field = ni.field
+            )
+        ) MERGE INTO target
+        USING
+            @ngramIndex source ON
+            source.id = target.id AND
+            source.field = target.field AND
+            source.ngram = target.ngram
+        WHEN NOT MATCHED BY target THEN INSERT
+            (ngram, field, id)
+        VALUES
+            (source.ngram, source.field, source.id)
+        WHEN NOT MATCHED BY source THEN DELETE;`,
     ngramSearch: (schema, table) => `CREATE FUNCTION [${schema}].[${table}Search] (
         @ngram [${schema}].[ngramTT] READONLY,
         @fuzzy FLOAT
