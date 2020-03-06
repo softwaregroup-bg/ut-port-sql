@@ -657,8 +657,11 @@ CREATE TABLE [schemaName].[tableName](
 
 - Setting the `ngram` property will create table type named `[schemaName].[ngramTT]`
 that can be used in the stored procedures that want to receive n-grams
-- Setting the `ngram.index` to true will create a table named
-`[schemaName].[tableNameIndex]` for storing the n-grams
+- Setting the `ngram.index` to true will:
+  - create an index table named `[schemaName].[tableNameIndex]` for storing the n-grams
+  - create a table type named `[schemaName].[ngramIndexTT]`
+  - create a stored procedure named `[schemaName].[tableNameIndexMerge]` for merging
+    n-grams in the index table
 - Setting the `ngram.search` to true will create a function named
 `[schemaName].[tableNameSearch]` for searching the n-grams index
 
@@ -685,9 +688,9 @@ the `@ngram` parameter. Each row in the `@ngram` variable will include informati
 for the parameter name and table row number used during n-gram generation.
 
 Stored procedure must use the `@ngram` parameter to save the passed data to the
-corresponding index table. If the procedure modified more than one row, it
-should use. For example if a variable named `@inserted` contains the rows inserted
-in the main table, the following code could be used to save the n-grams in the index:
+corresponding index table. For example if a variable named `@inserted` contains
+the rows inserted in the main table, the following code could be used to save
+the n-grams in the index:
 
 ```sql
 INSERT INTO
