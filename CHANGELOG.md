@@ -1,3 +1,12 @@
+## [7.25.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.3...v7.25.4) (2020-03-11)
+
+
+### Bug Fixes
+
+* encrypt dates properly ([23154f7](https://github.com/softwaregroup-bg/ut-port-sql/commit/23154f748263ee169a05509c85ccca2c92876bb0))
+
+
+
 ## [7.25.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.2...v7.25.3) (2020-03-06)
 
 
