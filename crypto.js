@@ -56,7 +56,7 @@ module.exports = {
 
         function pad(s) {
             s = Buffer.from(s);
-            return Buffer.concat([s, Buffer.alloc((16 - s.length % 16) % 16), ' ']);
+            return Buffer.concat([s, Buffer.alloc((16 - s.length % 16) % 16, ' ')]);
         }
 
         const encrypt = value => Buffer.concat([enc.update(crypto.randomFillSync(iv)), enc.update(pad(value))]);
