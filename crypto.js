@@ -55,10 +55,11 @@ module.exports = {
         dec.update(iv);
 
         function pad(s) {
-            return s + ' '.repeat((16 - s.length % 16) % 16);
+            s = Buffer.from(s);
+            return Buffer.concat([s, Buffer.alloc((16 - s.length % 16) % 16), ' ']);
         }
 
-        const encrypt = value => Buffer.concat([enc.update(zeroes), enc.update(pad(value))]);
+        const encrypt = value => Buffer.concat([enc.update(crypto.randomFillSync(iv)), enc.update(pad(value))]);
         const decrypt = value => dec.update(Buffer.concat([value, iv.slice(value.length % 16)])).toString('utf8', 32).trim();
         const encryptStable = value => {
             const cipher = crypto.createCipheriv('aes-256-cbc', key, zeroes);
