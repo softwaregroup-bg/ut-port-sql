@@ -1,3 +1,12 @@
+## [7.25.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.4...v7.25.5) (2020-03-11)
+
+
+### Bug Fixes
+
+* properly pad when value is unicode string ([7807493](https://github.com/softwaregroup-bg/ut-port-sql/commit/780749304cc0fd1cc625d662e8ff9c9050760f13))
+
+
+
 ## [7.25.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.3...v7.25.4) (2020-03-11)
 
 
