@@ -1,3 +1,12 @@
+## [7.25.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.5...v7.25.6) (2020-03-11)
+
+
+### Bug Fixes
+
+* typo ([fb47280](https://github.com/softwaregroup-bg/ut-port-sql/commit/fb4728088dfd3807987b0d182c501278e949f681))
+
+
+
 ## [7.25.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.4...v7.25.5) (2020-03-11)
 
 
