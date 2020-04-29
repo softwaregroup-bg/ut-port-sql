@@ -276,6 +276,14 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 fileContent: ngramIndex,
                                 createStatement: ngramIndex
                             });
+                            const ngramIndexById = mssqlQueries.ngramIndexById(namespace, table);
+                            addQuery(schema, queries, {
+                                fileName,
+                                objectName: 'ix' + objectName + 'IndexById',
+                                objectId: 'ix' + objectId + 'indexbyid',
+                                fileContent: ngramIndexById,
+                                createStatement: ngramIndexById
+                            });
                             const ngramIndexTT = mssqlQueries.ngramIndexTT(namespace);
                             addQuery(schema, queries, {
                                 binding: parserSP.parse(ngramIndexTT),

@@ -60,6 +60,7 @@ table
           doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
           options: options && parseJSON(options.multi || options.single || ''),
           fields: fc.filter(function(x){return x.isField}),
+          indexes: fc.filter(function(x){return x.type === 'INDEX'}),
           constraints: fc.filter(function(x){return x.isConstraint})
       }
     }
@@ -144,7 +145,7 @@ fields_and_constraints = f:ws p:field_or_constraint q:(ws comma ws:ws r:field_or
 
 }
 
-field_or_constraint = constraint / field
+field_or_constraint = index / constraint / field
 
 
 fields =
@@ -204,12 +205,11 @@ constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / uniq
 }
 
 pk_constraint
-  = "PRIMARY KEY"i ws c:clustered? ws lparen ws n:names ws o:order? ws rparen {
+  = "PRIMARY KEY"i ws c:clustered? ws lparen ws n:names ws rparen {
       return {
           type: "PRIMARY KEY",
-            clustered: !!c && c.toLowerCase() === "clustered",
-            columns: n,
-            order: o
+          clustered: !!c && c.toLowerCase() === "clustered",
+          columns: n
         }
     }
 
@@ -351,3 +351,16 @@ SingleLineCommentBody = (!LineTerminator SourceCharacter)* {return {single:text(
 SingleLineComment
   = "--" x:SingleLineCommentBody {return x}
 WhitespaceSingleLineComment = WhiteSpace? "--" x:SingleLineCommentBody {return x}
+
+unique = "UNIQUE"i
+
+index
+  = "INDEX"i ws1 n:name ws u:unique? ws c:clustered? ws lparen ws col:names ws rparen {
+      return {
+          type: "INDEX",
+          name: n,
+          clustered: !!c && c.toLowerCase() === "clustered",
+          unique: !!u && u.toLowerCase() === "unique",
+          columns: col
+        }
+    }
