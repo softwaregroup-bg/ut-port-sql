@@ -1,3 +1,12 @@
+# [7.26.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.6...v7.26.0) (2020-04-29)
+
+
+### Features
+
+* add ngram index by id ([a421e9f](https://github.com/softwaregroup-bg/ut-port-sql/commit/a421e9f757a8668f1267072bd355dc263829b6c2))
+
+
+
 ## [7.25.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.5...v7.25.6) (2020-03-11)
 
 
