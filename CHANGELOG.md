@@ -1,3 +1,12 @@
+## [7.26.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.26.0...v7.26.1) (2020-04-30)
+
+
+### Bug Fixes
+
+* check if index exists ([56f9bed](https://github.com/softwaregroup-bg/ut-port-sql/commit/56f9bed96d41ec5ee37e093fc8fb5bda6806d704))
+
+
+
 # [7.26.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.25.6...v7.26.0) (2020-04-29)
 
 
