@@ -252,7 +252,9 @@ module.exports = {
         id BIGINT,
         CONSTRAINT [pk${upper0(schema)}${upper0(table)}Index] PRIMARY KEY CLUSTERED(ngram, field, id)
     )`,
-    ngramIndexById: (schema, table) => `CREATE INDEX [ix${upper0(schema)}${upper0(table)}IndexById] ON [${schema}].[${table}Index](id)`,
+    ngramIndexById: (schema, table) => `
+        IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = 'ix${upper0(schema)}${upper0(table)}IndexById')
+        CREATE INDEX [ix${upper0(schema)}${upper0(table)}IndexById] ON [${schema}].[${table}Index](id)`,
     ngramIndexTT: (schema) => `CREATE TYPE [${schema}].[ngramIndexTT] AS TABLE (
         [ngram] [VARBINARY](32),
         [field] [TINYINT],
