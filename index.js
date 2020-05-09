@@ -1,7 +1,7 @@
 'use strict';
 const errors = require('./errors.json');
 const stringify = require('json-stringify-deterministic');
-const mssql = require('mssql');
+let mssql = require('mssql');
 const fs = require('fs');
 const fsplus = require('fs-plus');
 const crypto = require('./crypto');
@@ -106,6 +106,13 @@ module.exports = function({utPort, registerErrors, vfs}) {
         }
 
         async init() {
+            if (this.config.configSchema) {
+                this.configSchema = this.config.configSchema;
+            }
+            if (this.config.connection && this.config.connection.driver) {
+                mssql = require(`mssql/${this.config.connection.driver}`);
+            }
+
             const result = await super.init(...arguments);
             this.latency = this.counter && this.counter('average', 'lt', 'Latency');
             this.bytesSent = this.counter && this.counter('counter', 'bs', 'Bytes sent', 300);
@@ -530,6 +537,20 @@ module.exports = function({utPort, registerErrors, vfs}) {
             let isAsync = false;
             const pipeline = [];
             Object.entries(columns).forEach(([key, column]) => {
+                if (!column.type) {
+                    // Int and BigInt values are returned with type undefined :/
+                    if (column.index === 0 && column.length === 10) {
+                        column = {
+                            ...column,
+                            ...(mssql.Int())
+                        };
+                    } else if (column.index === 0 && column.length === 19) {
+                        column = {
+                            ...column,
+                            ...(mssql.BigInt())
+                        };
+                    }
+                }
                 if (column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
                     pipeline.push(record => {
                         if (record[key]) { // value is not null
@@ -560,6 +581,13 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                     }
                                 });
                             });
+                        }
+                    });
+                } else if (column.type.declaration === 'bigint') {
+                    // parsing BigInt values to string as the driver msnodesqlv8 returns them as integer
+                    pipeline.push(record => {
+                        if (record[key]) {
+                            record[key] = String(record[key]);
                         }
                     });
                 }
@@ -1144,9 +1172,22 @@ module.exports = function({utPort, registerErrors, vfs}) {
             });
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
-            if (this.config.create && this.config.create.user) {
+            if (
+                (this.config.create && this.config.create.user) ||
+                (this.config.connection.driver && this.config.connection.options && this.config.connection.options.trustedConnection)
+            ) {
                 const conCreate = new mssql.ConnectionPool(
-                    sanitize({...this.config.connection, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
+                    sanitize({
+                        ...this.config.connection,
+                        ...(this.config.connection.driver && this.config.driverDefaults ?
+                            this.config.driverDefaults :
+                            {
+                                user: '',
+                                password: '',
+                                database: ''
+                            }),
+                        ...this.config.create
+                    }) // expect explicit user/pass
                 );
 
                 // Patch for https://github.com/patriksimek/node-mssql/issues/467
