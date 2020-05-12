@@ -1171,14 +1171,23 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 }
             });
 
-            this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
+            this.connection = new mssql.ConnectionPool(sanitize({
+                ...(this.config.connection.driver && this.config.driverDefaults ?
+                    this.config.driverDefaults :
+                    {
+                        user: '',
+                        password: '',
+                        database: ''
+                    }),
+                ...this.config.connection,
+                ...this.config.create
+            }));
             if (
                 (this.config.create && this.config.create.user) ||
                 (this.config.connection.driver && this.config.connection.options && this.config.connection.options.trustedConnection)
             ) {
                 const conCreate = new mssql.ConnectionPool(
                     sanitize({
-                        ...this.config.connection,
                         ...(this.config.connection.driver && this.config.driverDefaults ?
                             this.config.driverDefaults :
                             {
@@ -1186,6 +1195,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 password: '',
                                 database: ''
                             }),
+                        ...this.config.connection,
                         ...this.config.create
                     }) // expect explicit user/pass
                 );
