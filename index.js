@@ -1195,7 +1195,6 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 password: '',
                                 database: ''
                             }),
-                        ...this.config.connection,
                         ...this.config.create
                     }) // expect explicit user/pass
                 );
