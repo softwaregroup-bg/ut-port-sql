@@ -6,7 +6,6 @@
     "dot-prop": "4.2.0",
     "fs-plus": "3.1.1",
     "json-stringify-deterministic": "1.0.1",
-    "msnodesqlv8": "1.1.5",
     "mssql": "5.1.0",
     "ut-function.includes": "^1.2.1",
     "uuid": "3.3.2",
