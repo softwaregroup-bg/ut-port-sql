@@ -11,7 +11,8 @@ function addNgram(hmac, ngramParam, add, row, param, column, string) {
     if (!options) return ngramParam;
     const id = typeof options === 'number' ? options : options.id;
     const unique = new Set();
-    string.toLowerCase().match(WORDS).forEach(word => {
+    const match = string.toLowerCase().match(WORDS);
+    match && match.forEach(word => {
         word = word.match(LETTER);
         if (word) {
             const {min = 3, max = 3, depth = word.length - min} = options;
