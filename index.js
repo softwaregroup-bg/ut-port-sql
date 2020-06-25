@@ -1172,9 +1172,9 @@ module.exports = function({utPort, registerErrors, vfs}) {
             });
 
             this.connection = new mssql.ConnectionPool(sanitize({
-                ...(this.config.connection.driver && this.config.driverDefaults ?
-                    this.config.driverDefaults :
-                    {
+                ...(this.config.connection.driver && this.config.driverDefaults
+                    ? this.config.driverDefaults
+                    : {
                         user: '',
                         password: '',
                         database: ''
