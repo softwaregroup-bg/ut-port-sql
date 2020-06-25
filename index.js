@@ -1186,18 +1186,13 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 (this.config.create && this.config.create.user) ||
                 (this.config.connection.driver && this.config.connection.options && this.config.connection.options.trustedConnection)
             ) {
-                const conCreate = new mssql.ConnectionPool(
-                    sanitize({
-                        ...(this.config.connection.driver && this.config.driverDefaults ?
-                            this.config.driverDefaults :
-                            {
-                                user: '',
-                                password: '',
-                                database: ''
-                            }),
-                        ...this.config.create
-                    }) // expect explicit user/pass
-                );
+                const confObj = {...this.config.connection, ...{user: '', password: '', database: ''}};
+                if (this.config.connection.driver && this.config.connection.options && this.config.connection.options.trustedConnection) {
+                    delete confObj.user;
+                    delete confObj.password;
+                    delete confObj.database;
+                }
+                const conCreate = new mssql.ConnectionPool(sanitize({...confObj, ...this.config.create}));
 
                 // Patch for https://github.com/patriksimek/node-mssql/issues/467
                 conCreate._throwingClose = conCreate._close;
