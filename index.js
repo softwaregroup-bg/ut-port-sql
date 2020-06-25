@@ -1171,27 +1171,12 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 }
             });
 
-            this.connection = new mssql.ConnectionPool(sanitize({
-                ...(this.config.connection.driver && this.config.driverDefaults
-                    ? this.config.driverDefaults
-                    : {
-                        user: '',
-                        password: '',
-                        database: ''
-                    }),
-                ...this.config.connection,
-                ...this.config.create
-            }));
-            if (
-                (this.config.create && this.config.create.user) ||
-                (this.config.connection.driver && this.config.connection.options && this.config.connection.options.trustedConnection)
-            ) {
-                const confObj = {...this.config.connection, ...{user: '', password: '', database: ''}};
-                if (this.config.connection.driver && this.config.connection.options && this.config.connection.options.trustedConnection) {
-                    delete confObj.user;
-                    delete confObj.password;
-                    delete confObj.database;
-                }
+            this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
+            if (this.config.create && this.config.create.user) {
+                const confObj = {...this.config.connection};
+                delete confObj.user;
+                delete confObj.password;
+                delete confObj.database;
                 const conCreate = new mssql.ConnectionPool(sanitize({...confObj, ...this.config.create}));
 
                 // Patch for https://github.com/patriksimek/node-mssql/issues/467
