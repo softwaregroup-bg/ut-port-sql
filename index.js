@@ -1172,7 +1172,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             });
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
-            if (this.config.create && this.config.create.user) {
+            if (this.config.create) {
                 const confObj = {...this.config.connection};
                 delete confObj.user;
                 delete confObj.password;
