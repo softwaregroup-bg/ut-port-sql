@@ -1,3 +1,21 @@
+## [7.26.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.26.2...v7.26.3) (2020-06-08)
+
+
+### Bug Fixes
+
+* check match ([7c2e902](https://github.com/softwaregroup-bg/ut-port-sql/commit/7c2e9029792bed709b1f2770109249c67092a2e3))
+
+
+
+## [7.26.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.26.1...v7.26.2) (2020-05-05)
+
+
+### Bug Fixes
+
+* pass cbc where required ([cb59c6b](https://github.com/softwaregroup-bg/ut-port-sql/commit/cb59c6b56ff04675a3411a6ec63c767332bcd354))
+
+
+
 ## [7.26.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.26.0...v7.26.1) (2020-04-30)
 
 

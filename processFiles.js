@@ -59,8 +59,8 @@ const preProcess = (binding, statement, fileName, objectName, cbc) => {
     return statement;
 };
 
-function getAlterStatement(binding, statement, fileName, objectName) {
-    statement = preProcess(binding, statement, fileName, objectName);
+function getAlterStatement(binding, statement, fileName, objectName, cbc) {
+    statement = preProcess(binding, statement, fileName, objectName, cbc);
     if (statement.trim().match(/^CREATE\s+TYPE/i)) {
         return statement.trim();
     } else {
@@ -105,8 +105,8 @@ function fieldSource(column) {
     return (column.column + '\t' + column.type + '\t' + (column.length === null ? '' : column.length) + '\t' + (column.scale === null ? '' : column.scale)).toLowerCase();
 }
 
-function getSource(binding, statement, fileName, objectName) {
-    statement = preProcess(binding, statement, fileName, objectName);
+function getSource(binding, statement, fileName, objectName, cbc) {
+    statement = preProcess(binding, statement, fileName, objectName, cbc);
     if (statement.trim().match(/^CREATE\s+TYPE/i)) {
         if (binding && binding.type === 'table type') {
             return binding.fields.map(fieldSource).join('\r\n');
@@ -115,12 +115,12 @@ function getSource(binding, statement, fileName, objectName) {
     return statement.trim().replace(/^ALTER /i, 'CREATE ');
 }
 
-function addQuery(schema, queries, params) {
+function addQuery(schema, queries, params, cbc) {
     if (schema.source[params.objectId] === undefined) {
         queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: params.createStatement});
     } else {
         if (schema.source[params.objectId].length &&
-            (getSource(params.binding, params.fileContent, params.fileName, params.objectName) !== schema.source[params.objectId])) {
+            (getSource(params.binding, params.fileContent, params.fileName, params.objectName, cbc) !== schema.source[params.objectId])) {
             const deps = schema.deps[params.objectId];
             if (deps) {
                 deps.names.forEach(function(dep) {
@@ -137,7 +137,7 @@ function addQuery(schema, queries, params) {
                 fileName: params.fileName,
                 objectName: params.objectName,
                 objectId: params.objectId,
-                content: getAlterStatement(params.binding, params.fileContent, params.fileName, params.objectName)
+                content: getAlterStatement(params.binding, params.fileContent, params.fileName, params.objectName, cbc)
             });
         }
     }
@@ -229,7 +229,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                         objectId,
                         fileContent,
                         createStatement: getCreateStatement(binding, fileContent, fileName, objectName, cbc)
-                    });
+                    }, cbc);
                     if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
                         const tt = tableToType(binding);
                         if (tt) {
@@ -240,7 +240,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'tt',
                                 fileContent: tt,
                                 createStatement: tt
-                            });
+                            }, cbc);
                         }
                         const ttu = tableToTTU(binding);
                         if (ttu) {
@@ -251,7 +251,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'ttu',
                                 fileContent: ttu,
                                 createStatement: ttu
-                            });
+                            }, cbc);
                         }
                     };
                     if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
@@ -264,7 +264,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                             objectId: namespace + '.ngramtt',
                             fileContent: ngramTT,
                             createStatement: ngramTT
-                        });
+                        }, cbc);
                         schema.source[namespace + '.ngramtt'] = true;
                         if (binding.options.ngram.index) {
                             const ngramIndex = mssqlQueries.ngramIndex(namespace, table);
@@ -275,7 +275,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'index',
                                 fileContent: ngramIndex,
                                 createStatement: ngramIndex
-                            });
+                            }, cbc);
                             const ngramIndexById = mssqlQueries.ngramIndexById(namespace, table);
                             addQuery(schema, queries, {
                                 fileName,
@@ -283,7 +283,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: 'ix' + objectId + 'indexbyid',
                                 fileContent: ngramIndexById,
                                 createStatement: ngramIndexById
-                            });
+                            }, cbc);
                             const ngramIndexTT = mssqlQueries.ngramIndexTT(namespace);
                             addQuery(schema, queries, {
                                 binding: parserSP.parse(ngramIndexTT),
@@ -292,7 +292,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: namespace + '.ngramindextt',
                                 fileContent: ngramIndexTT,
                                 createStatement: ngramIndexTT
-                            });
+                            }, cbc);
                             schema.source[namespace + '.ngramindextt'] = true;
                             const ngramMerge = mssqlQueries.ngramMerge(namespace, table);
                             addQuery(schema, queries, {
@@ -301,7 +301,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'indexmerge',
                                 fileContent: ngramMerge,
                                 createStatement: ngramMerge
-                            });
+                            }, cbc);
                         }
                         if (binding.options.ngram.search) {
                             const ngramSearch = mssqlQueries.ngramSearch(namespace, table);
@@ -311,7 +311,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'search',
                                 fileContent: ngramSearch,
                                 createStatement: ngramSearch
-                            });
+                            }, cbc);
                         }
                     }
                     break;
