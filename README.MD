@@ -519,22 +519,22 @@ This procedure can be called in one of the following ways, handling the
 procedure's returned non error `result` (which is array of arrays of row
 objects) in different ways:
 
-- `bus.importMethod('module.entity.action')(params)` - will resolve with `result`
-- `bus.importMethod('module.entity.action[^]')(params)` - will resolve with
+- `bus.importMethod('subject.object.predicate')(params)` - will resolve with `result`
+- `bus.importMethod('subject.object.predicate#[^]')(params)` - will resolve with
   `null` or throw error `portSQL.noRowsExpected` if procedure returned more than
    one result set or procedure returned more than 0 rows in the first result set
-- `bus.importMethod('module.entity.action[0]')(params)` - will resolve with
+- `bus.importMethod('subject.object.predicate#[0]')(params)` - will resolve with
   object containing the first row from the first result set (`result[0][0]`) or
   throw `portSQL.oneRowExpected`, if what procedure returned is not exactly one
   result set with exactly one row
-- `bus.importMethod('module.entity.action[?]')(params)` - will resolve with
+- `bus.importMethod('subject.object.predicate#[?]')(params)` - will resolve with
   `null` or object containing the first row from the first result set
   (`result[0][0]`) or throw `portSQL.maxOneRowExpected`, if what procedure
   returned is not exactly one result set with maximum one row
-- `bus.importMethod('module.entity.action[+]')(params)` - will array holding
+- `bus.importMethod('subject.object.predicate#[+]')(params)` - will array holding
   first result set rows (`result[0]`) or throw `portSQL.minOneRowExpected` if
   what procedure returned is not exactly one result set with one or more rows
-- `bus.importMethod('module.entity.action[]')(params)` - will resolve with array
+- `bus.importMethod('subject.object.predicate#[]')(params)` - will resolve with array
   holding first result set rows [{row}, ...] or throw error
   `portSQL.singleResultsetExpected` if more than one result set is returned
 
@@ -554,7 +554,7 @@ SELECT 'result2' resultSetName
 SELECT * FROM module.someTable
 ```
 
-Calling `bus.importMethod('module.entity.action')(params)` will resolve with
+Calling `bus.importMethod('subject.object.predicate')(params)` will resolve with
 `{result1:[], result2:[]}`
 
 ### Crypto Algorithm or `cryptoAlgorithm` param in config will point how password is encrypted
@@ -577,7 +577,8 @@ SELECT
     'someModule.someError' [type],
     @@servername serverName,
     @@version [version]
-
+IF @@trancount > 0 ROLLBACK TRANSACTION -- if rollback is needed
+RETURN EXEC [core].[error] @type = 'someModule.someError' -- if processing is needed
 ```
 
 This will throw an error of type `someModule.someError`, which will also have

@@ -1,5 +1,5 @@
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
-const CORE_ERROR = /^[\s+]{0,}EXEC \[?core]?\.\[?error]?$/m;
+const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?$/mi;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const PERMISSION_CHECK = /^[\s+]{0,}--ut-permission-check$/m;
 const mssqlQueries = require('./sql');
@@ -32,10 +32,10 @@ function replaceCallParams(binding, statement) {
 function replaceCoreError(statement, fileName, objectName, params) {
     return statement
         .split('\n')
-        .map((line, index) => (line.replace(CORE_ERROR,
+        .map((line, index) => (line.replace(CORE_ERROR, (match, ret, type) =>
             `DECLARE @CORE_ERROR_FILE_${index} sysname='${fileName.replace(/'/g, '\'\'')}' ` +
             `DECLARE @CORE_ERROR_LINE_${index} int='${index + 1}' ` +
-            `EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}`)))
+            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ''}`)))
         .join('\n');
 }
 
