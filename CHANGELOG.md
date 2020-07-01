@@ -1,3 +1,12 @@
+# [7.27.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.26.3...v7.27.0) (2020-07-01)
+
+
+### Features
+
+* allow passing error type to core.errorStack ([a173cb3](https://github.com/softwaregroup-bg/ut-port-sql/commit/a173cb33e844f628a249d0afad6170c6c9841cd1))
+
+
+
 ## [7.26.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.26.2...v7.26.3) (2020-06-08)
 
 
