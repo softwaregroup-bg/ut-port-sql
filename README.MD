@@ -69,7 +69,7 @@ module.exports = function sql() {
     return {
         // folders containing files, used to create the schemas
         schema: [{
-            path: path.join(__dirname, 'schema1'), linkSP: true
+            path: path.join(__dirname, 'schema1'), linkSP: true, exclude
         }, {
             path: path.join(__dirname, 'schema2'), linkSP: false
         }],
@@ -81,9 +81,12 @@ module.exports = function sql() {
 ```
 
 This configuration will make the port scan the specified folders and synchronize
-database schema. In addition, procedures from the first folder will be automatically
-linked to the port, so that they can be executed directly, based on their schema
-name and procedure name. So for the following procedure:
+database schema. The optional `exclude` property can specify files to be excluded
+from synchronization. It can be a string, a regular expression, of array of these.
+In addition, procedures from the first folder will be automatically
+linked to the port (because of the `linkSP: true` setting), so that they can be
+executed directly, based on their schema name and procedure name.
+So for the following procedure:
 
 ```sql
 CREATE PROCEDURE schema1.storedProcedureName
@@ -98,12 +101,12 @@ The stored procedure can be called using this:
 
 ```js
 bus.importMethod('schema1.storedProcedureName')({
-  param1:1,
-  param2:'value',
+  param1: 1,
+  param2: 'value',
   param3:[{
-    column1:'value row 1'
+    column1: 'value row 1'
   },{
-    column1:'value row 2'
+    column1: 'value row 2'
   }]
 })
 ```

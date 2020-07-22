@@ -197,8 +197,8 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
             name: interpolate(file, busConfig)
         };
     });
-    if (schemaConfig.exclude && schemaConfig.exclude.length > 0) {
-        files = files.filter((file) => !(schemaConfig.exclude.indexOf(file.name) >= 0));
+    if (schemaConfig.exclude) {
+        files = files.filter(file => !includes(schemaConfig.exclude, [file.originalName]));
     }
     const objectIds = files.reduce(function(prev, cur) {
         prev[getObjectName(cur.name).toLowerCase()] = true;
