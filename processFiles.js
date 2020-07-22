@@ -200,6 +200,9 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
     if (schemaConfig.exclude) {
         files = files.filter(file => !includes(schemaConfig.exclude, [file.originalName]));
     }
+    if (schemaConfig.config && schemaConfig.config.exclude) {
+        files = files.filter(file => !includes(schemaConfig.config.exclude, [file.originalName]));
+    }
     const objectIds = files.reduce(function(prev, cur) {
         prev[getObjectName(cur.name).toLowerCase()] = true;
         return prev;
