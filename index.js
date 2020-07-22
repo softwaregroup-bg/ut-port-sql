@@ -45,7 +45,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 doc: false,
                 maxNesting: 5,
                 cbcStable: {},
-                compatibilityLevel: 130,
+                compatibilityLevel: 120,
                 cbcDate: {},
                 connection: {
                     options: {
