@@ -1,3 +1,18 @@
+# [7.28.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.27.1...v7.28.0) (2020-07-22)
+
+
+### Bug Fixes
+
+* use compatibility level 120 as default ([07785b4](https://github.com/softwaregroup-bg/ut-port-sql/commit/07785b46802619cb769a3d8b2ba76ab353dbf940))
+
+
+### Features
+
+* more exclusion options ([f0c2760](https://github.com/softwaregroup-bg/ut-port-sql/commit/f0c2760af4469143c65114b44114d46f0f4f216f))
+* set compatibility level ([29829ab](https://github.com/softwaregroup-bg/ut-port-sql/commit/29829ab40f9503ae26206c6f0d9dd2927e90eb01))
+
+
+
 ## [7.27.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.27.0...v7.27.1) (2020-07-08)
 
 
