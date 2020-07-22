@@ -1,3 +1,12 @@
+# [7.29.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.28.0...v7.29.0) (2020-07-22)
+
+
+### Features
+
+* allow more exlude options ([78e741a](https://github.com/softwaregroup-bg/ut-port-sql/commit/78e741a2ee06559d96cf5b16e49aa66e88694738))
+
+
+
 # [7.28.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.27.1...v7.28.0) (2020-07-22)
 
 
