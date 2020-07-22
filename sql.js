@@ -213,11 +213,12 @@ module.exports = {
         sql += 'FOR XML RAW(\'params\'), BINARY BASE64, TYPE)';
         return sql;
     },
-    createDatabase: function(name, user) {
+    createDatabase: function(name, level) {
         return `
         IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${name}')
         BEGIN
           CREATE DATABASE [${name}]
+          ${level && `ALTER DATABASE [${name}] SET COMPATIBILITY_LEVEL = ${level}`}
           ALTER DATABASE [${name}] SET READ_COMMITTED_SNAPSHOT ON
           ALTER DATABASE [${name}] SET AUTO_SHRINK OFF
         END`;

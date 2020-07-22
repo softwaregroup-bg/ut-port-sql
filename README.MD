@@ -39,6 +39,7 @@ This involves the following configuration:
 
 ```yaml
 db:
+  compatibilityLevel: 130 # optional, the default is 130
   connection:
     server: <db server>
     database: <db name>

@@ -45,6 +45,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 doc: false,
                 maxNesting: 5,
                 cbcStable: {},
+                compatibilityLevel: 130,
                 cbcDate: {},
                 connection: {
                     options: {
@@ -64,6 +65,10 @@ module.exports = function({utPort, registerErrors, vfs}) {
             return {
                 type: 'object',
                 properties: {
+                    compatibilityLevel: {
+                        type: 'integer',
+                        enum: [0, 100, 110, 120, 130, 140, 150]
+                    },
                     connection: {
                         type: 'object',
                         properties: {
@@ -1162,7 +1167,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 // end patch
 
                 return conCreate.connect()
-                    .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database)))
+                    .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel)))
                     .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.connection.database)))
                     .then(() => {
                         if (this.config.create.user === this.config.connection.user) {
