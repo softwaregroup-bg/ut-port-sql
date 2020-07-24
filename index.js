@@ -1183,7 +1183,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 conCreate._throwingClose = conCreate._close;
                 conCreate._close = function(callback) {
                     const close = conCreate._throwingClose.bind(this, callback);
-                    if (this.pool) {
+                    if (this.pool && this.pool.drain) {
                         return this.pool.drain().then(close);
                     } else {
                         return close();
