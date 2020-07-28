@@ -1,7 +1,6 @@
 'use strict';
 const errors = require('./errors.json');
 const stringify = require('json-stringify-deterministic');
-const mssql = require('mssql');
 const fs = require('fs');
 const fsplus = require('fs-plus');
 const crypto = require('./crypto');
@@ -24,6 +23,9 @@ function changeRowVersionType(field) {
 
 module.exports = function({utPort, registerErrors, vfs}) {
     if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
+    let mssql;
+    let patch;
+
     return class SqlPort extends utPort {
         constructor() {
             super(...arguments);
@@ -112,6 +114,15 @@ module.exports = function({utPort, registerErrors, vfs}) {
         }
 
         async init() {
+            switch (this.config.connection && this.config.connection.driver) {
+                case 'msnodesqlv8':
+                    mssql = require('mssql/msnodesqlv8');
+                    patch = true;
+                    break;
+                default:
+                    mssql = require('mssql');
+            }
+
             const result = await super.init(...arguments);
             this.latency = this.counter && this.counter('average', 'lt', 'Latency');
             this.bytesSent = this.counter && this.counter('counter', 'bs', 'Bytes sent', 300);
@@ -537,6 +548,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
             let isAsync = false;
             const pipeline = [];
             Object.entries(columns).forEach(([key, column]) => {
+                if (patch && !column.type) {
+                    // Int and BigInt values are returned with type undefined by msnodesqlv8:/
+                    if (column.index === 0 && column.length === 10) column = {...column, ...mssql.Int()};
+                    else if (column.index === 0 && column.length === 19) column = {...column, ...mssql.BigInt()};
+                }
                 if (column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
                     pipeline.push(record => {
                         if (record[key]) { // value is not null
@@ -568,6 +584,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 });
                             });
                         }
+                    });
+                } else if (patch && column.type.declaration === 'bigint') {
+                    // parsing BigInt values to string as the driver msnodesqlv8 returns them as integer
+                    pipeline.push(record => {
+                        if (record[key] != null) record[key] = String(record[key]);
                     });
                 }
                 if (/\.json$/i.test(key)) {
@@ -643,7 +664,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 return request.execute(name)
                     .then(async({recordsets}) => {
                         for (let i = 0, n = recordsets.length; i < n; i += 1) {
-                            const transform = self.getRowTransformer(recordsets[i].columns);
+                            const transform = recordsets[i].length && self.getRowTransformer(recordsets[i].columns);
                             if (typeof transform === 'function') {
                                 if (transform.constructor.name === 'AsyncFunction') {
                                     for (let j = 0, m = recordsets[i].length; j < m; j += 1) {
@@ -1185,23 +1206,9 @@ module.exports = function({utPort, registerErrors, vfs}) {
             });
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
-            if (this.config.create && this.config.create.user) {
-                const conCreate = new mssql.ConnectionPool(
-                    sanitize({...this.config.connection, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
-                );
-
-                // Patch for https://github.com/patriksimek/node-mssql/issues/467
-                conCreate._throwingClose = conCreate._close;
-                conCreate._close = function(callback) {
-                    const close = conCreate._throwingClose.bind(this, callback);
-                    if (this.pool) {
-                        return this.pool.drain().then(close);
-                    } else {
-                        return close();
-                    }
-                };
-                // end patch
-
+            const {user, password, database, ...connection} = this.config.connection;
+            if (this.config.create && ((user && password) || (!user && !password))) {
+                const conCreate = new mssql.ConnectionPool(sanitize({...connection, ...this.config.create}));
                 return conCreate.connect()
                     .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel)))
                     .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.connection.database)))
