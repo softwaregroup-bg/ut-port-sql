@@ -13,6 +13,7 @@ const xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', merge
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const {setParam, isEncrypted, flattenMessage} = require('./params');
+const bcp = require('./bcp');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -132,6 +133,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 .then(this.updateSchema.bind(this, {paths: 'schema', retry: this.config.retrySchemaUpdate, load: true}))
                 .then(this.refreshView.bind(this, false))
                 .then(this.linkSP.bind(this))
+                .then(this.linkBCP.bind(this))
                 .then(this.doc.bind(this))
                 .then((v) => { this.connectionReady = true; return v; })
                 .then(this.updateSchema.bind(this, {paths: 'seed', retry: false, load: false}))
@@ -327,7 +329,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             });
         }
 
-        getPaths(name) {
+        getPaths(name, configKey = 'updates') {
             let result = [];
             if (this.config[name]) {
                 let folder;
@@ -343,7 +345,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 }
             }
             this.methods.importedMap && Array.from(this.methods.importedMap.entries()).forEach(function([imported, value]) {
-                if (this.includesConfig('updates', imported, true)) {
+                if (this.includesConfig(configKey, imported, true)) {
                     value[name] && Array.prototype.push.apply(result, value[name]);
                 }
             }.bind(this));
@@ -408,7 +410,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             if (!folders || !folders.length) {
                 return schema;
             }
-            const processFiles = require('./processFiles');
+            const {processFiles} = require('./processFiles');
             return folders.reduce((promise, schemaConfig) =>
                 promise.then(allDbObjects =>
                     new Promise((resolve, reject) => {
@@ -832,6 +834,40 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 }.bind(this));
             }
             return schema;
+        }
+
+        async linkBCP(schema) {
+            const format = this.getPaths('format', 'format');
+            format.length && [].concat(
+                ...await Promise.all(
+                    format.map(
+                        ({path: dir}) => new Promise(
+                            (resolve, reject) => vfs.readdir(dir, (err, files) => err ? reject(err) : resolve(files.map(file => path.join(dir, file))))
+                        )
+                    )
+                )
+            ).sort().forEach(file => {
+                const {getObjectName} = require('./processFiles');
+                const method = getObjectName(path.basename(file));
+                const [schema, table, command] = method.split('.', 3);
+                if (command) {
+                    this.methods[method] = this.callBCP(`${schema}.${table}`, file);
+                } else {
+                    this.methods[method + '.import'] = this.callBCP(`${schema}.${table}`, file, 'in');
+                    this.methods[method + '.export'] = this.callBCP(`${schema}.${table}`, file, 'out');
+                }
+            });
+            return schema;
+        }
+
+        callBCP(table, formatFile, command) {
+            return params => bcp({
+                command,
+                ...params,
+                table,
+                formatFile,
+                ...this.config.connection
+            });
         }
 
         loadSchema(objectList, hash, setHash) {

@@ -599,6 +599,56 @@ in the result set has suffix `.json`. In this case the column value is parsed wi
 JSON.parse and stored in a property without the `.json` suffix. This enables easier
 consumption of stored JSON by just renaming the columns in the result set.
 
+## Bulk import and export
+
+SQL port can scan folders for `*.fmt` files and create methods, which invoke the
+bulk copy utility [bcp](https://docs.microsoft.com/en-us/sql/tools/bcp-utility)
+to import or export big amounts of data in efficient way.
+Pass the the list of folders in the `format` configuration property:
+
+```js
+{
+  format: [{path: path.join(__dirname, 'format')}]
+}
+```
+
+The folder is scanned for files named:
+
+- `schema.table.fmt` - this will create two methods in the SQL port
+  with names `schema.table.import` and `schema.table.export`
+- `schema.table.operation.fmt` - this will create one method in the SQL
+  port with the name `schema.table.operation`
+
+The files will be used as format files for import or export of data
+in or from the `schema.table` table.
+These methods accept the following properties in their first argument:
+
+- `command` - the `bcp` command to execute (in / out / format)
+  For the `*.import` and `*.export` methods, this is implicitly set to `in` or
+  `out` respectively
+- `file` - file to use during the import or export
+- `firstRow` - start row, the default is `1`
+- `lastRow`- end row
+- `maxErrors` - maximum number of allowed errors
+- `hints` - hints for bulk import
+- `tempDir` - temporary folder to use for error messages, the default is `os.tmpdir()`
+- `separator` - field separator to use ( useful when generating a format file)
+- `terminator`- row terminator to use ( useful when generating a format file)
+- `unicode` - allow usage of unicode characters, default is `true`
+  ( useful when generating a format file)
+
+For more details see the [bcp documentation](https://docs.microsoft.com/en-us/sql/tools/bcp-utility)
+
+Usually the `file` parameter is enough for successful import or export of data.
+Note that files with data should be treated as temporary and be deleted
+or encrypted after the bulk operation is finished.
+
+The recommended command for generating format files is:
+
+```bash
+bcp schema.table format nul -c -fschema.table.fmt -Uuser -Ppass -Sserver
+```
+
 ## Encryption of SP parameters
 
 SQL server port will automatically encrypt values of stored procedure parameters
