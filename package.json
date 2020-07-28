@@ -6,7 +6,7 @@
     "dot-prop": "4.2.0",
     "fs-plus": "3.1.1",
     "json-stringify-deterministic": "1.0.1",
-    "mssql": "5.1.0",
+    "mssql": "6.2.1",
     "ut-function.includes": "^1.2.1",
     "uuid": "3.3.2",
     "xml2js": "0.4.22",
@@ -17,7 +17,7 @@
     "pegjs": "0.10.0",
     "tap": "^14.10.6",
     "ut-run": "^10.19.3",
-    "ut-tools": "^6.33.2",
+    "ut-tools": "^6.33.6",
     "why-is-node-running": "^2.1.0"
   },
   "peerDependencies": {
