@@ -144,7 +144,7 @@ function addQuery(schema, queries, params, cbc) {
 }
 
 function getObjectName(fileName) {
-    return fileName.replace(/\.(sql|js|json|yaml)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
+    return fileName.replace(/\.(sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
 }
 
 function shouldCreateTT(schemaConfig, tableName) {
@@ -344,4 +344,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
     return {queries, dbObjects};
 };
 
-module.exports = processFiles;
+module.exports = {
+    processFiles,
+    getObjectName
+};
