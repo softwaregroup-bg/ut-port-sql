@@ -1205,7 +1205,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
             const {user, password, database, ...connection} = this.config.connection;
-            if (this.config.create && ((user && password) || (!user && !password))) {
+            if (this.config.create && ((this.config.create.user && this.config.create.password) || (!this.config.create.user && !this.config.create.password))) {
                 const conCreate = new mssql.ConnectionPool(sanitize({...connection, ...this.config.create}));
                 return conCreate.connect()
                     .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database)))
