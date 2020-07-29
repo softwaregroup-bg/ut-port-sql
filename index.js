@@ -632,6 +632,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 $meta.globalId = uuid.v1();
                 params && params.forEach(function(param) {
                     let value;
+                    if (ngramParam && param.name === 'ngram') return;
                     if (param.name === 'meta') {
                         value = Object.assign(
                             {},
