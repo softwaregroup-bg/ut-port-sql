@@ -191,9 +191,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         if (schema.createTT == null) schema.createTT = this.config.createTT;
                     });
                 }
+                if (value.namespace) this.config.namespace = (this.config.namespace || []).concat(value.namespace);
                 if (Array.isArray(value.cbcStable)) value.cbcStable.forEach(key => { this.config.cbcStable[key] = true; });
                 if (Array.isArray(value.cbcDate)) value.cbcDate.forEach(key => { this.config.cbcDate[key] = true; });
             });
+            if (this.config.namespace) this.config.namespace = Array.from(new Set([].concat(this.config.namespace)));
             return Promise.resolve()
                 .then(() => super.start(...arguments))
                 .then(this.connect.bind(this))
