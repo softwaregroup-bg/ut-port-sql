@@ -39,7 +39,7 @@ This involves the following configuration:
 
 ```yaml
 db:
-  compatibilityLevel: 130 # optional, the default is 130
+  compatibilityLevel: 120 # optional, the default is 120
   connection:
     server: <db server>
     database: <db name>
@@ -48,6 +48,9 @@ db:
     connectionTimeout: 60000
     requestTimeout: 60000
     # other parameters to pass - see general and tedious options in mssql module
+    options: # this can be skipped if the below defaults are acceptable
+      encrypt: true
+      trustServerCertificate: true
   create:
     user: <user that can create db and the above db user>
     password: <password for the above user>
@@ -56,6 +59,19 @@ db:
 The parameters specified in `connection` are used during normal operation of
 the port. Optionally in the `create`, a user and password can be specified
 if automatic creation of the database is allowed.
+
+Use the following additional configuration options to work with the alternative
+`msnodesqlv8` driver:
+
+```yaml
+db:
+  connection:
+    driver: msnodesqlv8
+    TrustServerCertificate: 'yes'
+```
+
+See [mssql](https://www.npmjs.com/package/mssql) module docs for more details about
+other options to pass.
 
 ## **Schema sync**
 
