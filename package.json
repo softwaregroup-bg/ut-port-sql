@@ -3,7 +3,7 @@
   "version": "7.30.0-mssql-upgrade.1",
   "main": "./index.js",
   "dependencies": {
-    "dot-prop": "4.2.0",
+    "dot-prop": "5.2.0",
     "fs-plus": "3.1.1",
     "json-stringify-deterministic": "1.0.1",
     "mssql": "6.2.1",
