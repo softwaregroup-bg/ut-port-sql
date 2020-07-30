@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.30.0-mssql-upgrade.1",
+  "version": "7.30.0-mssql-upgrade.2",
   "main": "./index.js",
   "dependencies": {
     "dot-prop": "5.2.0",
