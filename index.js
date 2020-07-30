@@ -23,8 +23,6 @@ function changeRowVersionType(field) {
 
 module.exports = function({utPort, registerErrors, vfs}) {
     if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
-    let mssql;
-    let patch;
 
     return class SqlPort extends utPort {
         constructor() {
@@ -51,11 +49,14 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 compatibilityLevel: 120,
                 cbcDate: {},
                 connection: {
+                    connectionString: 'Driver=SQL Server Native Client 11.0;Server=#{server},#{port};Database=#{database};Uid=#{user};Pwd=#{password};Trusted_Connection=#{trusted};Encrypt=#{encrypt};TrustServerCertificate=#{TrustServerCertificate}',
+                    TrustServerCertificate: 'yes',
                     options: {
+                        trustServerCertificate: true,
                         debug: {
                             packet: true
                         },
-                        encrypt: false,
+                        encrypt: true,
                         enableArithAbort: true,
                         enableAnsiWarnings: true,
                         abortTransactionOnError: true
@@ -116,11 +117,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
         async init() {
             switch (this.config.connection && this.config.connection.driver) {
                 case 'msnodesqlv8':
-                    mssql = require('mssql/msnodesqlv8');
-                    patch = true;
+                    this.mssql = require('mssql/msnodesqlv8');
+                    this.patch = true;
                     break;
                 default:
-                    mssql = require('mssql');
+                    this.mssql = require('mssql');
             }
 
             const result = await super.init(...arguments);
@@ -538,7 +539,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
         }
 
         getRequest() {
-            const request = new mssql.Request(this.connection);
+            const request = new this.mssql.Request(this.connection);
             request.on('info', (info) => {
                 this.log.warn && this.log.warn({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
             });
@@ -550,10 +551,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
             let isAsync = false;
             const pipeline = [];
             Object.entries(columns).forEach(([key, column]) => {
-                if (patch && !column.type) {
+                if (this.patch && !column.type) {
                     // Int and BigInt values are returned with type undefined by msnodesqlv8:/
-                    if (column.index === 0 && column.length === 10) column = {...column, ...mssql.Int()};
-                    else if (column.index === 0 && column.length === 19) column = {...column, ...mssql.BigInt()};
+                    if (column.index === 0 && column.length === 10) column = {...column, ...this.mssql.Int()};
+                    else if (column.index === 0 && column.length === 19) column = {...column, ...this.mssql.BigInt()};
+                    else return;
                 }
                 if (column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
                     pipeline.push(record => {
@@ -587,7 +589,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                             });
                         }
                     });
-                } else if (patch && column.type.declaration === 'bigint') {
+                } else if (this.patch && column.type.declaration === 'bigint') {
                     // parsing BigInt values to string as the driver msnodesqlv8 returns them as integer
                     pipeline.push(record => {
                         if (record[key] != null) record[key] = String(record[key]);
@@ -838,10 +840,10 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                     }
                                 });
                                 param.def.create = () => {
-                                    const table = new mssql.Table(param.def.typeName.toLowerCase());
+                                    const table = new this.mssql.Table(param.def.typeName.toLowerCase());
                                     columns && columns.forEach(column => {
                                         changeRowVersionType(column);
-                                        const type = mssql[column.type.toUpperCase()];
+                                        const type = this.mssql[column.type.toUpperCase()];
                                         if (!(type instanceof Function)) {
                                             throw this.errors['portSQL.unexpectedType']({
                                                 type: column.type,
@@ -849,7 +851,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                             });
                                         }
                                         if (typeof column.length === 'string' && column.length.match(/^max$/i)) {
-                                            table.columns.add(column.column, type(mssql.MAX));
+                                            table.columns.add(column.column, type(this.mssql.MAX));
                                         } else {
                                             table.columns.add(column.column, type(column.length !== null ? Number.parseInt(column.length) : column.length, column.scale));
                                         }
@@ -942,7 +944,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 result.recordsets[1].reduce(function(prev, cur) { // extract columns of user defined table types
                     const parserDefault = require('./parsers/mssqlDefault');
                     changeRowVersionType(cur);
-                    if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
+                    if (!(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
                         throw self.errors['portSQL.unexpectedColumnType']({
                             type: cur.type,
                             userDefinedTableType: cur.name
@@ -1103,14 +1105,14 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 .then(function(docList) {
                     const request = self.getRequest();
                     request.multiple = true;
-                    const docListParam = new mssql.Table('core.documentationTT');
-                    docListParam.columns.add('type0', mssql.VarChar(128));
-                    docListParam.columns.add('name0', mssql.NVarChar(128));
-                    docListParam.columns.add('type1', mssql.VarChar(128));
-                    docListParam.columns.add('name1', mssql.NVarChar(128));
-                    docListParam.columns.add('type2', mssql.VarChar(128));
-                    docListParam.columns.add('name2', mssql.NVarChar(128));
-                    docListParam.columns.add('doc', mssql.NVarChar(2000));
+                    const docListParam = new self.mssql.Table('core.documentationTT');
+                    docListParam.columns.add('type0', self.mssql.VarChar(128));
+                    docListParam.columns.add('name0', self.mssql.NVarChar(128));
+                    docListParam.columns.add('type1', self.mssql.VarChar(128));
+                    docListParam.columns.add('name1', self.mssql.NVarChar(128));
+                    docListParam.columns.add('type2', self.mssql.VarChar(128));
+                    docListParam.columns.add('name2', self.mssql.NVarChar(128));
+                    docListParam.columns.add('doc', self.mssql.NVarChar(2000));
                     docList.forEach(function(doc) {
                         docListParam.rows.add(doc.type0, doc.name0, doc.type1, doc.name1, doc.type2, doc.name2, doc.doc);
                     });
@@ -1208,18 +1210,18 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 }
             });
 
-            this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
+            this.connection = new this.mssql.ConnectionPool(sanitize(this.config.connection));
             const {user, password, database, ...connection} = this.config.connection;
             if (this.config.create && ((this.config.create.user && this.config.create.password) || (!this.config.create.user && !this.config.create.password))) {
-                const conCreate = new mssql.ConnectionPool(sanitize({...connection, ...this.config.create}));
+                const conCreate = new this.mssql.ConnectionPool(sanitize({...connection, ...this.config.create}));
                 return conCreate.connect()
-                    .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel)))
-                    .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.connection.database)))
+                    .then(() => (new this.mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel)))
+                    .then(() => this.config.create.diagram && new this.mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.connection.database)))
                     .then(() => {
                         if (this.config.create.user === this.config.connection.user) {
                             return;
                         }
-                        return (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.connection.database, this.config.connection.user, this.config.connection.password));
+                        return (new this.mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.connection.database, this.config.connection.user, this.config.connection.password));
                     })
                     .then(() => conCreate.close())
                     .then(() => this.connection.connect())
