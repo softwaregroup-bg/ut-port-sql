@@ -1,3 +1,23 @@
+# [7.30.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.29.0...v7.30.0) (2020-07-30)
+
+
+### Bug Fixes
+
+* check create properties properly ([afcb0b8](https://github.com/softwaregroup-bg/ut-port-sql/commit/afcb0b85a9b9ba85285c430ae654741004363200))
+* do not set param twice ([5e623c4](https://github.com/softwaregroup-bg/ut-port-sql/commit/5e623c460bd592d9fc0a32e7c4375af2d39cc70e))
+* encrypt by default ([33bd18f](https://github.com/softwaregroup-bg/ut-port-sql/commit/33bd18fd0336cfcfa9e189153061aa25a4c7d263))
+* vulnerability warning ([423a393](https://github.com/softwaregroup-bg/ut-port-sql/commit/423a393454894d3d0ce3acdf549cc88e669b9a1c))
+
+
+### Features
+
+* add support for msnodesqlv8 ([f3c68f7](https://github.com/softwaregroup-bg/ut-port-sql/commit/f3c68f709ead5fc796e8436343ee7e3e30c0ff9c))
+* bcp ([dc416eb](https://github.com/softwaregroup-bg/ut-port-sql/commit/dc416eb195b2b7aa993c63b46e078d8d790c85a9))
+* import namespace ([331d49f](https://github.com/softwaregroup-bg/ut-port-sql/commit/331d49f81d7d61f95c72492a4545be7beb75cfca))
+* upgrade mssql ([8848291](https://github.com/softwaregroup-bg/ut-port-sql/commit/88482916365d92ed97b13f774e563177fe7abd11))
+
+
+
 # [7.29.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.28.0...v7.29.0) (2020-07-22)
 
 
