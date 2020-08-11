@@ -539,12 +539,12 @@ module.exports = function({utPort, registerErrors, vfs}) {
             Object.entries(columns).forEach(([key, column]) => {
                 if (!column.type) {
                     // Int and BigInt values are returned with type undefined :/
-                    if (column.index === 0 && column.length === 10) {
+                    if (column.length === 10) {
                         column = {
                             ...column,
                             ...(mssql.Int())
                         };
-                    } else if (column.index === 0 && column.length === 19) {
+                    } else if (column.length === 19) {
                         column = {
                             ...column,
                             ...(mssql.BigInt())
