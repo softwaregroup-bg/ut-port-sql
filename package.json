@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.27.0-msnodesql.4",
+  "version": "7.27.0-msnodesql.5",
   "main": "./index.js",
   "dependencies": {
     "dot-prop": "5.2.0",
