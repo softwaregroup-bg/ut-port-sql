@@ -1,3 +1,12 @@
+# [7.31.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.30.0...v7.31.0) (2020-08-20)
+
+
+### Features
+
+* add possibility to pass [@object](https://github.com/object)Id to --ut-permission-check ([#98](https://github.com/softwaregroup-bg/ut-port-sql/issues/98)) ([6e46ffd](https://github.com/softwaregroup-bg/ut-port-sql/commit/6e46ffd2cae87819c936d56cda31b9a1cf114c29))
+
+
+
 # [7.30.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.29.0...v7.30.0) (2020-07-30)
 
 
