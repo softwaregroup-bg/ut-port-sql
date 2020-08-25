@@ -1,3 +1,12 @@
+# [7.32.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.31.0...v7.32.0) (2020-08-25)
+
+
+### Features
+
+* enable saveAs stream result ([401069f](https://github.com/softwaregroup-bg/ut-port-sql/commit/401069f737a5d42f5b8266bfb14760f57dfc5d5a))
+
+
+
 # [7.31.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.30.0...v7.31.0) (2020-08-20)
 
 
