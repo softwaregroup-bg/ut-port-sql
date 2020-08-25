@@ -44,7 +44,17 @@ module.exports = async(port, request, { saveAs }, name) => {
             if (!err) {
                 try {
                     formatter.onDone();
-                    return resolve({outputFilePath, encryption: {algorithm, key, iv}});
+                    if (saveAs.stream) {
+                        return resolve(Object.assign(fs.createReadStream(outputFilePath).pipe(
+                            crypto.createDecipheriv(algorithm, key, iv)
+                        ), {
+                            toJSON: () => ({path: outputFilePath}),
+                            httpResponse: () => ({
+                                type: formatter.mime,
+                                header: ['content-disposition', `attachment; filename="${path.basename(saveAs.stream)}"`]
+                            })
+                        }));
+                    } else return resolve({outputFilePath, encryption: {algorithm, key, iv}});
                 } catch (e) {
                     err = e;
                 }
