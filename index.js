@@ -1,7 +1,6 @@
 'use strict';
 const merge = require('lodash.merge');
 const stringify = require('json-stringify-deterministic');
-const mssql = require('mssql');
 const util = require('util');
 const fs = require('fs');
 const fsplus = require('fs-plus');
@@ -101,6 +100,7 @@ module.exports = function({parent}) {
         this.connection = null;
         this.retryTimeout = null;
         this.connectionAttempt = 0;
+        this.patch = false;
         return this;
     }
 
@@ -113,6 +113,14 @@ module.exports = function({parent}) {
     }
 
     SqlPort.prototype.init = function init() {
+        switch (this.config.db && this.config.db.driver) {
+            case 'msnodesqlv8':
+                this.mssql = require('mssql/msnodesqlv8');
+                this.patch = true;
+                break;
+            default:
+                this.mssql = require('mssql');
+        }
         parent && parent.prototype.init.apply(this, arguments);
         this.latency = this.counter && this.counter('average', 'lt', 'Latency');
         this.bytesSent = this.counter && this.counter('counter', 'bs', 'Bytes sent', 300);
@@ -750,7 +758,7 @@ module.exports = function({parent}) {
     };
 
     SqlPort.prototype.getRequest = function() {
-        let request = new mssql.Request(this.connection);
+        let request = new this.mssql.Request(this.connection);
         request.on('info', (info) => {
             this.log.warn && this.log.warn({$meta: {mtid: 'event', opcode: 'message'}, message: info});
         });
@@ -770,15 +778,15 @@ module.exports = function({parent}) {
             if (def.type === 'table') {
                 type = def.create();
             } else if (def.type === 'rowversion') {
-                type = mssql[ROW_VERSION_INNER_TYPE](8);
+                type = self.mssql[ROW_VERSION_INNER_TYPE](8);
             } else {
-                type = mssql[def.type.toUpperCase()];
+                type = self.mssql[def.type.toUpperCase()];
             }
             if (def.size) {
                 if (Array.isArray(def.size)) {
                     type = type(def.size[0], def.size[1]);
                 } else {
-                    type = (def.size === 'max') ? type(mssql.MAX) : type(def.size);
+                    type = (def.size === 'max') ? type(self.mssql.MAX) : type(def.size);
                 }
             }
             return type;
@@ -945,6 +953,12 @@ module.exports = function({parent}) {
                     result.recordsets.forEach(function(resultset) {
                         let xmlColumns = Object.keys(resultset.columns)
                             .reduce(function(columns, column) {
+                                if (self.patch && !resultset.columns[column].type) {
+                                    // Int and BigInt values are returned with type undefined by msnodesqlv8:/
+                                    if (resultset.columns[column].length === 10) resultset.columns[column] = {...column, ...self.mssql.Int()};
+                                    else if (resultset.columns[column].length === 19) resultset.columns[column] = {...column, ...self.mssql.BigInt()};
+                                    else return;
+                                }
                                 if (resultset.columns[column].type.declaration === 'xml') {
                                     columns.push(column);
                                 }
@@ -1120,11 +1134,12 @@ module.exports = function({parent}) {
                                     param.flatten = '.';
                                 }
                             });
+                            const self = this;
                             param.def.create = function() {
-                                let table = new mssql.Table(param.def.typeName.toLowerCase());
+                                let table = new self.mssql.Table(param.def.typeName.toLowerCase());
                                 columns && columns.forEach(function(column) {
                                     changeRowVersionType(column);
-                                    let type = mssql[column.type.toUpperCase()];
+                                    let type = self.mssql[column.type.toUpperCase()];
                                     if (!(type instanceof Function)) {
                                         throw errors.unexpectedType({
                                             type: column.type,
@@ -1132,7 +1147,7 @@ module.exports = function({parent}) {
                                         });
                                     }
                                     if (typeof column.length === 'string' && column.length.match(/^max$/i)) {
-                                        table.columns.add(column.column, type(mssql.MAX));
+                                        table.columns.add(column.column, type(self.mssql.MAX));
                                     } else {
                                         table.columns.add(column.column, type(column.length !== null ? Number.parseInt(column.length) : column.length, column.scale));
                                     }
@@ -1207,7 +1222,7 @@ module.exports = function({parent}) {
             result.recordsets[1].reduce(function(prev, cur) { // extract columns of user defined table types
                 let parserDefault = require('./parsers/mssqlDefault');
                 changeRowVersionType(cur);
-                if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
+                if (!(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
                     throw errors.unexpectedColumnType({
                         type: cur.type,
                         userDefinedTableType: cur.name
@@ -1350,14 +1365,14 @@ module.exports = function({parent}) {
             .then(function(docList) {
                 let request = self.getRequest();
                 request.multiple = true;
-                let docListParam = new mssql.Table('core.documentationTT');
-                docListParam.columns.add('type0', mssql.VarChar(128));
-                docListParam.columns.add('name0', mssql.NVarChar(128));
-                docListParam.columns.add('type1', mssql.VarChar(128));
-                docListParam.columns.add('name1', mssql.NVarChar(128));
-                docListParam.columns.add('type2', mssql.VarChar(128));
-                docListParam.columns.add('name2', mssql.NVarChar(128));
-                docListParam.columns.add('doc', mssql.NVarChar(2000));
+                let docListParam = new self.mssql.Table('core.documentationTT');
+                docListParam.columns.add('type0', self.mssql.VarChar(128));
+                docListParam.columns.add('name0', self.mssql.NVarChar(128));
+                docListParam.columns.add('type1', self.mssql.VarChar(128));
+                docListParam.columns.add('name1', self.mssql.NVarChar(128));
+                docListParam.columns.add('type2', self.mssql.VarChar(128));
+                docListParam.columns.add('name2', self.mssql.NVarChar(128));
+                docListParam.columns.add('doc', self.mssql.NVarChar(2000));
                 docList.forEach(function(doc) {
                     docListParam.rows.add(doc.type0, doc.name0, doc.type1, doc.name1, doc.type2, doc.name2, doc.doc);
                 });
@@ -1437,20 +1452,19 @@ module.exports = function({parent}) {
             };
         };
 
-        this.connection = new mssql.ConnectionPool(this.config.db);
+        this.connection = new this.mssql.ConnectionPool(this.config.db);
         if (this.config.create) {
-            let conCreate = new mssql.ConnectionPool({
+            let conCreate = new this.mssql.ConnectionPool({
                 server: this.config.db.server,
                 options: this.config.db.options,
-                user: this.config.create.user,
-                password: this.config.create.password
+                ...this.config.create
             });
 
             // Patch for https://github.com/patriksimek/node-mssql/issues/467
             conCreate._throwingClose = conCreate._close;
             conCreate._close = function(callback) {
                 const close = conCreate._throwingClose.bind(this, callback);
-                if (this.pool) {
+                if (this.pool && this.pool.drain) {
                     return this.pool.drain().then(close);
                 } else {
                     return close();
@@ -1459,13 +1473,13 @@ module.exports = function({parent}) {
             // end patch
 
             return conCreate.connect()
-                .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
-                .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.db.database)))
+                .then(() => (new this.mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
+                .then(() => this.config.create.diagram && new this.mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.db.database)))
                 .then(() => {
                     if (this.config.create.user === this.config.db.user) {
                         return;
                     }
-                    return (new mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password));
+                    return (new this.mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.db.database, this.config.db.user, this.config.db.password));
                 })
                 .then(() => conCreate.close())
                 .then(() => this.connection.connect())
