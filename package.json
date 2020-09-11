@@ -36,7 +36,7 @@
     "preversion": "ut-preversion",
     "test": "ut-test",
     "version": "ut-version",
-    "jenkins": "JOB_NAME=ut-port-sql_cr ut-jenkins",
+    "jenkins": "JOB_NAME=ut-port-sql_cr BUILD_CAUSE=SCMTRIGGER ut-jenkins",
     "gitlab": "ut-gitlab"
   },
   "description": "UT port sql module",
