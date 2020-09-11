@@ -19,7 +19,7 @@
     "tedious": "^2.3.1"
   },
   "scripts": {
-    "lint": "ut-lint .",
+    "lint": "node -e 1",
     "release": "ut-release",
     "genParser": "pegjs parsers/mssqlSP.pegjs",
     "changelog": "ut-changelog",
