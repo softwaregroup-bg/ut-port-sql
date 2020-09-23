@@ -1,3 +1,12 @@
+## [7.33.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.33.0...v7.33.1) (2020-09-23)
+
+
+### Bug Fixes
+
+* config validation ([5696a75](https://github.com/softwaregroup-bg/ut-port-sql/commit/5696a75783d150f968256b1ef88c4c0d66dab54e))
+
+
+
 # [7.33.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.32.0...v7.33.0) (2020-09-23)
 
 
