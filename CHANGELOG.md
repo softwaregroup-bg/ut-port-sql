@@ -1,3 +1,12 @@
+# [7.33.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.32.0...v7.33.0) (2020-09-23)
+
+
+### Features
+
+* optional user and password for msnodesqlv8 ([#100](https://github.com/softwaregroup-bg/ut-port-sql/issues/100)) ([547c454](https://github.com/softwaregroup-bg/ut-port-sql/commit/547c454c5ac0102fb2e648a3dfe29e5acab600c6))
+
+
+
 # [7.32.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.31.0...v7.32.0) (2020-08-25)
 
 
