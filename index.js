@@ -81,16 +81,16 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 enum: ['mssql', 'msnodesqlv8'],
                                 default: 'mssql'
                             },
-                            user: {
-                                type: 'string'
-                            },
-                            password: {
-                                type: 'string'
-                            },
                             server: {
                                 type: 'string'
                             },
                             database: {
+                                type: 'string'
+                            },
+                            user: {
+                                type: 'string'
+                            },
+                            password: {
                                 type: 'string'
                             },
                             connectionTimeout: {
