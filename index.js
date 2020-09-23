@@ -77,7 +77,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         type: 'object',
                         properties: {
                             driver: {
-                                type: ['string'],
+                                type: ['string', 'null'],
                                 enum: ['mssql', 'msnodesqlv8'],
                                 default: 'mssql'
                             },
@@ -102,7 +102,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 oneOf: [{
                                     properties: {
                                         driver: {
-                                            enum: ['mssql']
+                                            enum: [null, 'mssql']
                                         },
                                         user: {
                                             type: 'string'
