@@ -76,16 +76,15 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     connection: {
                         type: 'object',
                         properties: {
+                            driver: {
+                                type: ['string'],
+                                enum: ['mssql', 'msnodesqlv8'],
+                                default: 'mssql'
+                            },
                             server: {
                                 type: 'string'
                             },
                             database: {
-                                type: 'string'
-                            },
-                            user: {
-                                type: 'string'
-                            },
-                            password: {
                                 type: 'string'
                             },
                             connectionTimeout: {
@@ -97,7 +96,25 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 title: 'Request timeout (ms)'
                             }
                         },
-                        required: ['server', 'database', 'user', 'password']
+                        required: ['server', 'database'],
+                        dependencies: {
+                            driver: {
+                                oneOf: [{
+                                    properties: {
+                                        driver: {
+                                            enum: ['mssql']
+                                        },
+                                        user: {
+                                            type: 'string'
+                                        },
+                                        password: {
+                                            type: 'string'
+                                        }
+                                    },
+                                    required: ['user', 'password']
+                                }]
+                            }
+                        }
                     }
                 },
                 required: ['connection']
