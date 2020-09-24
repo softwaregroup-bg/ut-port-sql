@@ -76,6 +76,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     connection: {
                         type: 'object',
                         properties: {
+                            driver: {
+                                type: ['string', 'null'],
+                                enum: ['mssql', 'msnodesqlv8'],
+                                default: 'mssql'
+                            },
                             server: {
                                 type: 'string'
                             },
@@ -97,7 +102,21 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 title: 'Request timeout (ms)'
                             }
                         },
-                        required: ['server', 'database', 'user', 'password']
+                        oneOf: [{
+                            properties: {
+                                driver: {
+                                    enum: [null, 'mssql']
+                                }
+                            },
+                            required: ['server', 'database', 'user', 'password']
+                        }, {
+                            properties: {
+                                driver: {
+                                    enum: ['msnodesqlv8']
+                                }
+                            },
+                            required: ['driver', 'server', 'database']
+                        }]
                     }
                 },
                 required: ['connection']

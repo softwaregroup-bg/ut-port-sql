@@ -1,3 +1,39 @@
+## [7.33.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.33.0...v7.33.1) (2020-09-23)
+
+
+### Bug Fixes
+
+* config validation ([5696a75](https://github.com/softwaregroup-bg/ut-port-sql/commit/5696a75783d150f968256b1ef88c4c0d66dab54e))
+
+
+
+# [7.33.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.32.0...v7.33.0) (2020-09-23)
+
+
+### Features
+
+* optional user and password for msnodesqlv8 ([#100](https://github.com/softwaregroup-bg/ut-port-sql/issues/100)) ([547c454](https://github.com/softwaregroup-bg/ut-port-sql/commit/547c454c5ac0102fb2e648a3dfe29e5acab600c6))
+
+
+
+# [7.32.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.31.0...v7.32.0) (2020-08-25)
+
+
+### Features
+
+* enable saveAs stream result ([401069f](https://github.com/softwaregroup-bg/ut-port-sql/commit/401069f737a5d42f5b8266bfb14760f57dfc5d5a))
+
+
+
+# [7.31.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.30.0...v7.31.0) (2020-08-20)
+
+
+### Features
+
+* add possibility to pass [@object](https://github.com/object)Id to --ut-permission-check ([#98](https://github.com/softwaregroup-bg/ut-port-sql/issues/98)) ([6e46ffd](https://github.com/softwaregroup-bg/ut-port-sql/commit/6e46ffd2cae87819c936d56cda31b9a1cf114c29))
+
+
+
 # [7.30.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.29.0...v7.30.0) (2020-07-30)
 
 

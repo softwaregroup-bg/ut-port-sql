@@ -3,6 +3,7 @@ const Format = require('./format');
 module.exports = class JsonFormat extends Format {
     constructor(config) {
         super(config);
+        this.mime = 'application/json';
         this.separator = '';
     }
 

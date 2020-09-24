@@ -5,6 +5,7 @@ const format = val => String(val).replace(/\n|,/g, ' ');
 module.exports = class CsvFormat extends Format {
     constructor(config) {
         super(config);
+        this.mime = 'text/csv';
         if (!Array.isArray(this.config.columns)) this.config.columns = [];
         if (typeof this.config.separator !== 'string') this.config.separator = ',';
     }
