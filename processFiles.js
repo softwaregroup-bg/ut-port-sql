@@ -164,7 +164,7 @@ function interpolate(txt, params = {}) {
 
 const addSP = (queries, {fileName, objectName, objectId, config}) => {
     const params = path.extname(fileName).toLowerCase() === '.yaml'
-        ? yaml.parse(fs.readFileSync(fileName, 'utf8'))
+        ? yaml.parse(interpolate(fs.readFileSync(fileName, 'utf8'), config))
         : require(fileName);
     queries.push({
         fileName,
