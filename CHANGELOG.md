@@ -1,3 +1,12 @@
+# [7.34.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.33.1...v7.34.0) (2020-09-24)
+
+
+### Features
+
+* interpolate yaml files ([#101](https://github.com/softwaregroup-bg/ut-port-sql/issues/101)) ([6008e2f](https://github.com/softwaregroup-bg/ut-port-sql/commit/6008e2fb0b6f8ae38b1fa7acb871bab52fd16e51))
+
+
+
 ## [7.33.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.33.0...v7.33.1) (2020-09-23)
 
 
