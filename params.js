@@ -1,6 +1,6 @@
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const xml2js = require('xml2js');
-const mssql = require('mssql');
+const mssql = require('ut-mssql');
 const xmlBuilder = new xml2js.Builder({headless: true});
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 const WORDS = /(\p{Letter}|\d)+/gu;

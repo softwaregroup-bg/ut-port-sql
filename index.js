@@ -136,11 +136,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
         async init() {
             switch (this.config.connection && this.config.connection.driver) {
                 case 'msnodesqlv8':
-                    this.mssql = require('mssql/msnodesqlv8');
+                    this.mssql = require('ut-mssql/msnodesqlv8');
                     this.patch = true;
                     break;
                 default:
-                    this.mssql = require('mssql');
+                    this.mssql = require('ut-mssql');
             }
 
             const result = await super.init(...arguments);
