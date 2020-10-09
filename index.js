@@ -646,10 +646,22 @@ module.exports = function({utPort, registerErrors, vfs}) {
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
             });
+            let cache;
 
             return function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
                 const request = self.getRequest();
+                request.on('callProcedure', (req) => {
+                    if (!cache) {
+                        const {parameters, parametersByName} = req;
+                        params.forEach(param => {
+                            param.ref = parametersByName[param.name];
+                        });
+                        cache = {parameters, parametersByName};
+                    } else {
+                        Object.assign(req, cache);
+                    }
+                });
                 const data = flattenMessage(msg, flatten, nesting);
                 const debug = this.isDebug();
                 const debugParams = {};

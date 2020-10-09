@@ -134,7 +134,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         value = JSON.stringify(value);
     }
     if (param.out) {
-        request.output(param.name, type, value);
+        if (param.ref) param.ref.value = value; else request.output(param.name, type, value);
     } else {
         if (param.def && param.def.type === 'table') {
             if (value) {
@@ -199,10 +199,10 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                     ), ...new Array(param.columns.length - 1));
                 }
             }
-            request.input(param.name, type);
+            if (param.ref) param.ref.value.rows = type.rows; else request.input(param.name, type);
         } else {
             if (!param.default || hasValue) {
-                request.input(param.name, type, value);
+                if (param.ref) param.ref.value = value; else request.input(param.name, type, value);
             }
         }
     }
