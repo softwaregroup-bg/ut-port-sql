@@ -652,20 +652,16 @@ module.exports = function({utPort, registerErrors, vfs}) {
             return function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
                 const request = self.getRequest();
+                const parametersByName = {};
+                let setParameters = false;
+                let hasDefault = false;
                 request.on('callProcedure', (req) => {
+                    if (hasDefault) return;
                     if (!cache) {
-                        const {parameters, parametersByName} = req;
-                        params.forEach(param => {
-                            param.ref = parametersByName[param.name];
-                        });
-                        cache = {parameters, parametersByName};
-                    } else {
-                        Object.assign(req, cache.parameters.reduce((prev, cur) => {
-                            const param = {...cur};
-                            prev.parameters.push(param);
-                            prev.parametersByName[param.name] = param;
-                            return prev;
-                        }, {parameters: [], parametersByName: {}}));
+                        cache = req.parametersByName;
+                    } else if (setParameters) {
+                        req.parametersByName = parametersByName;
+                        req.parameters = Object.values(parametersByName);
                     }
                 });
                 const data = flattenMessage(msg, flatten, nesting);
@@ -674,8 +670,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 request.multiple = true;
                 $meta.globalId = uuid.v1();
                 if (ngramParam) ngramParam.rows.length = 0;
+                const ngramRef = ngramParam && cache && cache.ngram;
+                if (ngramRef) ngramRef.value.rows.length = 0;
                 params && params.forEach(function(param) {
                     let value;
+                    hasDefault = hasDefault || param.default;
                     if (ngramParam && param.name === 'ngram') return;
                     if (param.name === 'meta') {
                         value = Object.assign(
@@ -691,13 +690,20 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     } else {
                         value = data[param.name];
                     }
+                    const paramRef = cache && {...cache[param.name]};
+                    if (paramRef) {
+                        setParameters = true;
+                        parametersByName[param.name] = paramRef;
+                    }
                     value = setParam(self.cbc, self.hmac, ngram && {
                         options: ngram.options,
-                        add: (...params) => ngramParam.rows.add(...params)
-                    }, request, param, value, nesting);
+                        add: (...params) => {
+                            if (ngramRef) ngramRef.value.rows.add(...params); else ngramParam.rows.add(...params);
+                        }
+                    }, request, param, paramRef, value, nesting);
                     debug && (debugParams[param.name] = value);
                 });
-                if (ngramParam && !ngramParam.ref) request.input('ngram', ngramParam);
+                if (ngramParam && !cache) request.input('ngram', ngramParam);
 
                 if ($meta.saveAs) return saveAs(self, request, $meta, name);
 

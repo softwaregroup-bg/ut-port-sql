@@ -114,7 +114,7 @@ function sqlType(def) {
     return type;
 }
 
-function setParam(cbc, hmac, ngram, request, param, value, limit) {
+function setParam(cbc, hmac, ngram, request, param, paramRef, value, limit) {
     if (param.encrypt && value != null) {
         if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
         ngram && addNgram(hmac, ngram, ngram.add, 1, param.name, param.name, value);
@@ -134,7 +134,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         value = JSON.stringify(value);
     }
     if (param.out) {
-        if (param.ref) param.ref.value = value; else request.output(param.name, type, value);
+        if (paramRef) paramRef.value = value; else request.output(param.name, type, value);
     } else {
         if (param.def && param.def.type === 'table') {
             if (value) {
@@ -199,12 +199,12 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                     ), ...new Array(param.columns.length - 1));
                 }
             }
-            if (param.ref) param.ref.value.rows = type.rows; else request.input(param.name, type);
+            if (paramRef) paramRef.value.rows = type.rows; else request.input(param.name, type);
         } else {
             if (!param.default || hasValue) {
-                if (param.ref) param.ref.value = value; else request.input(param.name, type, value);
+                if (paramRef) paramRef.value = value; else request.input(param.name, type, value);
             } else {
-                if (param.ref) param.ref.value = null;
+                if (paramRef) paramRef.value = null;
             }
         }
     }
