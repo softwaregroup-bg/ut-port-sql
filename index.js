@@ -646,6 +646,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
             });
+            const ngramParam = ngram && ngram.def.create();
             let cache;
 
             return function callLinkedSP(msg, $meta) {
@@ -659,15 +660,20 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         });
                         cache = {parameters, parametersByName};
                     } else {
-                        Object.assign(req, cache);
+                        Object.assign(req, cache.parameters.reduce((prev, cur) => {
+                            const param = {...cur};
+                            prev.parameters.push(param);
+                            prev.parametersByName[param.name] = param;
+                            return prev;
+                        }, {parameters: [], parametersByName: {}}));
                     }
                 });
                 const data = flattenMessage(msg, flatten, nesting);
                 const debug = this.isDebug();
                 const debugParams = {};
-                const ngramParam = ngram && ngram.def.create();
                 request.multiple = true;
                 $meta.globalId = uuid.v1();
+                if (ngramParam) ngramParam.rows.length = 0;
                 params && params.forEach(function(param) {
                     let value;
                     if (ngramParam && param.name === 'ngram') return;
@@ -691,7 +697,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     }, request, param, value, nesting);
                     debug && (debugParams[param.name] = value);
                 });
-                if (ngramParam) request.input('ngram', ngramParam);
+                if (ngramParam && !ngramParam.ref) request.input('ngram', ngramParam);
 
                 if ($meta.saveAs) return saveAs(self, request, $meta, name);
 

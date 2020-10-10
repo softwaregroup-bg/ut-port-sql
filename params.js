@@ -203,6 +203,8 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         } else {
             if (!param.default || hasValue) {
                 if (param.ref) param.ref.value = value; else request.input(param.name, type, value);
+            } else {
+                if (param.ref) param.ref.value = null;
             }
         }
     }
