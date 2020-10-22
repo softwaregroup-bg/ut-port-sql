@@ -1,3 +1,12 @@
+# [7.35.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.34.0...v7.35.0) (2020-10-22)
+
+
+### Features
+
+* enable stable cbc with prefix ([d0e690c](https://github.com/softwaregroup-bg/ut-port-sql/commit/d0e690cbaad6d9efdf667a1beeaf373de5fa54ef))
+
+
+
 # [7.34.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.33.1...v7.34.0) (2020-09-24)
 
 
