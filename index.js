@@ -186,6 +186,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
         }
 
         start() {
+            const cbcStable = fieldName => String(fieldName).startsWith('stable');
             if (this.config.cbc) {
                 const {encrypt, decrypt} = crypto.cbc(this.config.cbc);
                 this.cbc = {
@@ -193,10 +194,10 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         this.config.cbcDate[field]
                             ? new Date(value).getTime().toString()
                             : value,
-                        field && (field === true || this.config.cbcStable[field])
+                        field && (field === true || this.config.cbcStable[field] || cbcStable(field))
                     ),
                     decrypt: (value, field) => {
-                        value = decrypt(value, field && this.config.cbcStable[field]);
+                        value = decrypt(value, field && (this.config.cbcStable[field] || cbcStable(field)));
                         return this.config.cbcDate[field] ? new Date(parseInt(value)) : value;
                     }
                 };
