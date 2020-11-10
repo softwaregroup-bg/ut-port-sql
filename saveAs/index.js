@@ -54,7 +54,7 @@ module.exports = async(port, request, { saveAs }, name) => {
                                 header: ['content-disposition', `attachment; filename="${path.basename(saveAs.stream)}"`]
                             })
                         }));
-                    } else return resolve({outputFilePath, encryption: {algorithm, key, iv}});
+                    } else return resolve({outputFilePath, encryption: {algorithm, key: key.toString('hex'), iv: iv.toString('hex')}});
                 } catch (e) {
                     err = e;
                 }
