@@ -819,6 +819,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     try {
                         binding = parserSP.parse(procedure.source);
                     } catch (e) {
+                        e.fileName = procedure.fileName;
                         if (this.isDebug()) {
                             e.source = procedure.source;
                         }
@@ -1063,53 +1064,58 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                         }
                                         const fileContent = vfs.readFileSync(fileName).toString();
                                         if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
-                                            const binding = parserSP.parse(fileContent);
-                                            if (binding.type === 'procedure') {
-                                                binding.params.forEach((param) => {
-                                                    if (binding.doc) {
-                                                        docList.push({
-                                                            type0: 'SCHEMA',
-                                                            name0: binding.schema,
-                                                            type1: 'PROCEDURE',
-                                                            name1: binding.table,
-                                                            doc: binding.doc
-                                                        });
-                                                    }
-                                                    if (param.doc) {
-                                                        docList.push({
-                                                            type0: 'SCHEMA',
-                                                            name0: binding.schema,
-                                                            type1: 'PROCEDURE',
-                                                            name1: binding.table,
-                                                            type2: 'PARAMETER',
-                                                            name2: '@' + param.name,
-                                                            doc: param.doc
-                                                        });
-                                                    }
-                                                });
-                                            } else {
-                                                if (binding.doc) {
-                                                    docList.push({
-                                                        type0: 'SCHEMA',
-                                                        name0: binding.schema,
-                                                        type1: 'TABLE',
-                                                        name1: binding.table,
-                                                        doc: binding.doc
+                                            try {
+                                                const binding = parserSP.parse(fileContent);
+                                                if (binding.type === 'procedure') {
+                                                    binding.params.forEach((param) => {
+                                                        if (binding.doc) {
+                                                            docList.push({
+                                                                type0: 'SCHEMA',
+                                                                name0: binding.schema,
+                                                                type1: 'PROCEDURE',
+                                                                name1: binding.table,
+                                                                doc: binding.doc
+                                                            });
+                                                        }
+                                                        if (param.doc) {
+                                                            docList.push({
+                                                                type0: 'SCHEMA',
+                                                                name0: binding.schema,
+                                                                type1: 'PROCEDURE',
+                                                                name1: binding.table,
+                                                                type2: 'PARAMETER',
+                                                                name2: '@' + param.name,
+                                                                doc: param.doc
+                                                            });
+                                                        }
                                                     });
-                                                }
-                                                binding.fields.forEach((field) => {
-                                                    if (field.doc) {
+                                                } else {
+                                                    if (binding.doc) {
                                                         docList.push({
                                                             type0: 'SCHEMA',
                                                             name0: binding.schema,
                                                             type1: 'TABLE',
                                                             name1: binding.table,
-                                                            type2: 'COLUMN',
-                                                            name2: field.column,
-                                                            doc: field.doc
+                                                            doc: binding.doc
                                                         });
                                                     }
-                                                });
+                                                    binding.fields.forEach((field) => {
+                                                        if (field.doc) {
+                                                            docList.push({
+                                                                type0: 'SCHEMA',
+                                                                name0: binding.schema,
+                                                                type1: 'TABLE',
+                                                                name1: binding.table,
+                                                                type2: 'COLUMN',
+                                                                name2: field.column,
+                                                                doc: field.doc
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            } catch (e) {
+                                                e.fileName = fileName;
+                                                throw e;
                                             }
                                         }
                                     });

@@ -3,5 +3,4 @@ library identifier: 'jenkinsfile@master', retriever: modernSCM([
     remote: 'https://github.com/softwaregroup-bg/jenkinsfile.git'
 ])
 
-ut buildImage: 'softwaregroup/ut-docker'
-
+ut buildImage: 'nexus-dev.softwaregroup.com:5000/softwaregroup/ut-docker'
