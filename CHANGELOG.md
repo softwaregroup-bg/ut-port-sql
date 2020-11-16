@@ -1,3 +1,13 @@
+## [7.35.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.35.0...v7.35.1) (2020-11-16)
+
+
+### Bug Fixes
+
+* log filename for parse errors ([5dd92bf](https://github.com/softwaregroup-bg/ut-port-sql/commit/5dd92bf9b908d88395ae3093f246b05866706dc9))
+* return serializable data ([65ea91a](https://github.com/softwaregroup-bg/ut-port-sql/commit/65ea91a56b7f9e63243bfb452e7be492db86f9c4))
+
+
+
 # [7.35.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.34.0...v7.35.0) (2020-10-22)
 
 
