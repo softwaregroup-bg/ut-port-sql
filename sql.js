@@ -860,9 +860,9 @@ module.exports = {
         '@actionId': actionId = 'OBJECT_SCHEMA_NAME(@@PROCID) + \'.\' + OBJECT_NAME(@@PROCID)',
         '@objectId': objectId = 'NULL',
         offset
-    }) => {
-        return 'DECLARE @actionId_' + offset + ' VARCHAR(100) = ' + actionId + ', @return_' + offset + ' INT = 0;' +
+    }) => (
+        'DECLARE @actionId_' + offset + ' VARCHAR(100) = ' + actionId + ', @return_' + offset + ' INT = 0;' +
         'EXEC @return_' + offset + ' = [user].[permission.check] @actionId = @actionId_' + offset + ', @objectId = ' + objectId + ', @meta = @meta; ' +
         'IF (@return_' + offset + ' != 0) BEGIN RETURN 55555; END'
-    }
+    )
 };
