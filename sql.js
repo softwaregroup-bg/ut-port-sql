@@ -859,7 +859,7 @@ module.exports = {
     permissionCheck: ({
         '@actionId': actionId = 'OBJECT_SCHEMA_NAME(@@PROCID) + \'.\' + OBJECT_NAME(@@PROCID)',
         '@objectId': objectId = 'NULL',
-        offset
+        offset = ''
     }) => (
         'DECLARE @actionId_' + offset + ' VARCHAR(100) = ' + actionId + ', @return_' + offset + ' INT = 0;' +
         'EXEC @return_' + offset + ' = [user].[permission.check] @actionId = @actionId_' + offset + ', @objectId = ' + objectId + ', @meta = @meta; ' +
