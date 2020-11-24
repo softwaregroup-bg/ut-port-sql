@@ -1,7 +1,7 @@
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?$/mi;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
-const PERMISSION_CHECK = /^[\s+]{0,}--ut-permission-check(.*)$/m;
+const PERMISSION_CHECK = /^[\s+]{0,}--ut-permission-check(.*)$/gm;
 const mssqlQueries = require('./sql');
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ENCRYPTSTABLE_RE = /(?:NULL|0x.*)\/\*encryptStable (.*)\*\//gi;
@@ -223,8 +223,8 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                     let fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
                     const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
                     if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
-                        fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1) => {
-                            const params = {};
+                        fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
+                            const params = {offset};
                             if (p1) {
                                 p1.split(',').forEach(part => {
                                     const [key, value] = part.split('=').map(str => str.trim());
