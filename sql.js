@@ -858,10 +858,11 @@ module.exports = {
     },
     permissionCheck: ({
         '@actionId': actionId = 'OBJECT_SCHEMA_NAME(@@PROCID) + \'.\' + OBJECT_NAME(@@PROCID)',
-        '@objectId': objectId = 'NULL'
+        '@objectId': objectId = 'NULL',
+        offset = ''
     }) => (
-        'DECLARE @_actionId VARCHAR(100) = ' + actionId + ', @return INT = 0;' +
-        'EXEC @return = [user].[permission.check] @actionId = @_actionId, @objectId = ' + objectId + ', @meta = @meta; ' +
-        'IF (@return != 0) BEGIN RETURN 55555; END'
+        'DECLARE @actionId_' + offset + ' VARCHAR(100) = ' + actionId + ', @return_' + offset + ' INT = 0;' +
+        'EXEC @return_' + offset + ' = [user].[permission.check] @actionId = @actionId_' + offset + ', @objectId = ' + objectId + ', @meta = @meta; ' +
+        'IF (@return_' + offset + ' != 0) BEGIN RETURN 55555; END'
     )
 };
