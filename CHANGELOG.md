@@ -1,3 +1,12 @@
+# [7.36.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.35.1...v7.36.0) (2020-11-25)
+
+
+### Features
+
+* multiple permission check ([#102](https://github.com/softwaregroup-bg/ut-port-sql/issues/102)) ([cca01dc](https://github.com/softwaregroup-bg/ut-port-sql/commit/cca01dc2b460eaf2918214e5e1735d6a890a34e8))
+
+
+
 ## [7.35.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.35.0...v7.35.1) (2020-11-16)
 
 
