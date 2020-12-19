@@ -46,7 +46,7 @@
     "gitlab": "ut-gitlab"
   },
   "engines": {
-    "node": "^12.16.3"
+    "node": "^12.16.3 || ^14.15.3"
   },
   "description": "UT port sql module",
   "repository": {
