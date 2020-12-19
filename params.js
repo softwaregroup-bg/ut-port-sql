@@ -70,6 +70,7 @@ function flattenMessage(data, delimiter, limit) {
     function flatten(cur, prop, depth) {
         if (depth > limit) throw new Error('Unsupported deep nesting for property ' + prop);
         if (typeof cur === 'function') {
+            ;
         } else if (Object(cur) !== cur) {
             result[prop] = cur;
         } else if (Array.isArray(cur)) {
