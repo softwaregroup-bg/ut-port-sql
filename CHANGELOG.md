@@ -1,3 +1,12 @@
+## [7.36.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.36.0...v7.36.1) (2020-12-19)
+
+
+### Bug Fixes
+
+* support node 14 ([6db8d98](https://github.com/softwaregroup-bg/ut-port-sql/commit/6db8d98fe4ee84de7459781fd440b2a154c9bd59))
+
+
+
 # [7.36.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.35.1...v7.36.0) (2020-11-25)
 
 
