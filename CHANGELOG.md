@@ -1,3 +1,12 @@
+## [7.36.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.36.1...v7.36.2) (2021-01-14)
+
+
+### Bug Fixes
+
+* do not log after port is stopped ([33e37c9](https://github.com/softwaregroup-bg/ut-port-sql/commit/33e37c90aaa1801139d7f71d3891794d0bde4d0b))
+
+
+
 ## [7.36.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.36.0...v7.36.1) (2020-12-19)
 
 
