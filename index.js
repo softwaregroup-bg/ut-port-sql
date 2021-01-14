@@ -1196,7 +1196,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                             }
                         };
                         c.debug.log = msg => {
-                            if (this.log.debug && c.state && (c.state.name !== 'LoggedIn') && (c.state.name !== 'SentClientRequest')) {
+                            if (this.connection && this.log.debug && c.state && (c.state.name !== 'LoggedIn') && (c.state.name !== 'SentClientRequest')) {
                                 this.log.debug({$meta: {mtid: 'event', method: 'port.pool.state'}, message: {state: msg, id, created}});
                             }
                         };
