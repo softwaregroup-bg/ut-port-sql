@@ -12,7 +12,7 @@ module.exports = {
     dropHash: function() {
         return "IF OBJECT_ID('dbo.utSchemaHash') IS NOT NULL DROP FUNCTION dbo.utSchemaHash";
     },
-    loadSchema: function(partial) {
+    loadSchema: function(partial, loadDbo) {
         return `
         SELECT
             o.create_date,
@@ -37,8 +37,8 @@ module.exports = {
         WHERE
             o.type IN (${partial ? "'P'" : "'V', 'P', 'FN','F','IF','SN','TF','TR','U'"}) AND
             user_name(objectproperty(o.object_id, 'OwnerId')) in (USER_NAME(),'dbo') AND
-            objectproperty(o.object_id, 'IsMSShipped') = 0 AND
-            SCHEMA_NAME(o.schema_id) != 'dbo'
+            objectproperty(o.object_id, 'IsMSShipped') = 0
+            ${loadDbo ? '' : 'AND SCHEMA_NAME(o.schema_id) != \'dbo\''}
             ${partial ? 'AND ISNULL(c.colid, 1)=1' : ''}
         UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()

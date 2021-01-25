@@ -938,7 +938,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             this.checkConnection();
             const request = this.getRequest();
             request.multiple = true;
-            return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false')).then(function(result) {
+            return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false', this.config.loadDbo)).then(function(result) {
                 const schema = {source: {}, parseList: [], types: {}, deps: {}};
                 result.recordsets[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
                     const full = cur.full;
