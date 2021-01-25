@@ -1,3 +1,12 @@
+# [7.37.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.36.2...v7.37.0) (2021-01-25)
+
+
+### Features
+
+* config for loading dbo schema ([6c8a577](https://github.com/softwaregroup-bg/ut-port-sql/commit/6c8a5778793623a1839c80214ddc90feda80c5d5))
+
+
+
 ## [7.36.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.36.1...v7.36.2) (2021-01-14)
 
 
