@@ -74,7 +74,7 @@ module.exports = {
         JOIN
             sys.columns c ON types.type_table_object_id = c.object_id
         JOIN
-            sys.systypes AS st ON st.xtype = c.system_type_id
+            sys.systypes AS st ON st.xusertype = c.user_type_id
         WHERE
             types.is_user_defined = 1 AND st.name <> 'sysname'
         ORDER BY
