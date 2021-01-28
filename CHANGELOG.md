@@ -1,3 +1,13 @@
+## [7.37.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.0...v7.37.1) (2021-01-28)
+
+
+### Bug Fixes
+
+* Buffer objects are no more stringified when passed directly ([7e944ec](https://github.com/softwaregroup-bg/ut-port-sql/commit/7e944ec64f345673541e03d960d3d169edfcc875))
+* bug in fetching db table types when user defined data types exists ([ba1ef0a](https://github.com/softwaregroup-bg/ut-port-sql/commit/ba1ef0ae284ee8335b151b09282c2979319c8454))
+
+
+
 # [7.37.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.36.2...v7.37.0) (2021-01-25)
 
 
