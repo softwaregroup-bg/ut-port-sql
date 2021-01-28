@@ -55,7 +55,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
             return xmlBuilder.buildObject(obj);
         } else if (value.type === 'Buffer') {
             return Buffer.from(value.data);
-        } else if (typeof value === 'object' && !(value instanceof Date)) {
+        } else if (typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value)) {
             return JSON.stringify(value);
         }
     }
