@@ -1,3 +1,13 @@
+<a name="7.4.2"></a>
+## [7.4.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.4.1...v7.4.2) (2021-02-02)
+
+
+### Bug Fixes
+
+* bug in fetching db table types when user defined data types exists ([5016ecd](https://github.com/softwaregroup-bg/ut-port-sql/commit/5016ecd))
+
+
+
 <a name="7.4.1"></a>
 ## [7.4.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.4.0...v7.4.1) (2020-09-11)
 
