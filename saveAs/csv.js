@@ -16,9 +16,14 @@ class CsvTransform extends Transform {
         this.stream.push((columns || []).map((col) => formatCellValue(col.displayName)).join(this.config.seperator || ',') + EOL);
     }
     onRow(chunk) {
-        this.options.canPushRow && this.stream.push((this.config.columns || []).map((col) => {
-            return formatCellValue(col.transform ? col.transform(chunk[col.name], chunk) : chunk[col.name]);
-        }).join(this.config.seperator || ',') + EOL);
+        let row;
+        if (this.options.canPushRow) {
+            chunk = this.config.onRow ? this.config.onRow(chunk) : chunk;
+            row = (this.config.columns || []).map((col) => {
+                return formatCellValue(col.transform ? col.transform(chunk[col.name], chunk) : chunk[col.name] || '');
+            });
+        }
+        this.options.canPushRow && row && this.stream.push(row.join(this.config.seperator || ',') + EOL);
     }
     onResultSet(chunk) {
         let { resultSetName, namedSet } = this.config;
