@@ -1,3 +1,12 @@
+## [7.37.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.1...v7.37.2) (2021-02-05)
+
+
+### Bug Fixes
+
+* improve azure support ([dbb56f3](https://github.com/softwaregroup-bg/ut-port-sql/commit/dbb56f39913852bedd83a36213407f82b1b5b0ff))
+
+
+
 ## [7.37.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.0...v7.37.1) (2021-01-28)
 
 
