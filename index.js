@@ -1247,7 +1247,12 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         if (this.config.create.user === this.config.connection.user) {
                             return;
                         }
-                        return (new this.mssql.Request(conCreate)).batch(mssqlQueries.createUser(this.config.connection.database, this.config.connection.user, this.config.connection.password));
+                        return (new this.mssql.Request(conCreate)).batch(mssqlQueries.createUser(
+                            this.config.connection.database,
+                            this.config.connection.user,
+                            this.config.connection.password,
+                            this.config.createUser || {}
+                        ));
                     })
                     .then(() => conCreate.close())
                     .then(() => this.connection.connect())

@@ -223,8 +223,8 @@ module.exports = {
           ALTER DATABASE [${name}] SET AUTO_SHRINK OFF
         END`;
     },
-    createUser: function(name, user, password) {
-        return `
+    createUser: function(name, user, password, {azure = false}) {
+        return !azure ? `
         IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '${user}')
         BEGIN
             CREATE LOGIN [${user}] WITH PASSWORD = N'${password}', CHECK_POLICY = OFF
@@ -244,6 +244,19 @@ module.exports = {
         BEGIN
             USE [master]
             GRANT VIEW SERVER STATE to [${user}]
+        END
+        ` : `
+        IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name = '${user}')
+        BEGIN
+            CREATE LOGIN [${user}] WITH PASSWORD = N'${password}'
+        END
+        IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = '${user}')
+        BEGIN
+            CREATE USER [${user}] FOR LOGIN [${user}]
+        END
+        IF (is_rolemember('db_owner', '${user}') IS NULL OR is_rolemember('db_owner', '${user}') = 0)
+        BEGIN
+            EXEC sp_addrolemember 'db_owner', '${user}'
         END
         `;
     },
