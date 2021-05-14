@@ -665,7 +665,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                             {},
                             $meta.forward,
                             $meta,
-                            $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId}
+                            $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId, 'auth.checkSession': $meta.auth.checkSession}
                         );
                     } else if (param.def && param.def.typeName && param.def.typeName.endsWith('.ngramTT')) {
                         value = param.options && Object.keys(param.options).map(name => data[name] && [name, data[name]]).filter(Boolean);
