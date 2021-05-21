@@ -1,3 +1,12 @@
+## [7.37.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.2...v7.37.3) (2021-05-21)
+
+
+### Bug Fixes
+
+* BDC-1866 - pass auth.checkSession to SPs ([0d98b47](https://github.com/softwaregroup-bg/ut-port-sql/commit/0d98b47a78e7e66dd93621448b95c13329e6bcd5))
+
+
+
 ## [7.37.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.1...v7.37.2) (2021-02-05)
 
 
