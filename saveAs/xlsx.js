@@ -1,4 +1,3 @@
-const EOL = require('os').EOL;
 var Transform = require('./transform');
 let { getResultSetName } = require('./helpers');
 let Excel = require('exceljs');
