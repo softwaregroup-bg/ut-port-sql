@@ -2,9 +2,10 @@ const through2 = require('through2');
 let { getResultSetName } = require('./helpers');
 var transforms = {
     json: require('./json'),
-    csv: require('./csv')
+    csv: require('./csv'),
+    xlsx: require('./xlsx')
 };
-module.exports = function(request, saveAs) {
+module.exports = function(request, saveAs, wsStream) {
     var config = Object.assign({}, {
         namedSet: undefined,
         single: undefined
@@ -17,7 +18,7 @@ module.exports = function(request, saveAs) {
     return request.pipe(through2({objectMode: true}, function(chunk, encoding, next) {
         if (config.namedSet === undefined) { // called only once to write object start literal
             config.namedSet = !!getResultSetName(chunk);
-            transform = new Transform(this, config);
+            transform = new Transform(this, config, wsStream);
             transform.onStart();
         }
         if (config.namedSet && getResultSetName(chunk)) {
@@ -27,8 +28,8 @@ module.exports = function(request, saveAs) {
             transform.onRow(chunk);
         }
         next();
-    }, function(next) {
-        transform.onEnd();
+    }, async function(next) {
+        await transform.onEnd();
         next();
     }));
 };
