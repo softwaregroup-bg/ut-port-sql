@@ -913,10 +913,16 @@ module.exports = function({parent}) {
                         return reject(err);
                     });
                 })
-                    .then(function(resolve, reject) {
+                    .then(function() {
                         request.stream = true;
                         let ws = fs.createWriteStream(newFilename);
-                        saveAs(request, $meta.saveAs).pipe(ws);
+                        if (filename.endsWith('.xlsx')) {
+                            saveAs(request, $meta.saveAs, ws);
+                            request.execute(name);
+                        } else {
+                            let ws = fs.createWriteStream(newFilename);
+                            saveAs(request, $meta.saveAs).pipe(ws);
+                        }
                         request.execute(name);
                         return new Promise(function(resolve, reject) {
                             ws.on('finish', function() {
