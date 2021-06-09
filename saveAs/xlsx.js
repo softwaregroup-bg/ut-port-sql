@@ -2,13 +2,13 @@ var Transform = require('./transform');
 let { getResultSetName } = require('./helpers');
 let Excel = require('exceljs');
 class XlsxTransform extends Transform {
-    constructor(stream, config, wsStream) {
+    constructor(stream, config) {
         super(stream, config);
         this.options = {
             canPushRow: !config.namedSet,
-            xlsxFilename: config.xlsxFilename
+            xlsxFilename: config.filename
         };
-        this.workbook = new Excel.stream.xlsx.WorkbookWriter({stream: wsStream});
+        this.workbook = new Excel.Workbook();
         this.worksheet = this.workbook.addWorksheet(config.sheetName || 'Sheet 1');
     }
     onStart() {
@@ -21,11 +21,11 @@ class XlsxTransform extends Transform {
     onRow(chunk) {
         if (this.options.canPushRow) {
             chunk = this.config.onRow ? this.config.onRow(chunk) : chunk;
-            this.worksheet.addRow(chunk).commit();
+            this.worksheet.addRow(chunk);
         }
     }
     async onEnd() {
-        this.workbook.commit();
+        await this.workbook.xlsx.writeFile(this.options.xlsxFilename);
     }
     onResultSet(chunk) {
         let { resultSetName, namedSet } = this.config;

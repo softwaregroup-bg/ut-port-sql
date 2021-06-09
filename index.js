@@ -915,23 +915,15 @@ module.exports = function({parent}) {
                 })
                     .then(function() {
                         request.stream = true;
-                        let ws = fs.createWriteStream(newFilename);
-                        if (filename.endsWith('.xlsx')) {
-                            saveAs(request, $meta.saveAs, ws);
-                            request.execute(name);
-                        } else {
-                            let ws = fs.createWriteStream(newFilename);
-                            saveAs(request, $meta.saveAs).pipe(ws);
-                        }
-                        request.execute(name);
-                        return new Promise(function(resolve, reject) {
-                            ws.on('finish', function() {
-                                return resolve({outputFilePath: newFilename});
+                        let params = {
+                            ...(typeof $meta.saveAs === 'string' ? {} : ($meta.saveAs || {})),
+                            filename: newFilename,
+                            spParams: name
+                        };
+                        return saveAs(request, params)
+                            .then(() => {
+                                return {outputFilePath: newFilename};
                             });
-                            ws.on('error', function(err) {
-                                return reject(err);
-                            });
-                        });
                     });
             }
             return request.execute(name)
