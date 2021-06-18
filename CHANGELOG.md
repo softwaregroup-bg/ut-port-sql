@@ -1,3 +1,12 @@
+## [7.37.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.3...v7.37.4) (2021-06-18)
+
+
+### Bug Fixes
+
+* change log level [UTCORE-121] ([7382e0d](https://github.com/softwaregroup-bg/ut-port-sql/commit/7382e0d94a0d39649c289c7868daab732c42a734))
+
+
+
 ## [7.37.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.2...v7.37.3) (2021-05-21)
 
 
