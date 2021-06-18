@@ -561,7 +561,11 @@ module.exports = function({utPort, registerErrors, vfs}) {
         getRequest() {
             const request = new this.mssql.Request(this.connection);
             request.on('info', (info) => {
-                this.log.warn && this.log.warn({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
+                if (typeof info.includes === 'function' && info.includes('The module will still be created')) {
+                    this.log.debug && this.log.debug({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
+                } else {
+                    this.log.warn && this.log.warn({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
+                }
             });
             return request;
         }
