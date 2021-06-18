@@ -16,7 +16,7 @@
     "json-schema-to-markdown": "1.1.1",
     "pegjs": "0.10.0",
     "tap": "^15.0.9",
-    "ut-run": "^10.56.1",
+    "ut-run": "^10.56.2",
     "ut-tools": "^6.38.1",
     "why-is-node-running": "^2.1.0"
   },

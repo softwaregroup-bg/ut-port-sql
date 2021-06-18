@@ -27,8 +27,8 @@ require('ut-run').run({
                     process: 'json'
                 },
                 result: (result, assert) => {
-                    assert.true(Array.isArray(result.dataSet));
-                    assert.equals(result.dataSet[0].test, 1);
+                    assert.ok(Array.isArray(result.dataSet));
+                    assert.equal(result.dataSet[0].test, 1);
                 }
             }
         ]
