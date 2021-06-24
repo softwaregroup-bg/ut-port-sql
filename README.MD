@@ -598,7 +598,8 @@ SELECT
     @@servername serverName,
     @@version [version]
 IF @@trancount > 0 ROLLBACK TRANSACTION -- if rollback is needed
-RETURN EXEC [core].[error] @type = 'someModule.someError' -- if processing is needed
+EXEC [core].[error] @type = 'someModule.someError' -- if processing is needed
+RETURN 55555
 ```
 
 This will throw an error of type `someModule.someError`, which will also have
