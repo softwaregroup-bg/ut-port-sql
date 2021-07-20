@@ -1,3 +1,12 @@
+# [7.38.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.5...v7.38.0) (2021-07-20)
+
+
+### Features
+
+* enable skipping calls to non-existing SP [UTCORE-121] ([8a8e2e1](https://github.com/softwaregroup-bg/ut-port-sql/commit/8a8e2e18b267c7098ba60f1c09fbaa41c3162400))
+
+
+
 ## [7.37.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.4...v7.37.5) (2021-06-24)
 
 
