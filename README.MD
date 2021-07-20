@@ -367,6 +367,8 @@ Note the **camelCase** naming convention. File names, including extension are
     - {column1: row2value1, column2: row2value2}
   ```
 
+  If the SP name includes `[`, it will be called only when the SP exists.
+
 ## **Automatic creation of user defined table types**
 
 The SQL port has a configuration property named `createTT`. This property can be

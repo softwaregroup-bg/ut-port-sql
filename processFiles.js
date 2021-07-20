@@ -144,7 +144,7 @@ function addQuery(schema, queries, params, cbc) {
 }
 
 function getObjectName(fileName) {
-    return fileName.replace(/\.(sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
+    return fileName.replace(/\.(sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, '').replace(/\[|]/g, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
 }
 
 function shouldCreateTT(schemaConfig, tableName) {
@@ -172,6 +172,7 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
         objectId,
         callSP: function callSPFromJson() {
             if (typeof this.methods[objectName] !== 'function') {
+                if (path.basename(fileName).includes('[')) return Promise.resolve(false);
                 throw this.errors['portSQL.spNotFound']({params: {name: objectName}});
             }
 
