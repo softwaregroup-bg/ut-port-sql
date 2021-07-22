@@ -8,7 +8,6 @@ const mssqlQueries = require('./sql');
 const xml2js = require('xml2js');
 const uuid = require('uuid');
 const path = require('path');
-const xmlParser = new xml2js.Parser({explicitRoot: false, charkey: 'text', mergeAttrs: true, explicitArray: false});
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const {setParam, isEncrypted, flattenMessage} = require('./params');
@@ -201,7 +200,31 @@ module.exports = function({utPort, registerErrors, vfs}) {
                         return this.config.cbcDate[field] ? new Date(parseInt(value)) : value;
                     }
                 };
-            }
+            } else delete this.cbc;
+            const lower = (string, start) => string.charAt(start).toLowerCase() + string.slice(start + 1);
+            const rename = (name) => {
+                if (name.startsWith('encrypted') && name.length > 9) return lower(name, 9);
+                else if (name.startsWith('stable') && name.length > 6) return lower(name, 6);
+                else return name;
+            };
+            const decrypt = (value, name) => {
+                if (name.startsWith('encrypted') && name.length > 9) return this.cbc.decrypt(Buffer.from(value, 'base64'), lower(name, 9));
+                else if (name.startsWith('stable') && name.length > 6) return this.cbc.decrypt(Buffer.from(value, 'base64'), lower(name, 6));
+                else return value;
+            };
+            this.xmlParser = new xml2js.Parser({
+                explicitRoot: false,
+                charkey: 'text',
+                mergeAttrs: true,
+                explicitArray: false,
+                ...this.cbc && {
+                    tagNameProcessors: [rename],
+                    attrNameProcessors: [rename],
+                    valueProcessors: [decrypt],
+                    attrValueProcessors: [decrypt]
+                }
+            });
+
             this.hmac = this.config.hmac && crypto.hmac(this.config.hmac);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
             if (this.config.createTT != null) this.log.warn && this.log.warn('Property createTT should be moved in schema array');
@@ -600,11 +623,13 @@ module.exports = function({utPort, registerErrors, vfs}) {
                     pipeline.push(record => {
                         if (record[key]) { // value is not null
                             return new Promise((resolve, reject) => {
-                                xmlParser.parseString(record[key], (err, result) => {
+                                this.xmlParser.parseString(record[key], (err, result) => {
                                     if (err) {
-                                        reject(this.errors['portSQL.wrongXmlFormat']({
+                                        const error = this.errors['portSQL.wrongXmlFormat']({
                                             xml: record[key]
-                                        }));
+                                        });
+                                        error.cause = err;
+                                        reject(error);
                                     } else {
                                         record[key] = result;
                                         resolve();
