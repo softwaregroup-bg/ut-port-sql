@@ -1,3 +1,12 @@
+# [7.39.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.38.0...v7.39.0) (2021-07-22)
+
+
+### Features
+
+* decrypt XML tag and attr values [UTCORE-121] ([4b2560e](https://github.com/softwaregroup-bg/ut-port-sql/commit/4b2560e51772c32e4686afd833ba41e69a1ad70d))
+
+
+
 # [7.38.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.37.5...v7.38.0) (2021-07-20)
 
 
