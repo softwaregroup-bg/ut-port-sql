@@ -84,7 +84,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
                                 type: 'string'
                             },
                             port: {
-                                type: 'integer',
+                                type: 'integer'
                             },
                             database: {
                                 type: 'string'
@@ -272,14 +272,14 @@ module.exports = function({utPort, registerErrors, vfs}) {
             if (!this.connection) {
                 throw this.errors['portSQL.noConnection']({
                     server: this.config.connection && this.config.connection.server,
-                    port: this.config.connection && this.config.connection.port || 'default',
+                    port: (this.config.connection && this.config.connection.port) || 'default',
                     database: this.config.connection && this.config.connection.database
                 });
             }
             if (checkReady && !this.connectionReady) {
                 throw this.errors['portSQL.notReady']({
                     server: this.config.connection && this.config.connection.server,
-                    port: this.config.connection && this.config.connection.port || 'default',
+                    port: (this.config.connection && this.config.connection.port) || 'default',
                     database: this.config.connection && this.config.connection.database
                 });
             }
