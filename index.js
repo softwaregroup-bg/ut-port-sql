@@ -198,8 +198,8 @@ module.exports = function({utPort, registerErrors, vfs}) {
                             : value,
                         field && (field === true || this.config.cbcStable[field] || cbcStable(field))
                     ),
-                    decrypt: (value, field) => {
-                        value = decrypt(value, field && (this.config.cbcStable[field] || cbcStable(field)));
+                    decrypt: (value, field, stable) => {
+                        value = decrypt(value, stable || (field && (this.config.cbcStable[field] || cbcStable(field))));
                         return this.config.cbcDate[field] ? new Date(parseInt(value)) : value;
                     }
                 };
@@ -212,7 +212,7 @@ module.exports = function({utPort, registerErrors, vfs}) {
             };
             const decrypt = (value, name) => {
                 if (name.startsWith('encrypted') && name.length > 9) return this.cbc.decrypt(Buffer.from(value, 'base64'), lower(name, 9));
-                else if (name.startsWith('stable') && name.length > 6) return this.cbc.decrypt(Buffer.from(value, 'base64'), lower(name, 6));
+                else if (name.startsWith('stable') && name.length > 6) return this.cbc.decrypt(Buffer.from(value, 'base64'), lower(name, 6), true);
                 else return value;
             };
             this.xmlParser = new xml2js.Parser({
