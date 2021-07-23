@@ -1,3 +1,12 @@
+## [7.39.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.39.0...v7.39.1) (2021-07-23)
+
+
+### Bug Fixes
+
+* add port into conn obj UTCORE-121 ([#107](https://github.com/softwaregroup-bg/ut-port-sql/issues/107)) ([8a7f5aa](https://github.com/softwaregroup-bg/ut-port-sql/commit/8a7f5aa8d7ab6422e08074fabd6ed82e4e332013))
+
+
+
 # [7.39.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.38.0...v7.39.0) (2021-07-22)
 
 
