@@ -1,3 +1,12 @@
+## [7.39.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.39.1...v7.39.2) (2021-07-23)
+
+
+### Bug Fixes
+
+* xml decrypt stable [UTCORE-121] ([5fc431f](https://github.com/softwaregroup-bg/ut-port-sql/commit/5fc431f115f729fb53ed799659cf0d0196f7435f))
+
+
+
 ## [7.39.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.39.0...v7.39.1) (2021-07-23)
 
 
