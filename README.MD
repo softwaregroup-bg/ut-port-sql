@@ -48,7 +48,8 @@ and it is started in the implementation `server.js` like this:
 
 The `start` method of this port, that is called from the `ut-bus`, initializes the SQL connection to the server and starts receiving requests once they come inside the in-going conversion. This port is synchronous and the requests are piped in a queue.
 
-Let's consider that we want to send `sql.CredentialsLogin` message to the SQL port's in-coming conversion. The message should look like this:
+Let's consider that we want to send `sql.CredentialsLogin` message to the SQL port's in-coming conversion.
+The message should look like this:
 
     msg = {
         process: 'return',
