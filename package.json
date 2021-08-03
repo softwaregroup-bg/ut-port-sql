@@ -3,13 +3,13 @@
   "version": "7.8.2",
   "main": "./index.js",
   "dependencies": {
-    "dot-prop": "4.2.0",
-    "fs-plus": "3.0.2",
+    "dot-prop": "6.0.0",
+    "fs-plus": "3.1.1",
     "json-stringify-deterministic": "1.0.1",
     "through2": "2.0.3",
     "mssql": "6.2.1",
     "uuid": "3.3.2",
-    "xml2js": "0.4.19"
+    "xml2js": "0.4.22"
   },
   "devDependencies": {
     "tap": "^12.5.2",
@@ -17,8 +17,7 @@
     "pegjs": "0.10.0"
   },
   "peerDependencies": {
-    "ut-bus": "^7.1.1",
-    "tedious": "^2.7.1"
+    "ut-bus": "^7.4.2"
   },
   "scripts": {
     "lint": "ut-lint .",

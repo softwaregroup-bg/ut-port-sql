@@ -29,7 +29,7 @@ function changeRowVersionType(field) {
 
 function interpolate(txt, params = {}) {
     return txt.replace(VAR_RE, (placeHolder, label) => {
-        let value = dotprop.get(params, label);
+        const value = dotprop.get(params, label);
         switch (typeof value) {
             case 'undefined': return placeHolder;
             case 'object': return JSON.stringify(value);
@@ -49,6 +49,7 @@ module.exports = function({utPort}) {
             this.retryTimeout = null;
             this.connectionAttempt = 0;
         }
+
         get defaults() {
             return {
                 retrySchemaUpdate: true,
@@ -75,6 +76,7 @@ module.exports = function({utPort}) {
                 }
             };
         }
+
         async init() {
             const result = await super.init(...arguments);
             this.latency = this.counter && this.counter('average', 'lt', 'Latency');
@@ -82,6 +84,7 @@ module.exports = function({utPort}) {
             this.bytesReceived = this.counter && this.counter('counter', 'br', 'Bytes received', 300);
             return result;
         }
+
         connect() {
             this.connection && this.connection.close();
             this.connectionReady = false;
@@ -114,6 +117,7 @@ module.exports = function({utPort}) {
                     }
                 });
         }
+
         start() {
             this.cbc = this.config.cbc && crypto.cbc(this.config.cbc);
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
@@ -136,15 +140,17 @@ module.exports = function({utPort}) {
                     return result;
                 });
         }
+
         async stop() {
             clearTimeout(this.retryTimeout);
             // this.queue.push();
             this.connectionReady = false;
-            let connection = this.connection;
+            const connection = this.connection;
             this.connection = null;
             await (connection && connection.close());
             return super.stop(...arguments);
         }
+
         checkConnection(checkReady) {
             if (this.config.offline) return;
             if (!this.connection) {
@@ -160,23 +166,24 @@ module.exports = function({utPort}) {
                 });
             }
         }
+
         /**
              * @function exec
              * @description Handles SQL query execution
              * @param {Object} message
              */
         exec(message) {
-            let $meta = (arguments.length && arguments[arguments.length - 1]);
+            const $meta = (arguments.length && arguments[arguments.length - 1]);
             $meta.debug = !!this.bus.config.debug;
             let methodName = ($meta && $meta.method);
             if (methodName) {
-                let parts = methodName.match(/^([^[]*)(\[[0+?^]?])?$/);
+                const parts = methodName.match(/^([^[]*)(\[[0+?^]?])?$/);
                 let modifier;
                 if (parts) {
                     methodName = parts[1];
                     modifier = parts[2];
                 }
-                let method = this.findHandler(methodName);
+                const method = this.findHandler(methodName);
                 if (method instanceof Function) {
                     return Promise.resolve()
                         .then(() => method.apply(this, Array.prototype.slice.call(arguments)))
@@ -229,9 +236,9 @@ module.exports = function({utPort}) {
                 return Promise.reject(this.bus.errors['bus.methodNotFound']({params: {method: methodName}}));
             };
 
-            let debug = this.isDebug();
-            let request = this.getRequest();
-            let port = this;
+            const debug = this.isDebug();
+            const request = this.getRequest();
+            const port = this;
             return new Promise(function(resolve, reject) {
                 request.query(message.query, function(err, result) {
                     // let end = +new Date();
@@ -239,7 +246,7 @@ module.exports = function({utPort}) {
                     // todo record execution time
                     if (err) {
                         debug && (err.query = message.query);
-                        let error = port.errors.getError(err.message && err.message.split('\n').shift()) || sqlPortErrors.portSQL;
+                        const error = port.errors.getError(err.message && err.message.split('\n').shift()) || sqlPortErrors.portSQL;
                         reject(error(err));
                     } else {
                         $meta.mtid = 'response';
@@ -270,6 +277,7 @@ module.exports = function({utPort}) {
                 });
             });
         }
+
         getSchema() {
             let result = [];
             if (this.config.schema) {
@@ -296,19 +304,20 @@ module.exports = function({utPort}) {
                 return all;
             }, []);
         }
+
         updateSchema(schema) {
             this.checkConnection();
-            let busConfig = this.bus.config;
+            const busConfig = this.bus.config;
 
             function replaceAuditLog(statement) {
-                let parserSP = require('./parsers/mssqlSP');
-                let binding = parserSP.parse(statement);
+                const parserSP = require('./parsers/mssqlSP');
+                const binding = parserSP.parse(statement);
                 return statement.trim().replace(AUDIT_LOG, mssqlQueries.auditLog(binding));
             }
 
             function replaceCallParams(statement) {
-                let parserSP = require('./parsers/mssqlSP');
-                let binding = parserSP.parse(statement);
+                const parserSP = require('./parsers/mssqlSP');
+                const binding = parserSP.parse(statement);
                 return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding));
             }
 
@@ -355,11 +364,11 @@ module.exports = function({utPort}) {
             function tableToType(statement) {
                 if (statement.match(/^CREATE\s+TABLE/i)) {
                     statement = interpolate(statement, busConfig);
-                    let parserSP = require('./parsers/mssqlSP');
-                    let binding = parserSP.parse(statement);
+                    const parserSP = require('./parsers/mssqlSP');
+                    const binding = parserSP.parse(statement);
                     if (binding.type === 'table') {
-                        let name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
-                        let columns = binding.fields.map(function(field) {
+                        const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
+                        const columns = binding.fields.map(function(field) {
                             changeRowVersionType(field);
                             return `[${field.column}] [${field.type}]` +
                                 (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
@@ -377,11 +386,11 @@ module.exports = function({utPort}) {
                 let result = '';
                 if (statement.match(/^CREATE\s+TABLE/i)) {
                     statement = interpolate(statement, busConfig);
-                    let parserSP = require('./parsers/mssqlSP');
-                    let binding = parserSP.parse(statement);
+                    const parserSP = require('./parsers/mssqlSP');
+                    const binding = parserSP.parse(statement);
                     if (binding.type === 'table') {
-                        let name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
-                        let columns = binding.fields.map(function(field) {
+                        const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
+                        const columns = binding.fields.map(function(field) {
                             changeRowVersionType(field);
                             return ('[' + field.column + '] [' + field.type + ']' +
                                 (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
@@ -403,8 +412,8 @@ module.exports = function({utPort}) {
             function getSource(statement, fileName, objectName) {
                 statement = preProcess(statement, fileName, objectName);
                 if (statement.trim().match(/^CREATE\s+TYPE/i)) {
-                    let parserSP = require('./parsers/mssqlSP');
-                    let binding = parserSP.parse(statement);
+                    const parserSP = require('./parsers/mssqlSP');
+                    const binding = parserSP.parse(statement);
                     if (binding && binding.type === 'table type') {
                         return binding.fields.map(fieldSource).join('\r\n');
                     }
@@ -418,7 +427,7 @@ module.exports = function({utPort}) {
                 } else {
                     if (schema.source[params.objectId].length &&
                         (getSource(params.fileContent, params.fileName, params.objectName) !== schema.source[params.objectId])) {
-                        let deps = schema.deps[params.objectId];
+                        const deps = schema.deps[params.objectId];
                         if (deps) {
                             deps.names.forEach(function(dep) {
                                 delete schema.source[dep];
@@ -449,9 +458,9 @@ module.exports = function({utPort}) {
             }
 
             function retrySchemaUpdate(failedQueue) {
-                let newFailedQueue = [];
-                let request = self.getRequest();
-                let errCollection = [];
+                const newFailedQueue = [];
+                const request = self.getRequest();
+                const errCollection = [];
                 self.log.warn && self.log.warn('Retrying failed TX');
                 let promise = Promise.resolve();
                 failedQueue.forEach(function(schema) {
@@ -469,7 +478,7 @@ module.exports = function({utPort}) {
                                     return true;
                                 })
                                 .catch((err) => {
-                                    let newErr = err;
+                                    const newErr = err;
                                     newErr.fileName = schema.fileName;
                                     newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
                                     self.log.error && self.log.error(newErr);
@@ -490,15 +499,15 @@ module.exports = function({utPort}) {
                     });
             }
 
-            let self = this;
-            let schemas = this.getSchema();
-            let failedQueries = [];
+            const self = this;
+            const schemas = this.getSchema();
+            const failedQueries = [];
             let hashDropped = false;
             if (!schemas || !schemas.length) {
                 return schema;
             }
             return new Promise((resolve, reject) => {
-                let objectList = [];
+                const objectList = [];
                 let promise = Promise.resolve();
                 schemas.forEach((schemaConfig) => {
                     promise = promise
@@ -509,7 +518,7 @@ module.exports = function({utPort}) {
                                         reject(err);
                                         return;
                                     }
-                                    let queries = [];
+                                    const queries = [];
                                     files = files.sort().map(file => {
                                         return {
                                             originalName: file,
@@ -519,19 +528,19 @@ module.exports = function({utPort}) {
                                     if (schemaConfig.exclude && schemaConfig.exclude.length > 0) {
                                         files = files.filter((file) => !(schemaConfig.exclude.indexOf(file.name) >= 0));
                                     }
-                                    let objectIds = files.reduce(function(prev, cur) {
+                                    const objectIds = files.reduce(function(prev, cur) {
                                         prev[getObjectName(cur.name).toLowerCase()] = true;
                                         return prev;
                                     }, {});
                                     files.forEach(function(file) {
-                                        let objectName = getObjectName(file.name);
-                                        let objectId = objectName.toLowerCase();
-                                        let fileName = path.join(schemaConfig.path, file.originalName);
+                                        const objectName = getObjectName(file.name);
+                                        const objectId = objectName.toLowerCase();
+                                        const fileName = path.join(schemaConfig.path, file.originalName);
                                         if (!fs.statSync(fileName).isFile()) {
                                             return;
                                         }
                                         schemaConfig.linkSP && (objectList[objectId] = fileName);
-                                        let fileContent = fs.readFileSync(fileName).toString();
+                                        const fileContent = fs.readFileSync(fileName).toString();
                                         addQuery(queries, {
                                             fileName: fileName,
                                             objectName: objectName,
@@ -540,7 +549,7 @@ module.exports = function({utPort}) {
                                             createStatement: getCreateStatement(fileContent, fileName, objectName)
                                         });
                                         if (shouldCreateTT(objectId) && !objectIds[objectId + 'tt']) {
-                                            let tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                            const tt = tableToType(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
                                             if (tt) {
                                                 addQuery(queries, {
                                                     fileName: fileName,
@@ -550,7 +559,7 @@ module.exports = function({utPort}) {
                                                     createStatement: tt
                                                 });
                                             }
-                                            let ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
+                                            const ttu = tableToTTU(fileContent.trim().replace(/^ALTER /i, 'CREATE '));
                                             if (ttu) {
                                                 addQuery(queries, {
                                                     fileName: fileName,
@@ -563,8 +572,8 @@ module.exports = function({utPort}) {
                                         }
                                     });
 
-                                    let request = self.getRequest();
-                                    let updated = [];
+                                    const request = self.getRequest();
+                                    const updated = [];
                                     let innerPromise = Promise.resolve();
                                     if (queries.length && !hashDropped) {
                                         innerPromise = innerPromise
@@ -581,7 +590,7 @@ module.exports = function({utPort}) {
                                                 .then(() => updated.push(query.objectName))
                                                 .catch((err) => {
                                                     err.message = err.message + ' (' + query.fileName + ':' + (err.lineNumber || 1) + ':1)';
-                                                    let newError = sqlPortErrors['portSQL.updateSchema'](err);
+                                                    const newError = sqlPortErrors['portSQL.updateSchema'](err);
                                                     newError.fileName = query.fileName;
                                                     if (!this.config.retrySchemaUpdate) {
                                                         throw newError;
@@ -624,19 +633,21 @@ module.exports = function({utPort}) {
                     return self.loadSchema(objectList);
                 });
         }
+
         execTemplate(template, params) {
-            let self = this;
+            const self = this;
             return template.render(params).then(function(query) {
                 return self.exec({query: query, process: 'json'})
                     .then(result => result && result.dataSet);
             });
         }
+
         execTemplateRow(template, params) {
             return this.execTemplate(template, params).then(function(data) {
-                let result = (data && data[0]) || {};
+                const result = (data && data[0]) || {};
                 if (result._errorCode && parseInt(result._errorCode, 10) !== 0) {
                     // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
-                    let error = sqlPortErrors.portSQL({
+                    const error = sqlPortErrors.portSQL({
                         code: result._errorCode || -1,
                         message: result._errorMessage || 'sql error'
                     });
@@ -646,12 +657,13 @@ module.exports = function({utPort}) {
                 }
             });
         }
+
         execTemplateRows(template, params) {
             return this.execTemplate(template, params).then(function(data) {
-                let result = data || [{}];
+                const result = data || [{}];
                 if (result[0] && result[0]._errorCode && parseInt(result[0]._errorCode, 10) !== 0) {
                     // throw error if _errorCode is '', undefined, null, number (different than 0) or string (different than '0', '00', etc.)
-                    let error = sqlPortErrors.portSQL({
+                    const error = sqlPortErrors.portSQL({
                         code: result[0]._errorCode || -1,
                         message: result[0]._errorMessage || 'sql error'
                     });
@@ -661,16 +673,18 @@ module.exports = function({utPort}) {
                 }
             });
         }
+
         getRequest() {
-            let request = new mssql.Request(this.connection);
+            const request = new mssql.Request(this.connection);
             request.on('info', (info) => {
                 this.log.warn && this.log.warn({ $meta: { mtid: 'event', opcode: 'message' }, message: info });
             });
             return request;
         }
+
         callSP(name, params, flatten, fileName) {
-            let self = this;
-            let outParams = [];
+            const self = this;
+            const outParams = [];
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
             });
@@ -698,7 +712,7 @@ module.exports = function({utPort}) {
                 if (!delimiter) {
                     return data;
                 }
-                let result = {};
+                const result = {};
                 function recurse(cur, prop) {
                     if (Object(cur) !== cur) {
                         result[prop] = cur;
@@ -712,7 +726,7 @@ module.exports = function({utPort}) {
                         result[prop] = cur;
                     } else {
                         let isEmpty = true;
-                        for (let p in cur) {
+                        for (const p in cur) {
                             isEmpty = false;
                             recurse(cur[p], prop ? prop + delimiter + p : p);
                         }
@@ -737,7 +751,7 @@ module.exports = function({utPort}) {
                     } else if (column.type.declaration === 'time') {
                         return new Date('1970-01-01T' + value + 'Z');
                     } else if (column.type.declaration === 'xml') {
-                        let obj = {};
+                        const obj = {};
                         obj[column.name] = value;
                         return xmlBuilder.buildObject(obj);
                     } else if (value.type === 'Buffer') {
@@ -748,10 +762,10 @@ module.exports = function({utPort}) {
             }
             return function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
-                let request = self.getRequest();
-                let data = flattenMessage(msg, flatten);
-                let debug = this.isDebug();
-                let debugParams = {};
+                const request = self.getRequest();
+                const data = flattenMessage(msg, flatten);
+                const debug = this.isDebug();
+                const debugParams = {};
                 request.multiple = true;
                 $meta.globalId = uuid.v1();
                 params && params.forEach(function(param) {
@@ -759,15 +773,15 @@ module.exports = function({utPort}) {
                     if (param.name === 'meta') {
                         value = Object.assign({}, $meta.forward, $meta);
                     } else if (param.update) {
-                        value = data[param.name] || data.hasOwnProperty(param.update);
+                        value = data[param.name] || Object.prototype.hasOwnProperty.call(data, param.update);
                     } else {
                         value = data[param.name];
                     }
                     if (param.encrypt) {
                         value = self.cbc.encrypt(value);
                     }
-                    let hasValue = value !== void 0;
-                    let type = sqlType(param.def);
+                    const hasValue = value !== undefined;
+                    const type = sqlType(param.def);
                     debug && (debugParams[param.name] = value);
                     if (param.def && param.def.type === 'time' && value != null) {
                         value = new Date('1970-01-01T' + value);
@@ -788,7 +802,7 @@ module.exports = function({utPort}) {
                                         row = flattenMessage(row, param.flatten);
                                         if (typeof row === 'object') {
                                             type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                                prev.push(getValue(type.columns[i], row[cur.column], cur.default, cur.update && row.hasOwnProperty(cur.update)));
+                                                prev.push(getValue(type.columns[i], row[cur.column], cur.default, cur.update && Object.prototype.hasOwnProperty.call(row, cur.update)));
                                                 return prev;
                                             }, []));
                                         } else {
@@ -799,7 +813,7 @@ module.exports = function({utPort}) {
                                 } else if (typeof value === 'object') {
                                     value = flattenMessage(value, param.flatten);
                                     type.rows.add.apply(type.rows, param.columns.reduce(function(prev, cur, i) {
-                                        prev.push(getValue(type.columns[i], value[cur.column], cur.default, cur.update && value.hasOwnProperty(cur.update)));
+                                        prev.push(getValue(type.columns[i], value[cur.column], cur.default, cur.update && Object.prototype.hasOwnProperty.call(value, cur.update)));
                                         return prev;
                                     }, []));
                                 } else {
@@ -817,12 +831,12 @@ module.exports = function({utPort}) {
                     }
                 });
                 if ($meta.saveAs) {
-                    var filename = typeof $meta.saveAs === 'string' ? $meta.saveAs : $meta.saveAs.filename;
+                    const filename = typeof $meta.saveAs === 'string' ? $meta.saveAs : $meta.saveAs.filename;
                     if (path.isAbsolute(filename)) {
                         throw sqlPortErrors['portSQL.absolutePath']();
                     }
-                    let baseDir = path.join(this.bus.config.workDir, 'ut-port-sql', 'export');
-                    let newFilename = path.resolve(baseDir, filename);
+                    const baseDir = path.join(this.bus.config.workDir, 'ut-port-sql', 'export');
+                    const newFilename = path.resolve(baseDir, filename);
                     if (!newFilename.startsWith(baseDir)) {
                         return Promise.reject(sqlPortErrors['portSQL.invalidFileLocation']());
                     }
@@ -836,7 +850,7 @@ module.exports = function({utPort}) {
                     })
                         .then(function(resolve, reject) {
                             request.stream = true;
-                            let ws = fs.createWriteStream(newFilename);
+                            const ws = fs.createWriteStream(newFilename);
                             saveAs(request, $meta.saveAs).pipe(ws);
                             request.execute(name);
                             return new Promise(function(resolve, reject) {
@@ -908,12 +922,12 @@ module.exports = function({utPort}) {
                         function isNamingResultSet(element) {
                             return Array.isArray(element) &&
                                 element.length === 1 &&
-                                element[0].hasOwnProperty('resultSetName') &&
+                                Object.prototype.hasOwnProperty.call(element[0], 'resultSetName') &&
                                 typeof element[0].resultSetName === 'string';
                         }
                         let error;
                         if (resultSets.length > 0 && isNamingResultSet(resultSets[0])) {
-                            let namedSet = {};
+                            const namedSet = {};
                             if (outParams.length) {
                                 namedSet[self.config.paramsOutName] = outParams.reduce(function(prev, curr) {
                                     prev[curr] = request.parameters[curr].value;
@@ -944,7 +958,7 @@ module.exports = function({utPort}) {
                                             expectName: false
                                         });
                                     }
-                                    if (namedSet.hasOwnProperty(name)) {
+                                    if (Object.prototype.hasOwnProperty.call(namedSet, name)) {
                                         throw sqlPortErrors['portSQL.duplicateResultSetName']({
                                             name: name
                                         });
@@ -987,19 +1001,19 @@ module.exports = function({utPort}) {
                         return resultSets;
                     })
                     .catch(function(err) {
-                        let errorLines = err.message && err.message.split('\n');
+                        const errorLines = err.message && err.message.split('\n');
                         err.message = errorLines.shift();
-                        let error = self.errors.getError(err.type || err.message) || sqlPortErrors.portSQL;
+                        const error = self.errors.getError(err.type || err.message) || sqlPortErrors.portSQL;
                         if (error.type === err.message) {
                             // use default message
                             delete err.message;
                         }
-                        let errToThrow = error(err);
+                        const errToThrow = error(err);
                         if (debug) {
                             err.storedProcedure = name;
                             err.params = debugParams;
                             err.fileName = (fileName || name) + ':' + err.lineNumber + ':1';
-                            let stack = errToThrow.stack.split('\n');
+                            const stack = errToThrow.stack.split('\n');
                             stack.splice.apply(stack, [1, 0].concat(errorLines));
                             errToThrow.stack = stack.join('\n');
                         }
@@ -1007,9 +1021,10 @@ module.exports = function({utPort}) {
                     });
             };
         }
+
         linkSP(schema) {
             if (schema.parseList.length) {
-                let parserSP = require('./parsers/mssqlSP');
+                const parserSP = require('./parsers/mssqlSP');
                 schema.parseList.forEach(function(procedure) {
                     let binding;
                     try {
@@ -1020,9 +1035,9 @@ module.exports = function({utPort}) {
                         }
                         throw e;
                     }
-                    let flatName = binding.name.replace(/[[\]]/g, '');
+                    const flatName = binding.name.replace(/[[\]]/g, '');
                     if (binding && binding.type === 'procedure') {
-                        let update = [];
+                        const update = [];
                         let flatten = false;
                         binding.params && binding.params.forEach(function(param) {
                             update.push(param.name + '$update');
@@ -1039,7 +1054,7 @@ module.exports = function({utPort}) {
                                 param.encrypt = true;
                             };
                             if (param.def && param.def.type === 'table') {
-                                let columns = schema.types[param.def.typeName.toLowerCase()];
+                                const columns = schema.types[param.def.typeName.toLowerCase()];
                                 param.columns = [];
                                 param.flatten = false;
                                 columns.forEach(function(column) {
@@ -1052,10 +1067,10 @@ module.exports = function({utPort}) {
                                     }
                                 });
                                 param.def.create = function() {
-                                    let table = new mssql.Table(param.def.typeName.toLowerCase());
+                                    const table = new mssql.Table(param.def.typeName.toLowerCase());
                                     columns && columns.forEach(function(column) {
                                         changeRowVersionType(column);
-                                        let type = mssql[column.type.toUpperCase()];
+                                        const type = mssql[column.type.toUpperCase()];
                                         if (!(type instanceof Function)) {
                                             throw sqlPortErrors['portSQL.unexpectedType']({
                                                 type: column.type,
@@ -1078,12 +1093,13 @@ module.exports = function({utPort}) {
             }
             return schema;
         }
+
         loadSchema(objectList, hash) {
-            let self = this;
-            let schema = this.getSchema();
-            let cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
+            const self = this;
+            const schema = this.getSchema();
+            const cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
             if (hash) {
-                let cacheFileName = cacheFile(hash);
+                const cacheFileName = cacheFile(hash);
                 if (fs.existsSync(cacheFileName)) {
                     return serverRequire(cacheFileName);
                 }
@@ -1092,13 +1108,13 @@ module.exports = function({utPort}) {
                 return { source: {}, parseList: [] };
             }
             this.checkConnection();
-            let request = this.getRequest();
+            const request = this.getRequest();
             request.multiple = true;
             return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false')).then(function(result) {
-                let schema = {source: {}, parseList: [], types: {}, deps: {}};
+                const schema = {source: {}, parseList: [], types: {}, deps: {}};
                 result.recordsets[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
-                    let full = cur.full;
-                    let namespace = cur.namespace;
+                    const full = cur.full;
+                    const namespace = cur.namespace;
                     cur.namespace = cur.namespace && cur.namespace.toLowerCase();
                     cur.full = cur.full && cur.full.toLowerCase();
                     if (cur.source) {
@@ -1119,7 +1135,7 @@ module.exports = function({utPort}) {
                     return prev;
                 }, schema);
                 result.recordsets[1].reduce(function(prev, cur) { // extract columns of user defined table types
-                    let parserDefault = require('./parsers/mssqlDefault');
+                    const parserDefault = require('./parsers/mssqlDefault');
                     changeRowVersionType(cur);
                     if (!(mssql[cur.type.toUpperCase()] instanceof Function)) {
                         throw sqlPortErrors['portSQL.unexpectedColumnType']({
@@ -1135,14 +1151,14 @@ module.exports = function({utPort}) {
                         err.userDefinedTableType = cur.name;
                         throw sqlPortErrors['portSQL.parserError'](err);
                     }
-                    let type = prev[cur.name] || (prev[cur.name] = []);
+                    const type = prev[cur.name] || (prev[cur.name] = []);
                     type.push(cur);
                     return prev;
                 }, schema.types);
                 result.recordsets[2].reduce(function(prev, cur) { // extract dependencies
                     cur.name = cur.name && cur.name.toLowerCase();
                     cur.type = cur.type && cur.type.toLowerCase();
-                    let dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: []});
+                    const dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: []});
                     if (dep.names.indexOf(cur.name) < 0) {
                         dep.names.push(cur.name);
                         dep.drop.push(cur.drop);
@@ -1157,8 +1173,8 @@ module.exports = function({utPort}) {
             })
                 .then(schema => {
                     if (objectList && self.config.cache) {
-                        let content = stringify(schema);
-                        let contentHash = crypto.hash(content);
+                        const content = stringify(schema);
+                        const contentHash = crypto.hash(content);
                         fsplus.makeTreeSync(cacheFile());
                         fs.writeFileSync(cacheFile(contentHash), content);
                         return request.query(mssqlQueries.setHash(contentHash))
@@ -1168,10 +1184,11 @@ module.exports = function({utPort}) {
                     }
                 });
         }
+
         refreshView(drop, data) {
             this.checkConnection();
             if (this.config.offline) return drop ? this.config.offline : data;
-            let schema = this.getSchema();
+            const schema = this.getSchema();
             if ((Array.isArray(schema) && !schema.length) || !schema) {
                 if (drop && this.config.cache) {
                     return this.getRequest()
@@ -1192,16 +1209,17 @@ module.exports = function({utPort}) {
                     return !drop && data;
                 });
         }
+
         doc(schema) {
             if (!this.config.doc) {
                 return schema;
             }
             this.checkConnection();
-            let self = this;
-            let schemas = this.getSchema();
-            let parserSP = require('./parsers/mssqlSP');
+            const self = this;
+            const schemas = this.getSchema();
+            const parserSP = require('./parsers/mssqlSP');
             return new Promise(function(resolve, reject) {
-                let docList = [];
+                const docList = [];
                 let promise = Promise.resolve();
                 schemas.forEach(function(schemaConfig) {
                     promise = promise
@@ -1213,13 +1231,13 @@ module.exports = function({utPort}) {
                                     }
                                     files = files.sort();
                                     files.forEach(function(file) {
-                                        let fileName = schemaConfig.path + '/' + file;
+                                        const fileName = schemaConfig.path + '/' + file;
                                         if (!fs.statSync(fileName).isFile()) {
                                             return;
                                         }
-                                        let fileContent = fs.readFileSync(fileName).toString();
+                                        const fileContent = fs.readFileSync(fileName).toString();
                                         if (fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+PROCEDURE/i) || fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+TABLE/i)) {
-                                            let binding = parserSP.parse(fileContent);
+                                            const binding = parserSP.parse(fileContent);
                                             if (binding.type === 'procedure') {
                                                 binding.params.forEach((param) => {
                                                     if (param.doc) {
@@ -1261,9 +1279,9 @@ module.exports = function({utPort}) {
                     .catch(reject);
             })
                 .then(function(docList) {
-                    let request = self.getRequest();
+                    const request = self.getRequest();
                     request.multiple = true;
-                    let docListParam = new mssql.Table('core.documentationTT');
+                    const docListParam = new mssql.Table('core.documentationTT');
                     docListParam.columns.add('type0', mssql.VarChar(128));
                     docListParam.columns.add('name0', mssql.NVarChar(128));
                     docListParam.columns.add('type1', mssql.VarChar(128));
@@ -1281,23 +1299,24 @@ module.exports = function({utPort}) {
                         });
                 });
         }
+
         tryConnect() {
             if (this.config.offline) return;
             if (this.config.connection) {
                 this.config.connection.beforeConnect = c => {
                     if (c.debug) {
-                        let id = (++this.connectionAttempt);
-                        let created = new Date();
+                        const id = (++this.connectionAttempt);
+                        const created = new Date();
                         let context = {id, created};
-                        let notify = (event, connection) => {
+                        const notify = (event, connection) => {
                             this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.pool.' + event}, connection});
                         };
                         c.debug.packet = (direction, packet) => {
                             if (direction === 'Sent') {
-                                let length = packet.length();
+                                const length = packet.length();
                                 this.bytesSent && this.bytesSent(length + 8);
                                 if (this.log.trace) {
-                                    let id = packet.packetId();
+                                    const id = packet.packetId();
                                     if (id === 255 || packet.isLast()) {
                                         this.log.trace({
                                             $meta: {mtid: 'event', opcode: 'port.pool.out'},
@@ -1308,10 +1327,10 @@ module.exports = function({utPort}) {
                                 }
                             }
                             if (direction === 'Received') {
-                                let length = packet.length();
+                                const length = packet.length();
                                 this.bytesReceived && this.bytesReceived(length + 8);
                                 if (this.log.trace) {
-                                    let id = packet.packetId();
+                                    const id = packet.packetId();
                                     if (id === 255 || packet.isLast()) {
                                         this.log.trace({
                                             $meta: {mtid: 'event', opcode: 'port.pool.in'},
@@ -1329,7 +1348,7 @@ module.exports = function({utPort}) {
                         };
                         c.once('connect', err => {
                             if (!err) {
-                                let stream = c.messageIo.socket;
+                                const stream = c.messageIo.socket;
                                 context = {
                                     id,
                                     created,
@@ -1355,7 +1374,7 @@ module.exports = function({utPort}) {
                 return Number.isInteger(value) ? value : undefined;
             };
 
-            let sanitize = options => ({
+            const sanitize = options => ({
                 ...options,
                 ...{
                     requestTimeout: toInt(options.requestTimeout),
@@ -1365,7 +1384,7 @@ module.exports = function({utPort}) {
 
             this.connection = new mssql.ConnectionPool(sanitize(this.config.connection));
             if (this.config.create && this.config.create.user) {
-                let conCreate = new mssql.ConnectionPool(
+                const conCreate = new mssql.ConnectionPool(
                     sanitize({...this.config.connection, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
                 );
 
@@ -1408,7 +1427,7 @@ module.exports = function({utPort}) {
     }
 
     function setPathProperty(object, fieldName, fieldValue) {
-        let path = fieldName.split('.');
+        const path = fieldName.split('.');
         fieldName = path.pop();
         path.forEach(function(name) {
             if (name) {

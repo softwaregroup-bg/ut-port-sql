@@ -1,20 +1,20 @@
 const through2 = require('through2');
-let { getResultSetName } = require('./helpers');
-var transforms = {
+const { getResultSetName } = require('./helpers');
+const transforms = {
     json: require('./json'),
     jsonl: require('./jsonLines'),
     csv: require('./csv')
 };
 module.exports = function(request, saveAs) {
-    var config = Object.assign({}, {
+    const config = Object.assign({}, {
         namedSet: undefined,
         single: undefined
     }, typeof saveAs === 'object' ? saveAs : {});
-    var filename = typeof saveAs === 'string' ? saveAs : saveAs.filename;
-    var ext = filename.split('.').pop();
-    let Transform = transforms[ext];
+    const filename = typeof saveAs === 'string' ? saveAs : saveAs.filename;
+    const ext = filename.split('.').pop();
+    const Transform = transforms[ext];
     if (!Transform) throw new Error('File type not supported');
-    var transform;
+    let transform;
     return request.pipe(through2({objectMode: true}, function(chunk, encoding, next) {
         if (config.namedSet === undefined) { // called only once to write object start literal
             config.namedSet = !!getResultSetName(chunk);

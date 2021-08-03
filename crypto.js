@@ -5,12 +5,12 @@ const defIV = '1234567890123456';
 
 module.exports = {
     encrypt: (text, algorithm, password, iv) => {
-        let cipher = crypto.createCipheriv(algorithm, password || defPassword, iv || defIV);
+        const cipher = crypto.createCipheriv(algorithm, password || defPassword, iv || defIV);
 
         return new Promise((resolve, reject) => {
             let encrypted = '';
             cipher.on('readable', () => {
-                let data = cipher.read();
+                const data = cipher.read();
                 if (data) {
                     encrypted += data.toString('hex');
                 }
@@ -24,12 +24,12 @@ module.exports = {
         });
     },
     decrypt: (text, algorithm, password, iv) => {
-        let decipher = crypto.createDecipheriv(algorithm, password || defPassword, iv || defIV);
+        const decipher = crypto.createDecipheriv(algorithm, password || defPassword, iv || defIV);
 
         return new Promise((resolve, reject) => {
             let decrypted = '';
             decipher.on('readable', () => {
-                let data = decipher.read();
+                const data = decipher.read();
                 if (data) {
                     decrypted += data.toString('utf8');
                 }
@@ -44,13 +44,13 @@ module.exports = {
     },
     hash: content => crypto.createHash('sha256').update(content).digest('hex'),
     cbc: key => {
-        var iv = Buffer.alloc(16);
+        const iv = Buffer.alloc(16);
         crypto.randomFillSync(iv);
         if (typeof key === 'string') {
             key = Buffer.from(key, 'hex');
         }
-        var enc = crypto.createCipheriv('aes-256-cbc', key, iv);
-        var dec = crypto.createDecipheriv('aes-256-cbc', key, iv);
+        const enc = crypto.createCipheriv('aes-256-cbc', key, iv);
+        const dec = crypto.createDecipheriv('aes-256-cbc', key, iv);
         dec.update(iv);
 
         function pad(s) {

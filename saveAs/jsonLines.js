@@ -1,5 +1,5 @@
-var Transform = require('./transform');
-let { getResultSetName } = require('./helpers');
+const Transform = require('./transform');
+const { getResultSetName } = require('./helpers');
 
 module.exports = class JsonLinesTransform extends Transform {
     constructor(stream, config) {
@@ -8,11 +8,13 @@ module.exports = class JsonLinesTransform extends Transform {
         }
         super(stream, config);
     }
+
     onRow(chunk) {
-        let jsonString = JSON.stringify({[this.currentResultset]: chunk});
-        let line = `${jsonString}${this.config.lineSeparator}`;
+        const jsonString = JSON.stringify({[this.currentResultset]: chunk});
+        const line = `${jsonString}${this.config.lineSeparator}`;
         this.stream.push(line);
     }
+
     onResultSet(chunk) {
         this.currentResultset = getResultSetName(chunk);
     }

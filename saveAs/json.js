@@ -1,5 +1,5 @@
-var Transform = require('./transform');
-let { getResultSetName } = require('./helpers');
+const Transform = require('./transform');
+const { getResultSetName } = require('./helpers');
 class JsonTransform extends Transform {
     constructor(stream, config) {
         super(stream, config);
@@ -8,11 +8,13 @@ class JsonTransform extends Transform {
             resultsetPrev: null
         };
     }
+
     onStart() {
         this.stream.push(this.config.namedSet ? '{' : '[');
     }
+
     onEnd() {
-        let { namedSet, single } = this.config;
+        const { namedSet, single } = this.config;
         if (namedSet !== undefined) {
             if (single === false) {
                 this.stream.push(']'); // push end of array literal If the last object is not a single
@@ -20,17 +22,19 @@ class JsonTransform extends Transform {
             this.stream.push(namedSet ? '}' : ']'); //  write object end literal
         }
     }
+
     onRow(chunk) {
-        let { comma } = this.options;
+        const { comma } = this.options;
         this.stream.push(comma + JSON.stringify(chunk));
         if (comma === '') {
             this.options.comma = ',';
         }
     }
+
     onResultSet(chunk) {
-        var current = getResultSetName(chunk);
-        let { single } = this.config;
-        let { comma, resultsetPrev } = this.options;
+        const current = getResultSetName(chunk);
+        const { single } = this.config;
+        const { comma, resultsetPrev } = this.options;
         if (resultsetPrev) {
             if (comma === '') {
                 this.stream.push(resultsetPrev.single ? '{},' : '],'); // handling empty result set

@@ -3,9 +3,11 @@ class Transform {
         this.stream = stream;
         this.config = config || {};
     }
+
     setOptions(key, value) {
         this.config[key] = value;
     }
+
     onStart() {};
     onRow(chunk) {}
     onResultSet(chunk) {}
