@@ -1,6 +1,7 @@
 # **SQL Port:** `ut-port-sql`
 
-The purpose of this port is to work with SQL Server database. To be responsible for creating connections to the database and for query execution.
+The purpose of this port is to work with SQL Server database.
+To be responsible for creating connections to the database and for query execution.
 
 ## **Dependencies**
 
