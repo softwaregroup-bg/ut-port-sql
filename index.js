@@ -1388,18 +1388,6 @@ module.exports = function({utPort}) {
                     sanitize({...this.config.connection, ...{user: '', password: '', database: ''}, ...this.config.create}) // expect explicit user/pass
                 );
 
-                // Patch for https://github.com/patriksimek/node-mssql/issues/467
-                conCreate._throwingClose = conCreate._close;
-                conCreate._close = function(callback) {
-                    const close = conCreate._throwingClose.bind(this, callback);
-                    if (this.pool) {
-                        return this.pool.drain().then(close);
-                    } else {
-                        return close();
-                    }
-                };
-                // end patch
-
                 return conCreate.connect()
                     .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database)))
                     .then(() => this.config.create.diagram && new mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.connection.database)))
