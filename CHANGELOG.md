@@ -1,3 +1,12 @@
+# [7.40.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.39.2...v7.40.0) (2021-09-09)
+
+
+### Features
+
+* collect SP parameter types ([2f54379](https://github.com/softwaregroup-bg/ut-port-sql/commit/2f543792b7faf61cbff2629283d2b49954fdaadc))
+
+
+
 ## [7.39.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.39.1...v7.39.2) (2021-07-23)
 
 
