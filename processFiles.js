@@ -117,7 +117,13 @@ function getSource(binding, statement, fileName, objectName, cbc) {
 
 function addQuery(schema, queries, params, cbc) {
     if (schema.source[params.objectId] === undefined) {
-        queries.push({fileName: params.fileName, objectName: params.objectName, objectId: params.objectId, content: params.createStatement});
+        queries.push({
+            binding: params.binding,
+            fileName: params.fileName,
+            objectName: params.objectName,
+            objectId: params.objectId,
+            content: params.createStatement
+        });
     } else {
         if (schema.source[params.objectId].length &&
             (getSource(params.binding, params.fileContent, params.fileName, params.objectName, cbc) !== schema.source[params.objectId])) {

@@ -20,7 +20,7 @@ function changeRowVersionType(field) {
     }
 }
 
-module.exports = function({utPort, registerErrors, vfs}) {
+module.exports = function({utPort, registerErrors, vfs, joi}) {
     if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
 
     return class SqlPort extends utPort {
@@ -229,6 +229,17 @@ module.exports = function({utPort, registerErrors, vfs}) {
             });
 
             this.hmac = this.config.hmac && crypto.hmac(this.config.hmac);
+            this.import();
+            return Promise.resolve()
+                .then(() => super.start(...arguments))
+                .then(this.connect.bind(this))
+                .then(result => {
+                    this.pull(this.exec);
+                    return result;
+                });
+        }
+
+        import() {
             this.bus && this.bus.attachHandlers(this.methods, this.config.imports);
             if (this.config.createTT != null) this.log.warn && this.log.warn('Property createTT should be moved in schema array');
             this.methods.importedMap && Array.from(this.methods.importedMap.values()).forEach(value => {
@@ -248,13 +259,6 @@ module.exports = function({utPort, registerErrors, vfs}) {
                 if (Array.isArray(value.cbcDate)) value.cbcDate.forEach(key => { this.config.cbcDate[key] = true; });
             });
             if (this.config.namespace) this.config.namespace = Array.from(new Set([].concat(this.config.namespace)));
-            return Promise.resolve()
-                .then(() => super.start(...arguments))
-                .then(this.connect.bind(this))
-                .then(result => {
-                    this.pull(this.exec);
-                    return result;
-                });
         }
 
         async stop() {
@@ -1298,6 +1302,113 @@ module.exports = function({utPort, registerErrors, vfs}) {
             } else {
                 return this.connection.connect();
             }
+        }
+
+        async types() {
+            const common = require('ut-function.common-joi')({joi});
+            function validation({name, def: {type, size, typeName}, doc}) {
+                let result;
+                switch (type) {
+                    case 'table':
+                        result = joi.array().items(joi.object().meta({className: typeName.replace('.', 'TableTypes.') + '.params'}));
+                        break;
+                    case 'bit':
+                        result = common.boolNull;
+                        break;
+                    case 'int':
+                        result = common.integerNull;
+                        break;
+                    case 'smallint':
+                        result = common.integerNull.min(-32768).max(32767);
+                        break;
+                    case 'tinyint':
+                        result = common.integerNull.min(0).max(255);
+                        break;
+                    case 'bigint':
+                        result = common.bigintNull;
+                        break;
+                    case 'decimal':
+                    case 'money':
+                        result = common.numberNull;
+                        break;
+                    case 'char':
+                        result = common.stringNull.max(1);
+                        break;
+                    case 'varbinary':
+                        // result = (parseInt(size) > 0) ? joi.binary().allow(null).max(size) : joi.binary.allow(null);
+                        result = joi.any();
+                        break;
+                    case 'varchar':
+                    case 'nvarchar':
+                        result = (parseInt(size) > 0) ? common.stringNull.max(size) : common.stringNull;
+                        break;
+                    case 'date':
+                    case 'time':
+                    case 'datetime':
+                    case 'datetime2':
+                    case 'datetimeoffset':
+                        result = common.dateNull;
+                        break;
+                    case 'xml':
+                        result = joi.object();
+                        break;
+                    default:
+                        // console.log(name, type, doc);
+                        result = joi.any();
+                }
+                if (doc) result = result.description(doc);
+                return [name, result];
+            }
+
+            this.init();
+            this.import();
+            const busConfig = this.bus.config;
+            const folders = this.getPaths('schema');
+            const schema = {
+                source: {}
+            };
+            const {processFiles} = require('./processFiles');
+            const procedures = {};
+            for (const schemaConfig of folders) {
+                Object.assign(procedures, await new Promise((resolve, reject) => {
+                    vfs.readdir(schemaConfig.path, (err, files) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        const {queries} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc);
+                        resolve(Object.fromEntries(queries.map(query => {
+                            switch (query?.binding?.type) {
+                                case 'procedure':
+                                    return [
+                                        'db/' + query.objectName,
+                                        () => ({
+                                            params: joi.object().keys(Object.fromEntries(query.binding.params.map(param => validation(param)).filter(Boolean))),
+                                            result: joi.any()
+                                        })
+                                    ];
+                                case 'table type':
+                                    return [
+                                        query.objectName.replace('.', 'TableTypes.'),
+                                        () => ({
+                                            name: query.objectName.replace('.', 'TableTypes.'),
+                                            private: true,
+                                            params: joi.object().keys(Object.fromEntries(query.binding.fields.map(field => validation({
+                                                name: field.column,
+                                                def: {
+                                                    type: field.type,
+                                                    size: field.length
+                                                },
+                                                doc: field.doc
+                                            })).filter(Boolean)))
+                                        })
+                                    ];
+                            }
+                        }).filter(Boolean)));
+                    });
+                }));
+            }
+            return procedures;
         }
     };
 
