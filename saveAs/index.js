@@ -50,6 +50,9 @@ module.exports = function(request, saveAs) {
         } else {
             let ws = fs.createWriteStream(config.filename);
             stream.pipe(ws);
+            stream.on('error', function(error) {
+                return reject(error);
+            });
             ws.on('finish', () => {
                 resolve();
             });
@@ -59,5 +62,4 @@ module.exports = function(request, saveAs) {
         }
         request.execute(spParams);
     });
-     
 };
