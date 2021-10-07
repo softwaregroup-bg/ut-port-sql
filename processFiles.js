@@ -159,7 +159,7 @@ function shouldCreateTT(schemaConfig, tableName) {
 
 function interpolate(txt, params = {}) {
     return txt.replace(VAR_RE, (placeHolder, label) => {
-        const value = dotProp.get(params, label);
+        const value = dotProp.get(params, label, placeHolder);
         switch (typeof value) {
             case 'undefined': return placeHolder;
             case 'object': return JSON.stringify(value);
