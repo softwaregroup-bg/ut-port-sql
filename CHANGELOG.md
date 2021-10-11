@@ -1,3 +1,12 @@
+## [7.40.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.40.0...v7.40.1) (2021-10-11)
+
+
+### Bug Fixes
+
+* pass default value ([#108](https://github.com/softwaregroup-bg/ut-port-sql/issues/108)) ([9772472](https://github.com/softwaregroup-bg/ut-port-sql/commit/9772472f09013b66b965145c3c6f46c5bee65847))
+
+
+
 # [7.40.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.39.2...v7.40.0) (2021-09-09)
 
 
