@@ -1,3 +1,12 @@
+## [7.40.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.40.1...v7.40.2) (2021-10-12)
+
+
+### Bug Fixes
+
+* switch dot-prop with lodash.get ([faf9b73](https://github.com/softwaregroup-bg/ut-port-sql/commit/faf9b734f3ead5e4175a2b1c6370c30200a0a7c7))
+
+
+
 ## [7.40.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.40.0...v7.40.1) (2021-10-11)
 
 
