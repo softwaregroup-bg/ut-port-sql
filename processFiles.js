@@ -8,7 +8,7 @@ const ENCRYPTSTABLE_RE = /(?:NULL|0x.*)\/\*encryptStable (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const VAR_RE = /\$\{([^}]*)\}/g;
 const path = require('path');
-const dotProp = require('dot-prop');
+const get = require('lodash.get');
 const parserSP = require('./parsers/mssqlSP');
 const includes = require('ut-function.includes');
 const yaml = require('yaml');
@@ -159,7 +159,7 @@ function shouldCreateTT(schemaConfig, tableName) {
 
 function interpolate(txt, params = {}) {
     return txt.replace(VAR_RE, (placeHolder, label) => {
-        const value = dotProp.get(params, label, placeHolder);
+        const value = get(params, label, placeHolder);
         switch (typeof value) {
             case 'object': return JSON.stringify(value);
             default: return value;
