@@ -73,7 +73,7 @@ function flattenMessage(data, delimiter, limit) {
             ;
         } else if (Object(cur) !== cur) {
             result[prop] = cur;
-        } else if (Array.isArray(cur)) {
+        } else if (Array.isArray(cur) || Buffer.isBuffer(cur)) {
             // for (let i = 0, l = cur.length; i < l; i += 1) {
             //     flat(cur[i], prop + '[' + i + ']');
             // }

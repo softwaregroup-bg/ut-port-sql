@@ -699,10 +699,12 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     let value;
                     if (ngramParam && param.name === 'ngram') return;
                     if (param.name === 'meta') {
+                        const traceId = $meta.forward['x-b3-traceid'];
                         value = Object.assign(
                             {},
                             $meta.forward,
                             $meta,
+                            (traceId?.length === 32) && {traceId: Buffer.from(traceId, 'hex')},
                             $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId, 'auth.checkSession': $meta.auth.checkSession}
                         );
                     } else if (param.def && param.def.typeName && param.def.typeName.endsWith('.ngramTT')) {
