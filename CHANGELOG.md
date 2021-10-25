@@ -1,3 +1,12 @@
+## [7.41.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.41.0...v7.41.1) (2021-10-25)
+
+
+### Bug Fixes
+
+* explicit check for $meta.forward ([127174f](https://github.com/softwaregroup-bg/ut-port-sql/commit/127174f5e5fcbb180c4dc4a6035d9e99ea66a2d6))
+
+
+
 # [7.41.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.40.2...v7.41.0) (2021-10-25)
 
 
