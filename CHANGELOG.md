@@ -1,3 +1,12 @@
+# [7.41.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.40.2...v7.41.0) (2021-10-25)
+
+
+### Features
+
+* pass traceId ([cbed6e2](https://github.com/softwaregroup-bg/ut-port-sql/commit/cbed6e2884788e093a2d9af07c1255f269296349))
+
+
+
 ## [7.40.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.40.1...v7.40.2) (2021-10-12)
 
 
