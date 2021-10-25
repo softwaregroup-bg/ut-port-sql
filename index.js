@@ -699,7 +699,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     let value;
                     if (ngramParam && param.name === 'ngram') return;
                     if (param.name === 'meta') {
-                        const traceId = $meta.forward['x-b3-traceid'];
+                        const traceId = $meta.forward?.['x-b3-traceid'];
                         value = Object.assign(
                             {},
                             $meta.forward,
