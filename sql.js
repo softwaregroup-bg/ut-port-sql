@@ -872,10 +872,26 @@ module.exports = {
     permissionCheck: ({
         '@actionId': actionId = 'OBJECT_SCHEMA_NAME(@@PROCID) + \'.\' + OBJECT_NAME(@@PROCID)',
         '@objectId': objectId = 'NULL',
-        offset = ''
-    }) => (
-        'DECLARE @actionId_' + offset + ' VARCHAR(100) = ' + actionId + ', @return_' + offset + ' INT = 0;' +
-        'EXEC @return_' + offset + ' = [user].[permission.check] @actionId = @actionId_' + offset + ', @objectId = ' + objectId + ', @meta = @meta; ' +
-        'IF (@return_' + offset + ' != 0) BEGIN RETURN 55555; END'
-    )
+        offset = '',
+        ...rest
+    }) => {
+        const declarations = [
+            ['@actionId', 'VARCHAR(100)', actionId],
+            ['@objectId', 'VARCHAR(100)', objectId]
+        ];
+
+        const callParams = Object.entries(rest).map(([key, value = key]) => `${value} ${key.slice(1)}`);
+
+        declarations.push([
+            '@callParams',
+            'XML',
+            callParams.length
+                ? '(SELECT ' + callParams.join(', ') + ' for XML RAW(\'params\'))'
+                : 'NULL'
+        ]);
+
+        return `DECLARE @return_${offset} INT = 0, ${declarations.map(([name, type, value]) => `${name}_${offset} ${type} = ${value}`).join(', ')}; ` +
+            `EXEC @return_${offset} = [user].[permission.check] @meta = @meta, ${declarations.map(([name]) => `${name} = ${name}_${offset}`).join(', ')}; ` +
+            `IF (@return_${offset} != 0) BEGIN RETURN 55555; END`
+    }
 };
