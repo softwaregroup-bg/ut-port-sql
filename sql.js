@@ -892,6 +892,6 @@ module.exports = {
 
         return `DECLARE @return_${offset} INT = 0, ${declarations.map(([name, type, value]) => `${name}_${offset} ${type} = ${value}`).join(', ')}; ` +
             `EXEC @return_${offset} = [user].[permission.check] @meta = @meta, ${declarations.map(([name]) => `${name} = ${name}_${offset}`).join(', ')}; ` +
-            `IF (@return_${offset} != 0) BEGIN RETURN 55555; END`
+            `IF (@return_${offset} != 0) BEGIN RETURN 55555; END`;
     }
 };
