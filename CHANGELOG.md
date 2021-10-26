@@ -1,3 +1,12 @@
+# [7.42.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.41.1...v7.42.0) (2021-10-26)
+
+
+### Features
+
+* pass callParams to user.permission.check ([df352a1](https://github.com/softwaregroup-bg/ut-port-sql/commit/df352a1b48ba6bd0ca4d8d34e844faf8f2f61ec1))
+
+
+
 ## [7.41.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.41.0...v7.41.1) (2021-10-25)
 
 
