@@ -1,3 +1,12 @@
+## [7.42.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.42.0...v7.42.1) (2021-11-16)
+
+
+### Bug Fixes
+
+* pass [@call](https://github.com/call)Params to core.errorLog if provided as a parameter of the procedure ([f47f692](https://github.com/softwaregroup-bg/ut-port-sql/commit/f47f692176f102a8d438d24e5d046e593f2ca869))
+
+
+
 # [7.42.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.41.1...v7.42.0) (2021-10-26)
 
 

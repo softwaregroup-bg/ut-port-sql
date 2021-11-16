@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.42.0",
+  "version": "7.42.1",
   "main": "./index.js",
   "dependencies": {
     "fs-plus": "3.1.1",
