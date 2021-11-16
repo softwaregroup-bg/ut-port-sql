@@ -52,6 +52,8 @@ const preProcess = (binding, statement, fileName, objectName, cbc) => {
     if (statement.match(CALL_PARAMS)) {
         statement = replaceCallParams(binding, statement);
         params = '@callParams';
+    } else if (binding?.params?.find(param => param.name === 'callParams' && param.def.type === 'xml')) {
+        params = '@callParams';
     }
     if (statement.match(CORE_ERROR)) {
         statement = replaceCoreError(statement, fileName, objectName, params);
