@@ -20,9 +20,28 @@ const VAR_RE = /\$\{([^}]*)\}/g;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 let errors;
 const serverRequire = require;
+const tedious = require('tedious');
+
+tedious.TYPES.Money.writeParameterData = function writeParameterData(buffer, parameter) {
+    if (parameter.value != null) {
+        buffer.writeUInt8(8);
+        buffer.writeMoney((parameter.value * 1000000) / 100);
+    } else {
+        buffer.writeUInt8(0);
+    }
+};
+
+tedious.TYPES.SmallMoney.writeParameterData = function writeParameterData(buffer, parameter) {
+    if (parameter.value != null) {
+        buffer.writeUInt8(8);
+        buffer.writeMoney((parameter.value * 1000000) / 100);
+    } else {
+        buffer.writeUInt8(0);
+    }
+};
 
 // patch for https://github.com/tediousjs/tedious/pull/710
-require('tedious').TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
+tedious.TYPES.Time.writeParameterData = function writeParameterData(buffer, parameter, options) {
     if (parameter.value != null) {
         var time = new Date(+parameter.value);
 
