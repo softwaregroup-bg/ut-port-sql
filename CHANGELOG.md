@@ -1,3 +1,12 @@
+## [7.42.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.42.1...v7.42.2) (2021-12-06)
+
+
+### Bug Fixes
+
+* allow already prefixed times ([d46cfb8](https://github.com/softwaregroup-bg/ut-port-sql/commit/d46cfb8728447b90b1cccb9e16c71cc7fd7cffb1))
+
+
+
 ## [7.42.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.42.0...v7.42.1) (2021-11-16)
 
 
