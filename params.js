@@ -48,7 +48,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
         } else if (typeof value === 'string' && column.type.declaration.toUpperCase() === ROW_VERSION_INNER_TYPE) {
             return /^[0-9A-Fa-f]+$/.test(value) ? Buffer.from(value, 'hex') : Buffer.from(value, 'utf-8');
         } else if (column.type.declaration === 'time') {
-            return new Date('1970-01-01T' + value + 'Z');
+            return value?.includes?.('T') ? new Date(value) : new Date('1970-01-01T' + value + 'Z');
         } else if (column.type.declaration === 'xml') {
             const obj = {};
             obj[column.name] = value;
@@ -124,7 +124,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
     const hasValue = value !== undefined;
     const type = sqlType(param.def);
     if (param.def && param.def.type === 'time' && value != null) {
-        value = new Date('1970-01-01T' + value);
+        value = value?.includes?.('T') ? value : new Date('1970-01-01T' + value);
     } else if (param.def && /datetime/.test(param.def.type) && value != null && !(value instanceof Date)) {
         value = new Date(value);
     } else if (param.def && param.def.type === 'xml' && value != null) {
