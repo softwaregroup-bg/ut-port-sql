@@ -5,8 +5,9 @@ require('ut-run').run({
         () => ({
             test: () => [
                 (...params) => class db extends require('../')(...params) {},
-                function test() {
+                function sql() {
                     return {
+                        namespace: 'test',
                         schema: [{
                             path: path.join(__dirname, 'schema'),
                             linkSP: true
@@ -16,8 +17,8 @@ require('ut-run').run({
                         }],
                         'test.test.deadlock': function(_, $meta) {
                             return Promise.all([
-                                this.bus.importMethod('db/test.test.selectHoldLock')({}, $meta),
-                                this.bus.importMethod('db/test.test.selectHoldLock')({reversed: true}, $meta)
+                                this.exec({}, {method: 'test.test.selectHoldLock'}),
+                                this.exec({reverse: true}, {method: 'test.test.selectHoldLock'})
                             ]);
                         }
                     };
@@ -30,10 +31,9 @@ require('ut-run').run({
         implementation: 'port-sql',
         test: true,
         db: {
-            namespace: 'db/test',
-            imports: ['test'],
+            imports: ['sql'],
             allowQuery: true,
-            logLevel: 'error',
+            logLevel: 'warn',
             connection: {
                 server: 'infradb14',
                 user: '${decrypt(\'3b280fb6a2c0c22483dfb73be18128774fa156653edd29eebed4f3c4e8f5c0fa\')}',
@@ -48,7 +48,7 @@ require('ut-run').run({
         steps: [
             {
                 name: 'exec',
-                method: 'db/test.query',
+                method: 'test.query',
                 params: {
                     query: 'SELECT 1 AS test',
                     process: 'json'
@@ -63,10 +63,7 @@ require('ut-run').run({
                 method: 'test.test.deadlock',
                 params: {},
                 result: (result, assert) => {
-                    assert.ok(result, 'result returned');
-                },
-                error: (error, assert) => {
-                    assert.ok(error, 'error returned');
+                    assert.ok(result, 'deadlock retried');
                 }
             }
         ]

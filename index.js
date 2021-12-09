@@ -44,6 +44,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 paramsOutName: 'out',
                 doc: false,
                 maxNesting: 5,
+                retryOnDeadlock: true,
                 cbcStable: {},
                 compatibilityLevel: 120,
                 cbcDate: {},
@@ -68,6 +69,9 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             return {
                 type: 'object',
                 properties: {
+                    retryOnDeadlock: {
+                        type: ['boolean']
+                    },
                     compatibilityLevel: {
                         type: 'integer',
                         enum: [0, 100, 110, 120, 130, 140, 150]
@@ -686,11 +690,11 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 param.out && outParams.push(param.name);
             });
 
-            return function callLinkedSP(msg, $meta) {
+            function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
                 const request = self.getRequest();
                 const data = flattenMessage(msg, flatten, nesting);
-                const debug = this.isDebug();
+                const debug = self.isDebug();
                 const debugParams = {};
                 const ngramParam = ngram && ngram.def.create();
                 request.multiple = true;
@@ -724,7 +728,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
 
                 if ($meta.saveAs) return saveAs(self, request, $meta, name);
 
-                if (this.config.offline) return []; // todo offline exec
+                if (self.config.offline) return []; // todo offline exec
 
                 return request.execute(name)
                     .then(async({recordsets}) => {
@@ -847,6 +851,17 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             errToThrow.stack = stack.join('\n');
                         }
                         throw errToThrow;
+                    });
+            };
+
+            return function callLinkedSpWrapper(msg, $meta) {
+                return callLinkedSP(msg, $meta)
+                    .catch(function(e) {
+                        if (e.cause.number === 1205 && self.config.retryOnDeadlock) {
+                            self.log.warn && self.log.warn({ $meta: { mtid: 'event', method: 'portSQL.deadlock' }, method: $meta.method });
+                            return callLinkedSP(msg, $meta);
+                        }
+                        throw e;
                     });
             };
         }

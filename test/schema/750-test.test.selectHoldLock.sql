@@ -1,13 +1,12 @@
 ALTER PROCEDURE test.[test.selectHoldLock]
-    @reversed BIT = 0
+    @reverse BIT = 0
 AS
-DECLARE @reminder TINYINT = CAST(@reversed AS TINYINT)
 BEGIN TRY
     BEGIN TRANSACTION
-        SELECT * FROM test.test WITH (UPDLOCK, HOLDLOCK) WHERE id % 2 != @reminder
-        WAITFOR DELAY '00:00:03'
-        SELECT * FROM test.test WITH (UPDLOCK, HOLDLOCK) WHERE id % 2 = @reminder
-        WAITFOR DELAY '00:00:03'
+        SELECT * FROM test.test WITH (UPDLOCK, HOLDLOCK) WHERE id = IIF(@reverse = 0, 1, 2)
+        WAITFOR DELAY '00:00:02'
+        SELECT * FROM test.test WITH (UPDLOCK, HOLDLOCK) WHERE id = IIF(@reverse = 0, 2, 1)
+        WAITFOR DELAY '00:00:02'
     COMMIT TRANSACTION
 END TRY
 BEGIN CATCH
