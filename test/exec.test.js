@@ -59,7 +59,7 @@ require('ut-run').run({
                 }
             },
             {
-                name: 'exec',
+                name: 'deadlock',
                 method: 'test.test.deadlock',
                 params: {},
                 result: (result, assert) => {

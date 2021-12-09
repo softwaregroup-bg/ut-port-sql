@@ -70,7 +70,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 type: 'object',
                 properties: {
                     retryOnDeadlock: {
-                        type: ['boolean']
+                        type: 'boolean'
                     },
                     compatibilityLevel: {
                         type: 'integer',
