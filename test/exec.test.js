@@ -1,12 +1,39 @@
+const path = require('path');
 /* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
-    main: (...params) => class db extends (require('../')(...params)) {},
+    main: [
+        () => ({
+            test: () => [
+                (...params) => class db extends require('../')(...params) {},
+                function sql() {
+                    return {
+                        namespace: 'test',
+                        schema: [{
+                            path: path.join(__dirname, 'schema'),
+                            linkSP: true
+                        }],
+                        seed: [{
+                            path: path.join(__dirname, 'seed')
+                        }],
+                        'test.test.deadlock': function(_, $meta) {
+                            return Promise.all([
+                                this.exec({}, {method: 'test.test.selectHoldLock'}),
+                                this.exec({reverse: true}, {method: 'test.test.selectHoldLock'})
+                            ]);
+                        }
+                    };
+                }
+            ]
+        })
+    ],
     method: 'unit',
     config: {
         implementation: 'port-sql',
+        test: true,
         db: {
+            imports: ['sql'],
             allowQuery: true,
-            logLevel: 'error',
+            logLevel: 'warn',
             connection: {
                 server: 'infradb14',
                 user: '${decrypt(\'3b280fb6a2c0c22483dfb73be18128774fa156653edd29eebed4f3c4e8f5c0fa\')}',
@@ -20,15 +47,23 @@ require('ut-run').run({
     params: {
         steps: [
             {
-                method: 'db.query',
                 name: 'exec',
+                method: 'test.query',
                 params: {
                     query: 'SELECT 1 AS test',
                     process: 'json'
                 },
                 result: (result, assert) => {
-                    assert.ok(Array.isArray(result.dataSet));
-                    assert.equal(result.dataSet[0].test, 1);
+                    assert.ok(Array.isArray(result.dataSet), 'result returned');
+                    assert.equal(result.dataSet[0].test, 1, 'result correctness checked');
+                }
+            },
+            {
+                name: 'deadlock',
+                method: 'test.test.deadlock',
+                params: {},
+                result: (result, assert) => {
+                    assert.ok(result, 'deadlock retried');
                 }
             }
         ]
