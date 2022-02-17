@@ -717,7 +717,11 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             $meta.forward,
                             $meta,
                             (traceId?.length === 32) && {traceId: Buffer.from(traceId, 'hex')},
-                            $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId, 'auth.checkSession': $meta.auth.checkSession}
+                            $meta.auth && {
+                                'auth.actorId': $meta.auth.actorId,
+                                'auth.sessionId': $meta.auth.sessionId,
+                                'auth.checkSession': $meta.auth.checkSession
+                            }
                         );
                     } else if (param.def && param.def.typeName && param.def.typeName.endsWith('.ngramTT')) {
                         value = param.options && Object.keys(param.options).map(name => {
