@@ -5,14 +5,20 @@ const xmlBuilder = new xml2js.Builder({headless: true});
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 const WORDS = /(\p{Letter}|\d)+/gu;
 const LETTER = /\p{Letter}|\d/gu;
+const TAGS = /(\p{Letter}|\d|=|\.)+/gu;
 
 function addNgram(hmac, ngramParam, add, row, param, column, string) {
     const options = ngramParam.options && ngramParam.options[column];
     if (!options) return ngramParam;
     const id = typeof options === 'number' ? options : options.id;
     const unique = new Set();
-    const match = string.toLowerCase().match(WORDS);
+    const tags = options.tags || column?.endsWith?.('Tags');
+    const match = string.toLowerCase().match(tags ? TAGS : WORDS);
     match && match.forEach(word => {
+        if (tags) {
+            unique.add(word);
+            return;
+        }
         word = word.match(LETTER);
         if (word) {
             const {min = 3, max = 3, depth = word.length - min} = options;
@@ -32,15 +38,17 @@ function addNgram(hmac, ngramParam, add, row, param, column, string) {
 }
 
 function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
+    const calcNgram = what => what && ngram && addNgram(hmac, ngram, ngram.add, index, param.name, param.name + '.' + column.name, what);
     if (updated) {
         return updated;
     }
     if (value === undefined) {
+        calcNgram(def);
         return def;
     } else if (value) {
         if (cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
             if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
-            ngram && addNgram(hmac, ngram, ngram.add, index, param.name, param.name + '.' + column.name, value);
+            calcNgram(value);
             return cbc.encrypt(value, column.name);
         } else if (/^(date.*|smalldate.*)$/.test(column.type.declaration)) {
             // set a javascript date for 'date', 'datetime', 'datetime2' 'smalldatetime'
@@ -59,6 +67,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
             return JSON.stringify(value);
         }
     }
+    calcNgram(value);
     return value;
 }
 
