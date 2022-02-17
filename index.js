@@ -10,8 +10,9 @@ const uuid = require('uuid');
 const path = require('path');
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
-const {setParam, isEncrypted, flattenMessage} = require('./params');
+const {setParam, isEncrypted} = require('./params');
 const bcp = require('./bcp');
+const lodashGet = require('lodash.get');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -693,7 +694,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
                 const request = self.getRequest();
-                const data = flattenMessage(msg, flatten, nesting);
+                const getParam = name => flatten ? lodashGet(msg, name.split(flatten)) : msg[name];
                 const debug = self.isDebug();
                 const debugParams = {};
                 const ngramParam = ngram && ngram.def.create();
@@ -712,11 +713,14 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             $meta.auth && {auth: null, 'auth.actorId': $meta.auth.actorId, 'auth.sessionId': $meta.auth.sessionId, 'auth.checkSession': $meta.auth.checkSession}
                         );
                     } else if (param.def && param.def.typeName && param.def.typeName.endsWith('.ngramTT')) {
-                        value = param.options && Object.keys(param.options).map(name => data[name] && [name, data[name]]).filter(Boolean);
+                        value = param.options && Object.keys(param.options).map(name => {
+                            const value = getParam(name);
+                            return value && [name, value];
+                        }).filter(Boolean);
                     } else if (param.update) {
-                        value = data[param.name] || Object.prototype.hasOwnProperty.call(data, param.update);
+                        value = getParam(param.update) !== undefined;
                     } else {
-                        value = data[param.name];
+                        value = getParam(param.name);
                     }
                     value = setParam(self.cbc, self.hmac, ngram && {
                         options: ngram.options,

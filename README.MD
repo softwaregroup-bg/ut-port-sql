@@ -99,10 +99,13 @@ module.exports = function sql() {
 This configuration will make the port scan the specified folders and synchronize
 database schema. The optional `exclude` property can specify files to be excluded
 from synchronization. It can be a string, a regular expression, of array of these.
+
+## Calling stored procedures
+
 In addition, procedures from the first folder will be automatically
 linked to the port (because of the `linkSP: true` setting), so that they can be
 executed directly, based on their schema name and procedure name.
-So for the following procedure:
+Given the following procedure:
 
 ```sql
 CREATE PROCEDURE schema1.storedProcedureName
@@ -113,7 +116,7 @@ AS
   ...
 ```
 
-The stored procedure can be called using this:
+It can be called using this:
 
 ```js
 bus.importMethod('schema1.storedProcedureName')({
@@ -126,6 +129,37 @@ bus.importMethod('schema1.storedProcedureName')({
   }]
 })
 ```
+
+Parameter names for the stored procedure can be named so that they can
+refer to nested properties of the first argument of the method call.
+
+For example, the if we have the following procedure:
+
+```sql
+CREATE PROCEDURE schema1.storedProcedureName
+  @a_b_c int,
+  @d_0_e_1 nvarchar(20)
+AS
+  ...
+```
+
+When called from JS using this:
+
+```js
+bus.importMethod('schema1.storedProcedureName')({
+  a: {b: {c: 1}},
+  d: [{e:['zero', 'one']}]
+})
+```
+
+will receive the following values for the parameters:
+
+* `@a_b_c` = 1
+* `@d_0_e_1` = 'one'
+
+The parameter names (without @) are basically passed to the `String.split` function,
+using `_` as separator, then the result is passed as the path argument for the
+[lodash.get](https://lodash.com/docs/4.17.15#get) function.
 
 Linking can be fine-tuned with the linkSP configuration property, that can be
 set on the port. It can be boolean, function, object, regular expression or
