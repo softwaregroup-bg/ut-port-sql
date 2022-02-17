@@ -1,6 +1,7 @@
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const xml2js = require('xml2js');
 const mssql = require('mssql');
+const lodashGet = require('lodash.get');
 const xmlBuilder = new xml2js.Builder({headless: true});
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
 const WORDS = /(\p{Letter}|\d)+/gu;
@@ -71,40 +72,6 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
     return value;
 }
 
-function flattenMessage(data, delimiter, limit) {
-    if (!delimiter) {
-        return data;
-    }
-    const result = {};
-    function flatten(cur, prop, depth) {
-        if (depth > limit) throw new Error('Unsupported deep nesting for property ' + prop);
-        if (typeof cur === 'function') {
-            ;
-        } else if (Object(cur) !== cur) {
-            result[prop] = cur;
-        } else if (Array.isArray(cur) || Buffer.isBuffer(cur)) {
-            // for (let i = 0, l = cur.length; i < l; i += 1) {
-            //     flat(cur[i], prop + '[' + i + ']');
-            // }
-            // if (l === 0) {
-            //     result[prop] = [];
-            // }
-            result[prop] = cur;
-        } else {
-            let isEmpty = true;
-            for (const p in cur) {
-                isEmpty = false;
-                flatten(cur[p], prop ? prop + delimiter + p : p, depth + 1);
-            }
-            if (isEmpty && prop) {
-                result[prop] = {};
-            }
-        }
-    }
-    flatten(data, '', 1);
-    return result;
-}
-
 function sqlType(def) {
     let type;
     if (def.type === 'table') {
@@ -154,7 +121,6 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                             addNgram(hmac, param, (...columns) => type.rows.add(...columns), 1, 'search', row[0], row[1]);
                             return;
                         }
-                        row = flattenMessage(row, param.flatten, limit);
                         if (typeof row === 'object') {
                             type.rows.add(...param.columns.map((column, index) => getValue(
                                 cbc,
@@ -163,7 +129,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                                 rowIndex + 1,
                                 param,
                                 type.columns[index],
-                                row[column.column],
+                                param.flatten ? lodashGet(row, column.column.split(param.flatten)) : row[column.column],
                                 column.default,
                                 column.update && Object.prototype.hasOwnProperty.call(row, column.update)
                             )));
@@ -182,7 +148,6 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                         }
                     });
                 } else if (typeof value === 'object') {
-                    value = flattenMessage(value, param.flatten, limit);
                     type.rows.add(...param.columns.map((column, index) => getValue(
                         cbc,
                         hmac,
@@ -190,12 +155,11 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
                         1,
                         param,
                         type.columns[index],
-                        value[column.column],
+                        param.flatten ? lodashGet(value, column.column.split(param.flatten)) : value[column.column],
                         column.default,
                         column.update && Object.prototype.hasOwnProperty.call(value, column.update)
                     )));
                 } else {
-                    value = flattenMessage(value, param.flatten, limit);
                     type.rows.add(getValue(
                         cbc,
                         hmac,
@@ -219,4 +183,4 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
     return value;
 }
 
-module.exports = {setParam, isEncrypted, flattenMessage};
+module.exports = {setParam, isEncrypted};
