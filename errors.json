@@ -22,5 +22,6 @@
     "portSQL.absolutePath": "Absolute path error",
     "portSQL.invalidFileLocation": "Writing outside of base directory is forbidden",
     "portSQL.spNotFound": "Stored Procedure not found: {name}",
+    "portSQL.decrypt": "Field decryption failed for: {field}",
     "portSQL.exportError": "Export error"
 }

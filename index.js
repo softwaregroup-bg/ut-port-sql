@@ -204,7 +204,14 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                         field && (field === true || this.config.cbcStable[field] || cbcStable(field))
                     ),
                     decrypt: (value, field, stable) => {
-                        value = decrypt(value, stable || (field && (this.config.cbcStable[field] || cbcStable(field))));
+                        try {
+                            value = decrypt(value, stable || (field && (this.config.cbcStable[field] || cbcStable(field))));
+                        } catch (err) {
+                            throw this.errors['portSQL.decrypt']({
+                                cause: err,
+                                params: {field}
+                            });
+                        }
                         return this.config.cbcDate[field] ? new Date(parseInt(value)) : value;
                     }
                 };
