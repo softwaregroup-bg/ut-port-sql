@@ -99,10 +99,13 @@ module.exports = function sql() {
 This configuration will make the port scan the specified folders and synchronize
 database schema. The optional `exclude` property can specify files to be excluded
 from synchronization. It can be a string, a regular expression, of array of these.
+
+## Calling stored procedures
+
 In addition, procedures from the first folder will be automatically
 linked to the port (because of the `linkSP: true` setting), so that they can be
 executed directly, based on their schema name and procedure name.
-So for the following procedure:
+Given the following procedure:
 
 ```sql
 CREATE PROCEDURE schema1.storedProcedureName
@@ -113,7 +116,7 @@ AS
   ...
 ```
 
-The stored procedure can be called using this:
+It can be called using this:
 
 ```js
 bus.importMethod('schema1.storedProcedureName')({
@@ -126,6 +129,37 @@ bus.importMethod('schema1.storedProcedureName')({
   }]
 })
 ```
+
+Parameter names for the stored procedure can be named so that they can
+refer to nested properties of the first argument of the method call.
+
+For example, the if we have the following procedure:
+
+```sql
+CREATE PROCEDURE schema1.storedProcedureName
+  @a_b_c int,
+  @d_0_e_1 nvarchar(20)
+AS
+  ...
+```
+
+When called from JS using this:
+
+```js
+bus.importMethod('schema1.storedProcedureName')({
+  a: {b: {c: 1}},
+  d: [{e:['zero', 'one']}]
+})
+```
+
+will receive the following values for the parameters:
+
+* `@a_b_c` = 1
+* `@d_0_e_1` = 'one'
+
+The parameter names (without @) are basically passed to the `String.split` function,
+using `_` as separator, then the result is passed as the path argument for the
+[lodash.get](https://lodash.com/docs/4.17.15#get) function.
 
 Linking can be fine-tuned with the linkSP configuration property, that can be
 set on the port. It can be boolean, function, object, regular expression or
@@ -164,13 +198,13 @@ control the order of execution. The below convention is recommended.
 Note the **camelCase** naming convention. File names, including extension are
 **case sensitive**.
 
-- `150-schemaName.sql` for **schema** creation:
+* `150-schemaName.sql` for **schema** creation:
 
   ```sql
   CREATE SCHEMA [schemaName]
   ```
 
-- `250-schemaName.synonymName.sql` for **single synonym per file** creation.
+* `250-schemaName.synonymName.sql` for **single synonym per file** creation.
   Note that this needs to be in single line in the actual file.
   Following the below exact query format (i.e. using the [ and ] brackets and no
   extra spaces) and filename matches the `xxx-schema.object` pattern. Any
@@ -181,7 +215,7 @@ Note the **camelCase** naming convention. File names, including extension are
   [synonymName] FOR [foreignDatabaseName].[foreignSchemaName].[foreignObjectName]
   ```
 
-- `250-schemaName.scriptName.sql` for **multiple synonyms per file** creation.
+* `250-schemaName.scriptName.sql` for **multiple synonyms per file** creation.
   Filename should not match any object name in the database. The recommended
   queries in this case are:
 
@@ -213,7 +247,7 @@ Note the **camelCase** naming convention. File names, including extension are
    END
    ```
 
-- `340-schemaName.typeName.sql` for **used defined table type**.
+* `340-schemaName.typeName.sql` for **used defined table type**.
   The script will be executed as is, only when the used defined table type does
   not exist.
 
@@ -224,7 +258,7 @@ Note the **camelCase** naming convention. File names, including extension are
   )
   ```
 
-- `350-schemaName.tableName.sql` for **tables without FK**. File content should
+* `350-schemaName.tableName.sql` for **tables without FK**. File content should
   start with CREATE or ALTER keyword. Note the key field and primary key naming conventions.
   The script will be executed as is, only when the table does not exist.
 
@@ -238,7 +272,7 @@ Note the **camelCase** naming convention. File names, including extension are
   )
   ```
 
-- `360-schemaName.tableName.sql` for **tables with 1 FK**. File content should
+* `360-schemaName.tableName.sql` for **tables with 1 FK**. File content should
   start with CREATE or ALTER keyword. Note the foreign field and foreign key
   naming conventions and the use of underscore to separate the foreign table name.
   The script will be executed as is, only when the table does not exist.
@@ -254,7 +288,7 @@ Note the **camelCase** naming convention. File names, including extension are
   )
   ```
 
-- `370-schemaName.tableName.sql` for **tables with more than 1 FK**. File
+* `370-schemaName.tableName.sql` for **tables with more than 1 FK**. File
   content should start with CREATE or ALTER keyword. Note the foreign field and
   foreign key naming conventions and the use of underscore to separate the
   foreign table name. The script will be executed as is, only when the table
@@ -276,7 +310,7 @@ Note the **camelCase** naming convention. File names, including extension are
   )
   ```
 
-- `380-schemaName.alterTable.sql` for **altering tables** to add missing columns
+* `380-schemaName.alterTable.sql` for **altering tables** to add missing columns
   or modify existing columns that do not involve table recreation. This script
   will be executed on each reconnection to the database.
 
@@ -291,7 +325,7 @@ Note the **camelCase** naming convention. File names, including extension are
     END
   ```
 
-- `450-schemaName.functionName.sql` for **functions**. File content should start
+* `450-schemaName.functionName.sql` for **functions**. File content should start
   with CREATE or ALTER keyword.
 
   ```sql
@@ -306,7 +340,7 @@ Note the **camelCase** naming convention. File names, including extension are
   END
   ```
 
-- `550-schemaName.tableNameInsert.sql` for INSERT **triggers**. File content
+* `550-schemaName.tableNameInsert.sql` for INSERT **triggers**. File content
   should start with CREATE or ALTER keyword. Similar pattern can be used other triggers.
 
   ```sql
@@ -317,7 +351,7 @@ Note the **camelCase** naming convention. File names, including extension are
     ...
   ```
 
-- `650-schemaName.viewName.sql` for **views**. File content should start with
+* `650-schemaName.viewName.sql` for **views**. File content should start with
   CREATE or ALTER keyword.
 
    ```sql
@@ -326,7 +360,7 @@ Note the **camelCase** naming convention. File names, including extension are
      ...
    ```
 
-- `750-schemaName.procedureName.sql` for **stored procedures**. File content
+* `750-schemaName.procedureName.sql` for **stored procedures**. File content
   should start with CREATE or ALTER keyword. Note the mandatory camelCase naming
   convention for procedure, parameter and result column names.
 
@@ -340,7 +374,7 @@ Note the **camelCase** naming convention. File names, including extension are
     SELECT x columnName1, y columnName2, ...
   ```
 
-- `850-schemaName.data.sql` for **loading system default data**.
+* `850-schemaName.data.sql` for **loading system default data**.
   `WARNING - THIS IS DEPRECATED.`
   `THE RECOMMENDED APPROACH IS TO LOAD DATA THROUGH *.yaml FILES`
   Used for any scripts that will insert missing data:
@@ -354,7 +388,7 @@ Note the **camelCase** naming convention. File names, including extension are
   END
   ```
 
-- `850-schemaName.entity.merge.yaml` for **loading system default data**
+* `850-schemaName.entity.merge.yaml` for **loading system default data**
   This will call stored procedure, which should have already been created
   by previous files. These are usually procedures, which can safely merge
   the provided data, which is often non normalized and include no DB keys.
@@ -376,14 +410,14 @@ set to a boolean or an array of strings, specifying whether user defined table
 types matching the tables' structure should be automatically created. There are
 several scenarios:
 
-- If the property is set to `createTT: true`, then user defined table types will
+* If the property is set to `createTT: true`, then user defined table types will
    be automatically created for all tables.
 
-- If the property is set to an array of strings
+* If the property is set to an array of strings
   (e.g. `createTT: ['schema1.tableName1', 'schema2.tableName2']`)
   it means that user defined table types will be created for these tables only.
 
-- If the property is omitted or set to `createTT: false` then no user defined table
+* If the property is omitted or set to `createTT: false` then no user defined table
   types will be created.
 
 The user defined table types that get automatically created will have their
@@ -406,7 +440,7 @@ stored procedure should have a specific comment
 (--ut-permission-check) in its body which to be replaced
 with the respective snippet. There are several scenarios:
 
-- If the property is set to **true** then the permission check snippet
+* If the property is set to **true** then the permission check snippet
 will be enabled for all the stored procedures which
 have the --ut-permission-check comment somewhere within their body.
 e.g
@@ -426,7 +460,7 @@ e.g
     };
   ```
 
-- If the property is set to an array of strings the permission check snippet
+* If the property is set to an array of strings the permission check snippet
 will be enabled for those stored procedures only.
 
   ```js
@@ -447,7 +481,7 @@ will be enabled for those stored procedures only.
     };
   ```
 
-- if the property is omitted or set to **false**
+* if the property is omitted or set to **false**
 then no permission checking will be enabled.
 
 ```sql
@@ -541,22 +575,22 @@ This procedure can be called in one of the following ways, handling the
 procedure's returned non error `result` (which is array of arrays of row
 objects) in different ways:
 
-- `bus.importMethod('subject.object.predicate')(params)` - will resolve with `result`
-- `bus.importMethod('subject.object.predicate#[^]')(params)` - will resolve with
+* `bus.importMethod('subject.object.predicate')(params)` - will resolve with `result`
+* `bus.importMethod('subject.object.predicate#[^]')(params)` - will resolve with
   `null` or throw error `portSQL.noRowsExpected` if procedure returned more than
    one result set or procedure returned more than 0 rows in the first result set
-- `bus.importMethod('subject.object.predicate#[0]')(params)` - will resolve with
+* `bus.importMethod('subject.object.predicate#[0]')(params)` - will resolve with
   object containing the first row from the first result set (`result[0][0]`) or
   throw `portSQL.oneRowExpected`, if what procedure returned is not exactly one
   result set with exactly one row
-- `bus.importMethod('subject.object.predicate#[?]')(params)` - will resolve with
+* `bus.importMethod('subject.object.predicate#[?]')(params)` - will resolve with
   `null` or object containing the first row from the first result set
   (`result[0][0]`) or throw `portSQL.maxOneRowExpected`, if what procedure
   returned is not exactly one result set with maximum one row
-- `bus.importMethod('subject.object.predicate#[+]')(params)` - will array holding
+* `bus.importMethod('subject.object.predicate#[+]')(params)` - will array holding
   first result set rows (`result[0]`) or throw `portSQL.minOneRowExpected` if
   what procedure returned is not exactly one result set with one or more rows
-- `bus.importMethod('subject.object.predicate#[]')(params)` - will resolve with array
+* `bus.importMethod('subject.object.predicate#[]')(params)` - will resolve with array
   holding first result set rows [{row}, ...] or throw error
   `portSQL.singleResultsetExpected` if more than one result set is returned
 
@@ -638,27 +672,27 @@ Pass the the list of folders in the `format` configuration property:
 
 The folder is scanned for files named:
 
-- `schema.table.fmt` - this will create two methods in the SQL port
+* `schema.table.fmt` - this will create two methods in the SQL port
   with names `schema.table.import` and `schema.table.export`
-- `schema.table.operation.fmt` - this will create one method in the SQL
+* `schema.table.operation.fmt` - this will create one method in the SQL
   port with the name `schema.table.operation`
 
 The files will be used as format files for import or export of data
 in or from the `schema.table` table.
 These methods accept the following properties in their first argument:
 
-- `command` - the `bcp` command to execute (in / out / format)
+* `command` - the `bcp` command to execute (in / out / format)
   For the `*.import` and `*.export` methods, this is implicitly set to `in` or
   `out` respectively
-- `file` - file to use during the import or export
-- `firstRow` - start row, the default is `1`
-- `lastRow`- end row
-- `maxErrors` - maximum number of allowed errors
-- `hints` - hints for bulk import
-- `tempDir` - temporary folder to use for error messages, the default is `os.tmpdir()`
-- `separator` - field separator to use ( useful when generating a format file)
-- `terminator`- row terminator to use ( useful when generating a format file)
-- `unicode` - allow usage of unicode characters, default is `true`
+* `file` - file to use during the import or export
+* `firstRow` - start row, the default is `1`
+* `lastRow`- end row
+* `maxErrors` - maximum number of allowed errors
+* `hints` - hints for bulk import
+* `tempDir` - temporary folder to use for error messages, the default is `os.tmpdir()`
+* `separator` - field separator to use ( useful when generating a format file)
+* `terminator`- row terminator to use ( useful when generating a format file)
+* `unicode` - allow usage of unicode characters, default is `true`
   ( useful when generating a format file)
 
 For more details see the [bcp documentation](https://docs.microsoft.com/en-us/sql/tools/bcp-utility)
@@ -678,12 +712,12 @@ bcp schema.table format nul -c -fschema.table.fmt -Uuser -Ppass -Sserver
 SQL server port will automatically encrypt values of stored procedure parameters
 in these cases:
 
-- parameter type is varbinary and size is multiple of 16
-- parameter name starts with `'encrypted'`
-- if parameter type is table, values of these columns will be encrypted in these
+* parameter type is varbinary and size is multiple of 16
+* parameter name starts with `'encrypted'`
+* if parameter type is table, values of these columns will be encrypted in these
   cases:
-  - column type is varbinary and size is multiple of 16
-  - column name starts with `'encrypted'`
+  * column type is varbinary and size is multiple of 16
+  * column name starts with `'encrypted'`
 
 Since usually the stored procedures use auto generated table types, the
 encryption of parameters is achieved easily by just defining columns in the
@@ -705,7 +739,7 @@ column type is varbinary and size is multiple of 16
 column name starts with `'encrypted'`, in this case the result will include a
 column without this prefix.
 
-## Indexing of encrypted values
+## Indexing of encrypted values or tag lists
 
 To enable easier indexing of encrypted values, SQL port will look for
 annotations in the `*.sql` files that define the tables and procedures. These
@@ -729,34 +763,39 @@ CREATE TABLE [schemaName].[tableName](
 }*/
 ```
 
-- Setting the `ngram` property will create table type named `[schemaName].[ngramTT]`
+* Setting the `ngram` property will create table type named `[schemaName].[ngramTT]`
 that can be used in the stored procedures that want to receive n-grams
-- Setting the `ngram.index` to true will:
-  - create an index table named `[schemaName].[tableNameIndex]` for storing the n-grams
-  - create a table type named `[schemaName].[ngramIndexTT]`
-  - create a stored procedure named `[schemaName].[tableNameIndexMerge]` for merging
-    n-grams in the index table
-- Setting the `ngram.search` to true will create a function named
+* Setting the `ngram.index` to true will:
+  * create an index table named `[schemaName].[tableNameIndex]` for storing the n-grams
+  * create a table type named `[schemaName].[ngramIndexTT]`
+  * create a stored procedure named `[schemaName].[tableNameIndexMerge]` for merging
+  n-grams in the index table
+* Setting the `ngram.search` to true will create a function named
 `[schemaName].[tableNameSearch]` for searching the n-grams index
 
 ### Annotating stored procedure parameters
 
 Annotation of stored procedure parameters allows n-grams to be generated and
-passed to the stored procedure. Annotation uses JSON within multiline comment
-after the parameter definition:
+passed to the stored procedure. The annotation consists of a JSON within
+a multiline comment before an ngramTT parameter:
 
 ```sql
 CREATE PROCEDURE [schemaName].[method]
-    @paramName [schemaName].[tableNameTT] READONLY
+    @paramName [schemaName].[tableNameTT] READONLY,
 /*{
-    "paramName.text": true
+    "paramName.text": 1,
+    "paramName.demo": {
+      "id": 2,
+      "min": 3,
+      "max": 5
+    }
 }*/
     @ngram [schemaName].[ngramTT] READONLY
 AS
 ```
 
-The JSON properties define how each encrypted column is to be indexed. It can
-include parameters to the n-gram generation. Passing just true activates the
+The JSON properties define how each column is to be indexed. It can
+include parameters to the n-gram generation. Passing just a number activates the
 most common one - trigram generation. All generated n-grams will be passed in
 the `@ngram` parameter. Each row in the `@ngram` variable will include information
 for the parameter name and table row number used during n-gram generation.
@@ -775,6 +814,56 @@ FROM
     (SELECT id, RANK() OVER (ORDER BY id) rnk FROM @inserted) i
 JOIN
     @ngram n ON n.row = i.rnk AND n.param = 'paramName'
+```
+
+### Indexing of tags
+
+Tags or labels can be used as flags which mark specific conditions for the
+data. They are useful when the data includes values, for which no individual
+table column is available.
+
+Tags can be passed in a string parameter or table type column. The following
+format is recommended:
+
+```ini
+aaa.bbb=ccc
+...
+xxx.yyy=zzz
+```
+
+Individual tags are alphanumeric strings, which also can contain
+the dot and equal sign. They can be of any length, but for the index
+they are hashed to a fixed length of 32 bytes (256 bits) and passed
+in the ngramTT parameter for which they are configured.
+
+Distinguishing between tags or n-grams is done by the name or
+by explicit configuration:
+
+```sql
+-- by column/parameter name suffix "Tags"
+CREATE PROCEDURE [schemaName].[method]
+    @someTags VARCHAR(100),
+    @paramName [schemaName].[tableNameTT] READONLY
+/*{
+    "paramName.demoTags": 1,
+    "someTags": 2
+}*/
+    @ngram [schemaName].[ngramTT] READONLY
+AS
+```
+
+```sql
+-- by configuration
+CREATE PROCEDURE [schemaName].[method]
+    @paramName [schemaName].[tableNameTT] READONLY
+/*{
+    "paramName.demo": {
+        "tags": true,
+        "id": 1
+    }
+}*/
+    @ngram [schemaName].[ngramTT] READONLY
+AS
 ```
 
 ### Searching in n-gram index
@@ -806,7 +895,7 @@ WHERE
 
 The automatically created search function expects 2 parameters:
 
-- `@ngram` - list of n-gram hashes to search for
-- `@fuzzy` - a float value, that specifies how many of the n-grams must match,
+* `@ngram` - list of n-gram hashes to search for
+* `@fuzzy` - a float value, that specifies how many of the n-grams must match,
   where 1 means 100%. The function returns the list of keys that contain the
   passed n-grams
