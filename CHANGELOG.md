@@ -1,3 +1,7 @@
+# [7.43.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.42.3...v7.43.0) (2022-03-01)
+
+
+
 ## [7.42.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.42.2...v7.42.3) (2021-12-09)
 
 
