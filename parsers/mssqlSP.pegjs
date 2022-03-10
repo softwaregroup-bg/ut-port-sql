@@ -355,12 +355,14 @@ WhitespaceSingleLineComment = WhiteSpace? "--" x:SingleLineCommentBody {return x
 unique = "UNIQUE"i
 
 index
-  = "INDEX"i ws1 n:name ws u:unique? ws c:clustered? ws lparen ws col:names ws rparen {
+  = "INDEX"i ws1 n:name ws u:unique? ws c:clustered? ws lparen ws col:names ws rparen
+    filter:(ws1 "WHERE" filter:((ws1 name)+ {return text().trim()}){return filter})? {
       return {
           type: "INDEX",
           name: n,
           clustered: !!c && c.toLowerCase() === "clustered",
           unique: !!u && u.toLowerCase() === "unique",
-          columns: col
+          columns: col,
+          filter
         }
     }

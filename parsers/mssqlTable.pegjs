@@ -38,7 +38,7 @@
       }
    }
 
-   function addUneque(name, last) {
+   function addUnique(name, last) {
       if (!last) {
 	     table.uneques.push(name);
  	  }
@@ -70,24 +70,33 @@ table_constraint
    = "CONSTRAINT" ws* column_name ws*
    (tab_const_pk / tab_const_fk / tab_const_unique)
 
+table_index
+   = "INDEX" ws* column_name ws*
+   (
+      ("UNIQUE"? ws* clust? ws* lparen ws* column_name order? ws* (comma ws* column_name order? ws*)* ws* rparen) /
+      ("CLUSTERED" ws* "COLUMNSTORE") /
+      ("NONCLUSTERED"? ws* "COLUMNSTORE" ws* lparen ws* column_name ws* (comma ws* column_name ws*)* ws* rparen)
+   )
+   with?
+
 tab_const_unique
    = "UNIQUE" ws* lparen ws* name:column_name ws*
-   (comma ws* name:column_name { addUneque(name); })* rparen
-   { addUneque(name, true); }
+   (comma ws* name1:column_name { addUnique(name1); })* rparen
+   { addUnique(name, true); }
 
 tab_const_pk
    = "PRIMARY KEY" ws+ clust? ws* lparen ws*
    key:column_name ws* order:order? ws*
-   (comma ws* key:column_name ws* order:order? { addPrimaryKey(key, order) })* ws* rparen ws*
+   (comma ws* key1:column_name ws* order1:order? { addPrimaryKey(key1, order1) })* ws* rparen ws*
    { addPrimaryKey(key, order, true) }
 
 on = "ON" ws* column_name
 
 tab_const_fk
    = "FOREIGN KEY" ws* lparen ws* key:column_name ws*
-   (comma ws* key:column_name { addForeignKey(key) })* rparen ws*
+   (comma ws* key1:column_name { addForeignKey(key1) })* rparen ws*
    "REFERENCES" ws+ tb:table_name ws* lparen ref:column_name ws*
-   (comma ws* ref:column_name { addForeignKey(null, ref) })* rparen ws*
+   (comma ws* ref1:column_name { addForeignKey(null, ref1) })* rparen ws*
    { addForeignKey(key, ref, tb); }
 
 fk_clause_action
