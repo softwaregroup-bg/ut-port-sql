@@ -1,3 +1,12 @@
+# [7.44.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.43.0...v7.44.0) (2022-03-10)
+
+
+### Features
+
+* filtered index support ([0a5ecb2](https://github.com/softwaregroup-bg/ut-port-sql/commit/0a5ecb2fe1ee18380ddf7aded35b2212bb40297b))
+
+
+
 # [7.43.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.42.3...v7.43.0) (2022-03-01)
 
 
