@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "7.44.1",
+  "version": "8.0.0-gallium.0",
   "main": "./index.js",
   "dependencies": {
     "fs-plus": "3.1.1",
