@@ -70,7 +70,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
             value != null &&
             typeof value !== 'string' &&
             value.toString &&
-            param.def &&
+            column.type &&
             ['char', 'nchar', 'varchar', 'nvarchar', 'text', 'ntext', 'uniqueidentifier'].includes(column.type.declaration)
         ) {
             value = value.toString();
