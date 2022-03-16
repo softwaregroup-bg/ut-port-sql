@@ -909,6 +909,10 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             }
                         });
                         binding.params && binding.params.forEach(param => {
+                            // we rely on this feature, which was removed by
+                            // https://github.com/tediousjs/tedious/commit/46972ef35d2f36486b9592a1e810dcbbfc32ddb3
+                            if (param.def && ['varbinary', 'varchar'].includes(param.def.type.toLowerCase())) param.def.size = 8000;
+
                             (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
                             if (isEncrypted(param) && this.cbc) {
                                 param.encrypt = true;
