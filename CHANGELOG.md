@@ -1,3 +1,12 @@
+## [7.44.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.1...v7.44.2) (2022-03-16)
+
+
+### Bug Fixes
+
+* configure csv separator on csv export ALZ-7910 ([#114](https://github.com/softwaregroup-bg/ut-port-sql/issues/114)) ([620db65](https://github.com/softwaregroup-bg/ut-port-sql/commit/620db6510c25b5eef051731447ade50fdfe253dd))
+
+
+
 ## [7.44.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.0...v7.44.1) (2022-03-11)
 
 
