@@ -48,7 +48,7 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
         return def;
     } else if (value != null) {
         if (cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
-            if (!value) return value;
+            if (value === '') return Buffer.alloc(0);
             if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
             calcNgram(value);
             return cbc.encrypt(value, column.name);
