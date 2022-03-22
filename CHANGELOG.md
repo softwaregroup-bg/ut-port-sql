@@ -1,3 +1,12 @@
+## [7.44.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.2...v7.44.3) (2022-03-22)
+
+
+### Bug Fixes
+
+* bcp trustServerCertificate ([231b554](https://github.com/softwaregroup-bg/ut-port-sql/commit/231b554054d07fdd41e9a782571d6597b803ed3c))
+
+
+
 ## [7.44.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.1...v7.44.2) (2022-03-16)
 
 
