@@ -12,7 +12,7 @@ module.exports = function bcp({
     password,
     server,
     port,
-    trustServerCertificate,
+    options,
     database,
     separator,
     terminator,
@@ -41,7 +41,7 @@ module.exports = function bcp({
         hints && `-h${hints}`,
         separator && `-t${separator}`,
         terminator && `-r${terminator}`,
-        trustServerCertificate && '-u',
+        options?.trustServerCertificate && '-u',
         user && `-U${user}`,
         database && `-d${database}`,
         server && (port ? `-S${server},${port}` : `-S${server}`)
