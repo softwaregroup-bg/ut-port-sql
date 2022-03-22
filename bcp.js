@@ -12,6 +12,7 @@ module.exports = function bcp({
     password,
     server,
     port,
+    trustServerCertificate,
     database,
     separator,
     terminator,
@@ -40,10 +41,11 @@ module.exports = function bcp({
         hints && `-h${hints}`,
         separator && `-t${separator}`,
         terminator && `-r${terminator}`,
+        trustServerCertificate && '-u',
         user && `-U${user}`,
         database && `-d${database}`,
         server && (port ? `-S${server},${port}` : `-S${server}`)
-    ].filter(param => param), {
+    ].filter(Boolean), {
         input: password + '\n'
     });
     let errors = fs.existsSync(tempFileName);
