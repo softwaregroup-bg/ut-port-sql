@@ -65,6 +65,19 @@ require('ut-run').run({
                 result: (result, assert) => {
                     assert.ok(result, 'deadlock retried');
                 }
+            },
+            {
+                name: 'words',
+                method: 'test.test.words',
+                params: {
+                    words: [
+                        {word: 'Software'},
+                        {word: 'Group'}
+                    ]
+                },
+                result: (result, assert) => {
+                    assert.ok(result, 'words');
+                }
             }
         ]
     }
