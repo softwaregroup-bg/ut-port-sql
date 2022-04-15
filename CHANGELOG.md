@@ -1,3 +1,12 @@
+## [7.44.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.4...v7.44.5) (2022-04-15)
+
+
+### Bug Fixes
+
+* configurable name for ngram search ([b95dca3](https://github.com/softwaregroup-bg/ut-port-sql/commit/b95dca3c2d24949b928a90b214cddab391c1bf51))
+
+
+
 ## [7.44.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.3...v7.44.4) (2022-03-22)
 
 
