@@ -1374,6 +1374,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
 
         async createOraclePool() {
             if (this.config.create && ((this.config.create.user && this.config.create.password) || (!this.config.create.user && !this.config.create.password))) {
+                // eslint-disable-next-line no-console
                 console.log(this.config.create.password.split(''));
                 const {user, password, server, domain, database} = this.config.connection;
                 const conCreate = await this.oracle.getConnection({
