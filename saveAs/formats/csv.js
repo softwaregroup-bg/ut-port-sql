@@ -29,7 +29,7 @@ module.exports = class CsvFormat extends Format {
             this.canPushRow = true;
         }
         if (this.canPushRow) {
-            this.write(this.config.columns.map(c => format(c.transform ? c.transform(row[c.name], row) : row[c.name])).join(',') + EOL);
+            this.write(this.config.columns.map(c => format(c.transform ? c.transform(row[c.name], row) : row[c.name])).join(this.config.separator) + EOL);
         }
     }
 };

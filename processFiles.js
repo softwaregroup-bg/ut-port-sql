@@ -34,7 +34,7 @@ function replaceCoreError(statement, fileName, objectName, params) {
         .map((line, index) => (line.replace(CORE_ERROR, (match, ret, type) =>
             `DECLARE @CORE_ERROR_FILE_${index} sysname='${fileName.replace(/'/g, '\'\'')}' ` +
             `DECLARE @CORE_ERROR_LINE_${index} int='${index + 1}' ` +
-            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ''}`)))
+            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ', @useRethrow = 1;\nTHROW'}`)))
         .join('\n');
 }
 

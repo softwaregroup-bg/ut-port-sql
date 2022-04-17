@@ -35,7 +35,7 @@ function addNgram(hmac, ngramParam, add, row, param, column, string) {
             }
         }
     });
-    unique.forEach(ngram => add(row, id || 0, param, hmac(column + ' ' + ngram)));
+    unique.forEach(ngram => add(row, id || 0, param, hmac((options.name ? options.name : column) + ' ' + ngram)));
 }
 
 function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {

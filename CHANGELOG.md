@@ -1,3 +1,39 @@
+## [7.44.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.4...v7.44.5) (2022-04-15)
+
+
+### Bug Fixes
+
+* configurable name for ngram search ([b95dca3](https://github.com/softwaregroup-bg/ut-port-sql/commit/b95dca3c2d24949b928a90b214cddab391c1bf51))
+
+
+
+## [7.44.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.3...v7.44.4) (2022-03-22)
+
+
+### Bug Fixes
+
+* bcp trustServerCertificate ([782ed6a](https://github.com/softwaregroup-bg/ut-port-sql/commit/782ed6a5485e6c8adeea08ca6b6d347c353c38d5))
+
+
+
+## [7.44.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.2...v7.44.3) (2022-03-22)
+
+
+### Bug Fixes
+
+* bcp trustServerCertificate ([231b554](https://github.com/softwaregroup-bg/ut-port-sql/commit/231b554054d07fdd41e9a782571d6597b803ed3c))
+
+
+
+## [7.44.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.1...v7.44.2) (2022-03-16)
+
+
+### Bug Fixes
+
+* configure csv separator on csv export ALZ-7910 ([#114](https://github.com/softwaregroup-bg/ut-port-sql/issues/114)) ([620db65](https://github.com/softwaregroup-bg/ut-port-sql/commit/620db6510c25b5eef051731447ade50fdfe253dd))
+
+
+
 ## [7.44.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.0...v7.44.1) (2022-03-11)
 
 
