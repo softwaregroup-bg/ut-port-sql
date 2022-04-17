@@ -3,5 +3,5 @@ RUN curl https://download.oracle.com/otn_software/linux/instantclient/215000/ins
   && mkdir -p /opt/oracle \
   && unzip oracle.zip -d /opt/oracle \
   && rm oracle.zip
-ENV LD_LIBRARY_PATH=/opt/oracle/instantclient_12_5
+ENV LD_LIBRARY_PATH=/opt/oracle/instantclient_21_5
 USER node
