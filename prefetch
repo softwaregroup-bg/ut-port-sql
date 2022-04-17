@@ -1,0 +1,8 @@
+USER root
+RUN curl https://download.oracle.com/otn_software/linux/instantclient/215000/instantclient-basiclite-linux.x64-21.5.0.0.0dbru.zip -o  "oracle.zip" \
+  && mkdir -p /opt/oracle \
+  && unzip oracle.zip -d /opt/oracle \
+  && rm oracle.zip \
+  && apt-get install libaio1
+ENV LD_LIBRARY_PATH=/opt/oracle/instantclient_21_5
+USER node

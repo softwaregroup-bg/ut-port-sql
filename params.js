@@ -46,8 +46,9 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
     if (value === undefined) {
         calcNgram(def);
         return def;
-    } else if (value) {
+    } else if (value != null) {
         if (cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
+            if (value === '') return Buffer.alloc(0);
             if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
             calcNgram(value);
             return cbc.encrypt(value, column.name);
@@ -66,6 +67,14 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
             return Buffer.from(value.data);
         } else if (typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value)) {
             return JSON.stringify(value);
+        } else if (
+            value != null &&
+            typeof value !== 'string' &&
+            value.toString &&
+            column.type &&
+            ['char', 'nchar', 'varchar', 'nvarchar', 'text', 'ntext', 'uniqueidentifier'].includes(column.type.declaration)
+        ) {
+            value = value.toString();
         }
     }
     calcNgram(value);
@@ -109,6 +118,14 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         value = Buffer.from(value.data ? value.data : []);
     } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
         value = JSON.stringify(value);
+    } else if (
+        value != null &&
+        typeof value !== 'string' &&
+        value.toString &&
+        param.def &&
+        ['char', 'nchar', 'varchar', 'nvarchar', 'text', 'ntext', 'uniqueidentifier'].includes(param.def.type)
+    ) {
+        value = value.toString();
     }
     if (param.out) {
         request.output(param.name, type, value);
