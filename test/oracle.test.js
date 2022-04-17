@@ -9,11 +9,11 @@ require('ut-run').run({
                     return {
                         namespace: 'test',
                         schema: [{
-                            path: path.join(__dirname, 'schema'),
+                            path: path.join(__dirname, 'oracle'),
                             linkSP: true
                         }],
                         seed: [{
-                            path: path.join(__dirname, 'seed')
+                            path: path.join(__dirname, 'oracleSeed')
                         }],
                         'test.test.deadlock': function(_, $meta) {
                             return Promise.all([
@@ -36,12 +36,14 @@ require('ut-run').run({
             logLevel: 'warn',
             linkSP: true,
             connection: {
-                server: 'infradb14',
-                user: '${decrypt(\'3b280fb6a2c0c22483dfb73be18128774fa156653edd29eebed4f3c4e8f5c0fa\')}',
-                password: '${decrypt(\'de763840f0dc08b85b0d845b17d15e1bdaf6a774dc4eecf32e368620b7b7d410\')}'
+                driver: 'oracle',
+                domain: 'softwaregroup-bg.com',
+                server: 'bgs-vlx-db-05.softwaregroup-bg.com:1521',
+                user: '${decrypt("3b280fb6a2c0c22483dfb73be18128774fa156653edd29eebed4f3c4e8f5c0fa")}',
+                password: '${decrypt("de763840f0dc08b85b0d845b17d15e1bdaf6a774dc4eecf32e368620b7b7d410")}'
             },
             create: {
-                user: '${decrypt(\'289fd8ff4717c56d59b1ebc6987fbd1f1f0df4849705f6216b319763c8edb252\')}'
+                user: '${decrypt("289fd8ff4717c56d59b1ebc6987fbd1f1f0df4849705f6216b319763c8edb252")}'
             }
         }
     },
@@ -51,7 +53,7 @@ require('ut-run').run({
                 name: 'exec',
                 method: 'test.query',
                 params: {
-                    query: 'SELECT 1 AS test',
+                    query: 'SELECT 1 AS "test" FROM DUAL',
                     process: 'json'
                 },
                 result: (result, assert) => {
@@ -60,11 +62,13 @@ require('ut-run').run({
                 }
             },
             {
-                name: 'deadlock',
-                method: 'test.test.deadlock',
-                params: {},
+                name: 'result set',
+                method: 'test.resultset',
+                params: {
+                    message: 'hello world'
+                },
                 result: (result, assert) => {
-                    assert.ok(result, 'deadlock retried');
+                    assert.match(result, {result: [{column: 'hello world'}]}, 'result set');
                 }
             }
         ]

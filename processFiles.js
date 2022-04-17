@@ -9,7 +9,6 @@ const ROW_VERSION_INNER_TYPE = 'BINARY';
 const VAR_RE = /\$\{([^}]*)\}/g;
 const path = require('path');
 const get = require('lodash.get');
-const parserSP = require('./parsers/mssqlSP');
 const includes = require('ut-function.includes');
 const yaml = require('yaml');
 const fs = require('fs');
@@ -63,7 +62,7 @@ const preProcess = (binding, statement, fileName, objectName, cbc) => {
 
 function getAlterStatement(binding, statement, fileName, objectName, cbc) {
     statement = preProcess(binding, statement, fileName, objectName, cbc);
-    if (statement.trim().match(/^CREATE\s+TYPE/i)) {
+    if (statement.trim().match(/^CREATE\s+TYPE|^CREATE\s+(\bOR\b\s+\bREPLACE\b\s+)/i)) {
         return statement.trim();
     } else {
         return statement.trim().replace(/^CREATE /i, 'ALTER ');
@@ -152,7 +151,7 @@ function addQuery(schema, queries, params, cbc) {
 }
 
 function getObjectName(fileName) {
-    return fileName.replace(/\.(sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, '').replace(/\[|]/g, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
+    return fileName.replace(/\.(plsql|sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, '').replace(/\[|]/g, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
 }
 
 function shouldCreateTT(schemaConfig, tableName) {
@@ -198,7 +197,8 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
     });
 };
 
-function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
+function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) {
+    const parserSP = require('./parsers')(driver);
     files = files.sort().map(file => {
         return {
             originalName: file,
@@ -226,10 +226,11 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                 return;
             }
             switch (path.extname(fileName).toLowerCase()) {
+                case '.plsql':
                 case '.sql': {
                     schemaConfig.linkSP && (dbObjects[objectId] = fileName);
                     let fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
-                    const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
+                    const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
                     if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
                         fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
                             const params = {offset};

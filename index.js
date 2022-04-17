@@ -4,7 +4,6 @@ const stringify = require('json-stringify-deterministic');
 const fs = require('fs');
 const fsplus = require('fs-plus');
 const crypto = require('./crypto');
-const mssqlQueries = require('./sql');
 const xml2js = require('xml2js');
 const uuid = require('uuid');
 const path = require('path');
@@ -13,6 +12,7 @@ const ROW_VERSION_INNER_TYPE = 'BINARY';
 const {setParam, isEncrypted} = require('./params');
 const bcp = require('./bcp');
 const lodashGet = require('lodash.get');
+const OracleRequest = require('./OracleRequest');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -50,7 +50,6 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 compatibilityLevel: 120,
                 cbcDate: {},
                 connection: {
-                    connectionString: 'Driver=SQL Server Native Client 11.0;Server=#{server},#{port};Database=#{database};Uid=#{user};Pwd=#{password};Trusted_Connection=#{trusted};Encrypt=#{encrypt};TrustServerCertificate=#{TrustServerCertificate}',
                     TrustServerCertificate: 'yes',
                     options: {
                         trustServerCertificate: true,
@@ -82,7 +81,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                         properties: {
                             driver: {
                                 type: ['string', 'null'],
-                                enum: ['mssql', 'msnodesqlv8'],
+                                enum: ['mssql', 'msnodesqlv8', 'oracle'],
                                 default: 'mssql'
                             },
                             server: {
@@ -92,6 +91,9 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                                 type: 'integer'
                             },
                             database: {
+                                type: 'string'
+                            },
+                            domain: {
                                 type: 'string'
                             },
                             user: {
@@ -123,6 +125,13 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                                 }
                             },
                             required: ['driver', 'server', 'database']
+                        }, {
+                            properties: {
+                                driver: {
+                                    enum: ['oracle']
+                                }
+                            },
+                            required: ['server', 'database', 'domain', 'user', 'password']
                         }]
                     }
                 },
@@ -142,12 +151,23 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
 
         async init() {
             switch (this.config.connection && this.config.connection.driver) {
+                case 'oracle':
+                    delete this.mssql;
+                    this.oracle = require('oracledb');
+                    this.oracle.outFormat = this.oracle.OUT_FORMAT_OBJECT;
+                    this.systemQueries = require('./oracle');
+                    break;
                 case 'msnodesqlv8':
+                    delete this.oracle;
+                    if (!this.config.connection.connectionString) this.config.connection.connectionString = 'Driver=SQL Server Native Client 11.0;Server=#{server},#{port};Database=#{database};Uid=#{user};Pwd=#{password};Trusted_Connection=#{trusted};Encrypt=#{encrypt};TrustServerCertificate=#{TrustServerCertificate}';
                     this.mssql = require('mssql/msnodesqlv8');
+                    this.systemQueries = require('./sql');
                     this.patch = true;
                     break;
                 default:
+                    delete this.oracle;
                     this.mssql = require('mssql');
+                    this.systemQueries = require('./sql');
             }
 
             const result = await super.init(...arguments);
@@ -374,40 +394,39 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             const request = this.getRequest();
             const port = this;
             return new Promise(function(resolve, reject) {
-                request.query(message.query, function(err, result) {
+                return request.query(message.query).then(result => {
                     // let end = +new Date();
                     // let execTime = end - start;
                     // todo record execution time
-                    if (err) {
-                        debug && (err.query = message.query);
-                        const error = port.errors.getError(err.message && err.message.split('\n').shift()) || port.errors.portSQL;
-                        reject(error(err));
-                    } else {
-                        $meta.mtid = 'response';
-                        if (message.process === 'return') {
-                            if (result && result.recordset && result.recordset.length) {
-                                Object.keys(result.recordset[0]).forEach(function(value) {
-                                    setPathProperty(message, value, result.recordset[0][value]);
-                                });
-                            }
-                            resolve(message);
-                        } else if (message.process === 'json') {
-                            message.dataSet = result.recordset;
-                            resolve(message);
-                        } else if (message.process === 'xls') { // todo
-                            reject(port.errors['portSQL.notImplemented'](message.process));
-                        } else if (message.process === 'xml') { // todo
-                            reject(port.errors['portSQL.notImplemented'](message.process));
-                        } else if (message.process === 'csv') { // todo
-                            reject(port.errors['portSQL.notImplemented'](message.process));
-                        } else if (message.process === 'processRows') { // todo
-                            reject(port.errors['portSQL.notImplemented'](message.process));
-                        } else if (message.process === 'queueRows') { // todo
-                            reject(port.errors['portSQL.notImplemented'](message.process));
-                        } else {
-                            reject(port.errors['portSQL.missingProcess'](message.process));
+                    $meta.mtid = 'response';
+                    if (message.process === 'return') {
+                        if (result && result.recordset && result.recordset.length) {
+                            Object.keys(result.recordset[0]).forEach(function(value) {
+                                setPathProperty(message, value, result.recordset[0][value]);
+                            });
                         }
+                        resolve(message);
+                    } else if (message.process === 'json') {
+                        message.dataSet = result.recordset;
+                        resolve(message);
+                    } else if (message.process === 'xls') { // todo
+                        reject(port.errors['portSQL.notImplemented'](message.process));
+                    } else if (message.process === 'xml') { // todo
+                        reject(port.errors['portSQL.notImplemented'](message.process));
+                    } else if (message.process === 'csv') { // todo
+                        reject(port.errors['portSQL.notImplemented'](message.process));
+                    } else if (message.process === 'processRows') { // todo
+                        reject(port.errors['portSQL.notImplemented'](message.process));
+                    } else if (message.process === 'queueRows') { // todo
+                        reject(port.errors['portSQL.notImplemented'](message.process));
+                    } else {
+                        reject(port.errors['portSQL.missingProcess'](message.process));
                     }
+                    return true;
+                }, err => {
+                    debug && (err.query = message.query);
+                    const error = port.errors.getError(err.message && err.message.split('\n').shift()) || port.errors.portSQL;
+                    reject(error(err));
                 });
             });
         }
@@ -502,14 +521,14 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                                 reject(err);
                                 return;
                             }
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc);
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc, this.config.connection.driver);
 
                             const request = self.getRequest();
                             const updated = [];
                             let innerPromise = Promise.resolve();
                             if (queries.length && !hashDropped && load) {
                                 innerPromise = innerPromise
-                                    .then(() => request.batch(mssqlQueries.dropHash())
+                                    .then(() => request.batch(this.systemQueries.dropHash())
                                         .then(() => {
                                             hashDropped = true;
                                             return true;
@@ -602,7 +621,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             });
         }
 
-        getRequest() {
+        getRequestMssql() {
             const request = new this.mssql.Request(this.connection);
             request.on('info', (info) => {
                 if (typeof info.includes === 'function' && info.includes('The module will still be created')) {
@@ -612,6 +631,15 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 }
             });
             return request;
+        }
+
+        getRequestOracle() {
+            return new OracleRequest(this.connection);
+        }
+
+        getRequest() {
+            if (this.oracle) return this.getRequestOracle();
+            return this.getRequestMssql();
         }
 
         getRowTransformer(columns = {}) {
@@ -883,7 +911,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
 
         linkSP(schema) {
             if (schema.parseList.length) {
-                const parserSP = require('./parsers/mssqlSP');
+                const parserSP = require('./parsers')(this.config.connection.driver);
                 schema.parseList.forEach(function(procedure) {
                     let binding;
                     try {
@@ -1012,7 +1040,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             this.checkConnection();
             const request = this.getRequest();
             request.multiple = true;
-            return request.query(mssqlQueries.loadSchema(this.config.updates === false || this.config.updates === 'false', this.config.loadDbo)).then(function(result) {
+            return request.query(this.systemQueries.loadSchema(this.config.updates === false || this.config.updates === 'false', this.config.loadDbo)).then(function(result) {
                 const schema = {source: {}, parseList: [], types: {}, deps: {}};
                 result.recordsets[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
                     const full = cur.full;
@@ -1036,7 +1064,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     };
                     return prev;
                 }, schema);
-                result.recordsets[1].reduce(function(prev, cur) { // extract columns of user defined table types
+                result.recordsets[1]?.reduce(function(prev, cur) { // extract columns of user defined table types
                     const parserDefault = require('./parsers/mssqlDefault');
                     changeRowVersionType(cur);
                     if (!(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
@@ -1057,7 +1085,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     type.push(cur);
                     return prev;
                 }, schema.types);
-                result.recordsets[2].reduce(function(prev, cur) { // extract dependencies
+                result.recordsets[2]?.reduce(function(prev, cur) { // extract dependencies
                     cur.name = cur.name && cur.name.toLowerCase();
                     cur.type = cur.type && cur.type.toLowerCase();
                     const dep = prev[cur.type] || (prev[cur.type] = {names: [], drop: []});
@@ -1079,7 +1107,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                         const contentHash = crypto.hash(content);
                         fsplus.makeTreeSync(cacheFile());
                         fs.writeFileSync(cacheFile(contentHash), content);
-                        return setHash ? request.query(mssqlQueries.setHash(contentHash)).then(() => schema) : schema;
+                        return setHash ? request.query(this.systemQueries.setHash(contentHash)).then(() => schema) : schema;
                     } else {
                         return schema;
                     }
@@ -1093,13 +1121,13 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             if ((Array.isArray(schema) && !schema.length) || !schema) {
                 if (drop && this.config.cache) {
                     return this.getRequest()
-                        .query(mssqlQueries.getHash())
+                        .query(this.systemQueries.getHash())
                         .then(result => result && result.recordset && result.recordset[0] && result.recordset[0].hash);
                 }
                 return !drop && data;
             }
             return this.getRequest()
-                .query(mssqlQueries.refreshView(drop))
+                .query(this.systemQueries.refreshView(drop))
                 .then(result => {
                     if (!drop && result && result.recordset && result.recordset.length && result.recordset[0].view_name) {
                         throw this.errors['portSQL.invalidView'](result);
@@ -1118,7 +1146,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             this.checkConnection();
             const self = this;
             const schemas = this.getPaths('schema');
-            const parserSP = require('./parsers/mssqlSP');
+            const parserSP = require('./parsers')(this.config.connection.driver);
             return new Promise(function(resolve, reject) {
                 const docList = [];
                 let promise = Promise.resolve();
@@ -1297,6 +1325,10 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 };
             };
 
+            return this.createPool();
+        }
+
+        createSqlPool() {
             const toInt = value => {
                 value = parseInt(value, 10);
                 return Number.isInteger(value) ? value : undefined;
@@ -1315,13 +1347,13 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             if (this.config.create && ((this.config.create.user && this.config.create.password) || (!this.config.create.user && !this.config.create.password))) {
                 const conCreate = new this.mssql.ConnectionPool(sanitize({...connection, ...this.config.create}));
                 return conCreate.connect()
-                    .then(() => (new this.mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel)))
-                    .then(() => this.config.create.diagram && new this.mssql.Request(conCreate).batch(mssqlQueries.enableDatabaseDiagrams(this.config.connection.database)))
+                    .then(() => (new this.mssql.Request(conCreate)).batch(this.systemQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel, this.config.connection.user, this.config.connection.password)))
+                    .then(() => this.config.create.diagram && new this.mssql.Request(conCreate).batch(this.systemQueries.enableDatabaseDiagrams(this.config.connection.database)))
                     .then(() => {
                         if (this.config.create.user === this.config.connection.user) {
                             return;
                         }
-                        return (new this.mssql.Request(conCreate)).batch(mssqlQueries.createUser(
+                        return (new this.mssql.Request(conCreate)).batch(this.systemQueries.createUser(
                             this.config.connection.database,
                             this.config.connection.user,
                             this.config.connection.password,
@@ -1337,6 +1369,40 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     });
             } else {
                 return this.connection.connect();
+            }
+        }
+
+        async createOraclePool() {
+            if (this.config.create && ((this.config.create.user && this.config.create.password) || (!this.config.create.user && !this.config.create.password))) {
+                const {user, password, server, domain, database} = this.config.connection;
+                const conCreate = await this.oracle.getConnection({
+                    privilege: this.oracle.SYSDBA,
+                    user: this.config.create.user ? ('c##' + this.config.create.user) : user,
+                    password: this.config.create.password || password,
+                    connectionString: this.config.create.connectionString || (server + '/' + (this.config.create.database || 'orcl') + '.' + domain)
+                });
+                try {
+                    const {rows: [{exists}]} = await conCreate.execute(this.systemQueries.databaseExists(database));
+                    if (!exists) {
+                        await conCreate.execute(this.systemQueries.createDatabase(database, this.config.compatibilityLevel, user, password));
+                        await conCreate.execute(this.systemQueries.openDatabase(database));
+                    }
+                } finally {
+                    await conCreate.close();
+                }
+            }
+            this.connection = await this.oracle.createPool({
+                user: this.config.connection.user,
+                password: this.config.connection.password,
+                connectionString: this.config.connection.connectionString || (this.config.connection.server + '/' + this.config.connection.database.replace(/-/g, '_') + '.' + this.config.connection.domain)
+            });
+        }
+
+        createPool() {
+            if (this.oracle) {
+                return this.createOraclePool();
+            } else {
+                return this.createSqlPool();
             }
         }
 
@@ -1412,7 +1478,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             reject(err);
                             return;
                         }
-                        const {queries} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc);
+                        const {queries} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc, this.config.connection.driver);
                         resolve(Object.fromEntries(queries.map(query => {
                             switch (query?.binding?.type) {
                                 case 'procedure':
