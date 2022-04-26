@@ -69,8 +69,9 @@ function getAlterStatement(binding, statement, fileName, objectName, cbc) {
     }
 }
 
-function tableToType(binding) {
+function tableToType(binding, driver) {
     if (!binding || binding.type !== 'table') return '';
+    if (driver === 'oracle') return `TYPE "${binding.table}TT" IS TABLE OF "${binding.schema}.${binding.table}"%ROWTYPE;`;
     const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
     const columns = binding.fields.map(function(field) {
         changeRowVersionType(field);
@@ -83,8 +84,9 @@ function tableToType(binding) {
     return 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
 }
 
-function tableToTTU(binding) {
+function tableToTTU(binding, driver) {
     if (!binding || binding.type !== 'table') return '';
+    if (driver === 'oracle') return '';
     const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
     const columns = binding.fields.map(function(field) {
         changeRowVersionType(field);
@@ -116,7 +118,7 @@ function getSource(binding, statement, fileName, objectName, cbc) {
     return statement.trim().replace(/^ALTER /i, 'CREATE ');
 }
 
-function addQuery(schema, queries, params, cbc) {
+function addQuery(schema, queries, params, cbc, driver) {
     if (schema.source[params.objectId] === undefined) {
         queries.push({
             binding: params.binding,
@@ -141,11 +143,26 @@ function addQuery(schema, queries, params, cbc) {
                 });
             }
             queries.push({
+                binding: params.binding,
                 fileName: params.fileName,
                 objectName: params.objectName,
                 objectId: params.objectId,
                 content: getAlterStatement(params.binding, params.fileContent, params.fileName, params.objectName, cbc)
             });
+        }
+    }
+    if (driver === 'oracle' && params?.binding?.type === 'table type') {
+        const found = queries.findIndex(query => query?.binding?.type === 'table type' && params?.binding?.schema === query?.binding?.schema);
+        const last = queries[queries.length - 1];
+        if (found >= 0 && found < queries.length - 1) {
+            last.content = queries[found].content.replace(/^ {2}--types$/m, '  ' + last.content + '\n  --types');
+            queries.splice(found, 1);
+        } else {
+            last.content = `CREATE OR REPLACE PACKAGE "${params.binding.schema}"
+AS
+  ${last.content}
+  --types
+END;`;
         }
     }
 }
@@ -252,7 +269,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) 
                         createStatement: getCreateStatement(binding, fileContent, fileName, objectName, cbc)
                     }, cbc);
                     if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
-                        const tt = tableToType(binding);
+                        const tt = tableToType(binding, driver);
                         if (tt) {
                             addQuery(schema, queries, {
                                 binding: parserSP.parse(tt),
@@ -261,9 +278,9 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) 
                                 objectId: objectId + 'tt',
                                 fileContent: tt,
                                 createStatement: tt
-                            }, cbc);
+                            }, cbc, driver);
                         }
-                        const ttu = tableToTTU(binding);
+                        const ttu = tableToTTU(binding, driver);
                         if (ttu) {
                             addQuery(schema, queries, {
                                 binding: parserSP.parse(ttu),
@@ -272,7 +289,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) 
                                 objectId: objectId + 'ttu',
                                 fileContent: ttu,
                                 createStatement: ttu
-                            }, cbc);
+                            }, cbc, driver);
                         }
                     };
                     if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {

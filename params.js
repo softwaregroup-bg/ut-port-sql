@@ -81,7 +81,8 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
     return value;
 }
 
-function sqlType(def) {
+function sqlType(def, driver) {
+    if (driver === 'oracle') return def;
     let type;
     if (def.type === 'table') {
         type = def.create();
@@ -100,14 +101,14 @@ function sqlType(def) {
     return type;
 }
 
-function setParam(cbc, hmac, ngram, request, param, value, limit) {
+function setParam(cbc, hmac, ngram, request, param, value, driver) {
     if (param.encrypt && value != null) {
         if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
         ngram && addNgram(hmac, ngram, ngram.add, 1, param.name, param.name, value);
         value = cbc.encrypt(value, param.name);
     }
     const hasValue = value !== undefined;
-    const type = sqlType(param.def);
+    const type = sqlType(param.def, driver);
     if (param.def && param.def.type === 'time' && value != null) {
         value = value?.includes?.('T') ? value : new Date('1970-01-01T' + value);
     } else if (param.def && /datetime/.test(param.def.type) && value != null && !(value instanceof Date)) {
@@ -116,7 +117,7 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         value = xmlBuilder.buildObject(value);
     } else if (param.def && param.def.type === 'rowversion' && value != null && !Buffer.isBuffer(value)) {
         value = Buffer.from(value.data ? value.data : []);
-    } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
+    } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || !['table', 'nested'].includes(param.def.type))) {
         value = JSON.stringify(value);
     } else if (
         value != null &&

@@ -1,4 +1,5 @@
 const path = require('path');
+const id = Date.now();
 /* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
     main: [
@@ -10,6 +11,7 @@ require('ut-run').run({
                         namespace: 'test',
                         schema: [{
                             path: path.join(__dirname, 'oracle'),
+                            createTT: true,
                             linkSP: true
                         }],
                         seed: [{
@@ -62,13 +64,45 @@ require('ut-run').run({
                 }
             },
             {
+                name: 'params direction',
+                method: 'test.procedure',
+                params: {
+                    testInput: 'input',
+                    testInputOutput: 'input-output'
+                },
+                result: (result, assert) => {
+                    assert.strictSame(result, {
+                        testInputOutput: 'input/input-output',
+                        testOutputNumber: 555,
+                        testOutputString: 'output-string'
+                    }, 'out params');
+                }
+            },
+            {
                 name: 'result set',
                 method: 'test.resultset',
                 params: {
                     message: 'hello world'
                 },
                 result: (result, assert) => {
-                    assert.match(result, {result: [{column: 'hello world'}]}, 'result set');
+                    assert.strictSame(result, {result: [{column: 'hello world'}]}, 'result set');
+                }
+            },
+            {
+                name: 'table parameter',
+                method: 'test.property.add',
+                params: {
+                    property: [{
+                        id,
+                        name: 'test name',
+                        value: 'test value'
+                    }]
+                },
+                result: (result, assert) => {
+                    assert.strictSame(result, {
+                        result: [{id, name: 'test name', value: 'test value'}],
+                        resultCursor: [{id, name: 'test name', value: 'test value'}]
+                    }, 'result set');
                 }
             }
         ]

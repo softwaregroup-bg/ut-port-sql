@@ -13,6 +13,7 @@ const {setParam, isEncrypted} = require('./params');
 const bcp = require('./bcp');
 const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
+const { dirname } = require('path');
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -719,9 +720,9 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
 
         callSP(name, params, flatten, fileName, method) {
             const self = this;
-            const nesting = this.config.maxNesting;
             const outParams = [];
             const ngram = params.find(param => param.name === 'ngram' && param.def.type === 'table');
+            const driver = this.config.connection.driver;
             params && params.forEach(function(param) {
                 param.out && outParams.push(param.name);
             });
@@ -764,7 +765,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     value = setParam(self.cbc, self.hmac, ngram && {
                         options: ngram.options,
                         add: (...params) => ngramParam.rows.add(...params)
-                    }, request, param, value, nesting);
+                    }, request, param, value, driver);
                     debug && (debugParams[param.name] = value);
                 });
                 if (ngramParam) request.input('ngram', ngramParam);
@@ -1384,8 +1385,11 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 try {
                     const {rows: [{exists}]} = await conCreate.execute(this.systemQueries.databaseExists(database));
                     if (!exists) {
-                        await conCreate.execute(this.systemQueries.createDatabase(database, this.config.compatibilityLevel, user, password));
+                        const path = this.config.create.path || dirname((await conCreate.execute(this.systemQueries.defaultPath())).rows[0].FILE_NAME);
+                        await conCreate.execute(this.systemQueries.createDatabase(database, this.config.compatibilityLevel, user, password, path));
                         await conCreate.execute(this.systemQueries.openDatabase(database));
+                        await conCreate.execute(this.systemQueries.alterSession(database));
+                        await conCreate.execute(this.systemQueries.createUser(user));
                     }
                 } finally {
                     await conCreate.close();

@@ -49,6 +49,13 @@ module.exports = {
                 GROUP BY
                     type, name
             ) t ON o.object_name = t.name AND o.object_type = t.type
+            UNION ALL
+            SELECT
+                0,'T',object_name,NULL,NULL,NULL
+            FROM
+                user_objects
+            WHERE
+                object_type = 'TABLE'
         `;
     },
     refreshView(drop) {
@@ -75,14 +82,18 @@ module.exports = {
         name = name.replace(/-/g, '_').toUpperCase();
         return `SELECT COUNT(*) "exists" FROM DBA_PDBS WHERE PDB_NAME='${name}'`;
     },
-    createDatabase(name, level, user, password) {
+    defaultPath() {
+        return 'SELECT FILE_NAME from dba_data_files where tablespace_name=\'USERS\'';
+    },
+    createDatabase(name, level, user, password, path) {
         name = name.replace(/-/g, '_');
         return `
             CREATE PLUGGABLE DATABASE ${name}
             ADMIN USER "${user.toUpperCase()}"
             IDENTIFIED BY "${password}"
-            ROLES=(DBA)
-            FILE_NAME_CONVERT = ('/pdbseed/', '/${name}/')
+            ROLES=(IMP_FULL_DATABASE,CONNECT)
+            DEFAULT TABLESPACE UT
+            CREATE_FILE_DEST='${path}'
         `;
     },
     openDatabase(name) {
@@ -91,9 +102,15 @@ module.exports = {
             ALTER PLUGGABLE DATABASE ${name} OPEN READ WRITE
         `;
     },
-    createUser(name, user, password, {azure = false}) {
+    alterSession(name) {
+        name = name.replace(/-/g, '_');
         return `
-            SELECT * FROM all_users WHERE username = '${name}'
+            ALTER SESSION SET CONTAINER=${name}
+        `;
+    },
+    createUser(user) {
+        return `
+            GRANT UNLIMITED TABLESPACE TO "${user.toUpperCase()}"
         `;
     },
     ngramIndex: (schema, table) => '',
