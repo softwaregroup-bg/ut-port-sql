@@ -25,7 +25,7 @@ const tedious = require('tedious');
 tedious.TYPES.Money.writeParameterData = function writeParameterData(buffer, parameter) {
     if (parameter.value != null) {
         buffer.writeUInt8(8);
-        buffer.writeMoney((parameter.value * 1000000) / 100);
+        buffer.writeMoney(Math.round(parameter.value * 10000));
     } else {
         buffer.writeUInt8(0);
     }
@@ -34,7 +34,7 @@ tedious.TYPES.Money.writeParameterData = function writeParameterData(buffer, par
 tedious.TYPES.SmallMoney.writeParameterData = function writeParameterData(buffer, parameter) {
     if (parameter.value != null) {
         buffer.writeUInt8(8);
-        buffer.writeMoney((parameter.value * 1000000) / 100);
+        buffer.writeMoney(Math.round(parameter.value * 10000));
     } else {
         buffer.writeUInt8(0);
     }
