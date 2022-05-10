@@ -844,7 +844,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                         return resultSets;
                     })
                     .catch(function(err) {
-                        const errorLines = err.message && err.message.split('\n');
+                        const errorLines = err.message?.split('\n') || [''];
                         err.message = errorLines.shift();
                         const error = self.errors.getError(err.type || err.message) || self.errors.portSQL;
                         if (error.type === err.message) {
