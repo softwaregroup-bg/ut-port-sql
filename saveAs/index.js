@@ -1,5 +1,4 @@
 const path = require('path');
-const fsplus = require('fs-plus');
 const fs = require('fs');
 const formats = {
     jsonl: require('./formats/jsonl'),
@@ -17,7 +16,7 @@ module.exports = async(port, request, { saveAs }, name) => {
     if (!outputFilePath.startsWith(baseDir)) throw port.errors['portSQL.invalidFileLocation']();
 
     await new Promise((resolve, reject) => {
-        fsplus.makeTree(path.dirname(outputFilePath), err => {
+        fs.mkdir(path.dirname(outputFilePath), {recursive: true}, err => {
             if (!err || err.code === 'EEXIST') {
                 return resolve();
             }

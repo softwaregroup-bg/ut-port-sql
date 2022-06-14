@@ -196,7 +196,7 @@ field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default
 
 default = ws "DEFAULT"i ws lparen ws v:default_value ws rparen {return v}
 
-default_value = signed_number / string_literal
+default_value = expression / signed_number / string_literal
 
 constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint / check_constraint) {
   c.isConstraint = true;
@@ -280,7 +280,7 @@ scalar_type =  n:name
 signed_number =
   ( ( plus / minus )? numeric_literal ) {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;}
 
-value = numeric_literal / string_literal / "NULL"i
+value = lparen ws e:expression ws rparen / signed_number / string_literal / "NULL"i
 
 string_literal = quote s:([^'\r\n] / qq)* quote {return s.join('')}
 

@@ -2,7 +2,6 @@
 const errors = require('./errors.json');
 const stringify = require('json-stringify-deterministic');
 const fs = require('fs');
-const fsplus = require('fs-plus');
 const crypto = require('./crypto');
 const xml2js = require('xml2js');
 const uuid = require('uuid');
@@ -51,6 +50,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 compatibilityLevel: 120,
                 cbcDate: {},
                 connection: {
+                    driver: 'mssql',
                     TrustServerCertificate: 'yes',
                     options: {
                         trustServerCertificate: true,
@@ -1107,7 +1107,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     if (objectList && self.config.cache) {
                         const content = stringify(schema);
                         const contentHash = crypto.hash(content);
-                        fsplus.makeTreeSync(cacheFile());
+                        fs.mkdirSync(cacheFile(), {recursive: true});
                         fs.writeFileSync(cacheFile(contentHash), content);
                         return setHash ? request.query(this.systemQueries.setHash(contentHash)).then(() => schema) : schema;
                     } else {
