@@ -196,7 +196,7 @@ field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default
 
 default = ws "DEFAULT"i ws lparen ws v:default_value ws rparen {return v}
 
-default_value = expression / signed_number / string_literal
+default_value = signed_number / string_literal / expression {return null}
 
 constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint / check_constraint) {
   c.isConstraint = true;
