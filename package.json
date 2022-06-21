@@ -1,25 +1,25 @@
 {
   "name": "ut-port-sql",
-  "version": "7.44.6",
+  "version": "8.0.0-gallium.14",
   "main": "./index.js",
   "dependencies": {
-    "fs-plus": "3.1.1",
     "json-stringify-deterministic": "1.0.1",
     "lodash.get": "4.4.2",
-    "mssql": "6.2.1",
-    "ut-function.common-joi": "^1.5.2",
+    "mssql": "8.1.2",
+    "oracledb": "5.4.0",
+    "ut-function.common-joi": "^1.7.2",
     "ut-function.includes": "^1.2.1",
-    "uuid": "3.3.2",
+    "uuid": "8.3.2",
     "xml2js": "0.4.22",
     "yaml": "1.10.0"
   },
   "devDependencies": {
     "json-schema-to-markdown": "1.1.1",
     "pegjs": "0.10.0",
-    "tap": "^15.0.9",
-    "ut-run": "^10.56.2",
-    "ut-tools": "^6.40.8",
-    "why-is-node-running": "^2.1.0"
+    "tap": "^16.2.0",
+    "ut-run": "^10.69.4",
+    "ut-tools": "^6.41.5",
+    "why-is-node-running": "^2.2.2"
   },
   "peerDependencies": {
     "ut-run": "^10.19.3"
@@ -29,6 +29,7 @@
     "doc": "ut-doc",
     "release": "ut-release",
     "genParser": "pegjs parsers/mssqlSP.pegjs",
+    "genParserOracle": "pegjs parsers/oracleSP.pegjs",
     "changelog": "ut-changelog",
     "check": "ut-check",
     "cover": "ut-cover-parallel",

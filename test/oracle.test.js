@@ -1,4 +1,5 @@
 const path = require('path');
+const id = Date.now();
 /* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
     main: [
@@ -9,11 +10,12 @@ require('ut-run').run({
                     return {
                         namespace: 'test',
                         schema: [{
-                            path: path.join(__dirname, 'schema'),
+                            path: path.join(__dirname, 'oracle'),
+                            createTT: true,
                             linkSP: true
                         }],
                         seed: [{
-                            path: path.join(__dirname, 'seed')
+                            path: path.join(__dirname, 'oracleSeed')
                         }],
                         'test.test.deadlock': function(_, $meta) {
                             return Promise.all([
@@ -36,7 +38,9 @@ require('ut-run').run({
             logLevel: 'warn',
             linkSP: true,
             connection: {
-                server: 'infradb14',
+                driver: 'oracle',
+                domain: 'softwaregroup-bg.com',
+                server: 'bgs-vlx-db-05.softwaregroup-bg.com:1521',
                 user: '${decrypt(\'3b280fb6a2c0c22483dfb73be18128774fa156653edd29eebed4f3c4e8f5c0fa\')}',
                 password: '${decrypt(\'de763840f0dc08b85b0d845b17d15e1bdaf6a774dc4eecf32e368620b7b7d410\')}'
             },
@@ -51,7 +55,7 @@ require('ut-run').run({
                 name: 'exec',
                 method: 'test.query',
                 params: {
-                    query: 'SELECT 1 AS test',
+                    query: 'SELECT 1 AS "test" FROM DUAL',
                     process: 'json'
                 },
                 result: (result, assert) => {
@@ -60,11 +64,45 @@ require('ut-run').run({
                 }
             },
             {
-                name: 'deadlock',
-                method: 'test.test.deadlock',
-                params: {},
+                name: 'params direction',
+                method: 'test.procedure',
+                params: {
+                    testInput: 'input',
+                    testInputOutput: 'input-output'
+                },
                 result: (result, assert) => {
-                    assert.ok(result, 'deadlock retried');
+                    assert.strictSame(result, {
+                        testInputOutput: 'input/input-output',
+                        testOutputNumber: 555,
+                        testOutputString: 'output-string'
+                    }, 'out params');
+                }
+            },
+            {
+                name: 'result set',
+                method: 'test.resultset',
+                params: {
+                    message: 'hello world'
+                },
+                result: (result, assert) => {
+                    assert.strictSame(result, {result: [{column: 'hello world'}]}, 'result set');
+                }
+            },
+            {
+                name: 'table parameter',
+                method: 'test.property.add',
+                params: {
+                    property: [{
+                        id,
+                        name: 'test name',
+                        value: 'test value'
+                    }]
+                },
+                result: (result, assert) => {
+                    assert.strictSame(result, {
+                        result: [{id, name: 'test name', value: 'test value'}],
+                        resultCursor: [{id, name: 'test name', value: 'test value'}]
+                    }, 'result set');
                 }
             }
         ]

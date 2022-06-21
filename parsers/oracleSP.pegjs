@@ -24,39 +24,39 @@
 
 create = procedure / tableValue / table
 
-createoralter = "ALTER"i / "CREATE"i
+createoralter = "ALTER"i / "CREATE"i ws1 "OR"i ws1 "REPLACE"i / "CREATE"i
 
 procedure
-  = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body {
+  = ws createoralter ws1 PROCEDURE ws1 table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body {
       return {
           type:'procedure',
-            name: '['+schema+'].['+table+']',
-            schema: schema,
-            table: table,
+            name: table,
+            schema: table.split('.')[0],
+            table: table.split('.').slice(1).join('.'),
             doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
             params:params
         }
     }
 
 tableValue
-  = ws createoralter ws1 TYPE ws1 schema:schema table:name ws1 AS ws1 TABLE ws lparen doc:WhitespaceSingleLineComment? fields:fields ws rparen ws{
+  = ws TYPE ws1 tableT:name ws1 IS ws1 TABLE ws OF ws1 table:name "%ROWTYPE" doc:WhitespaceSingleLineComment? ws ";"{
       return {
           type:'table type',
-            name: '['+schema+'].['+table+']',
-            schema: schema,
-            table: table,
-            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
-            fields:fields
-        }
+          name: table.split('.')[0] + '.' + tableT,
+          schema: table.split('.')[0],
+          table: table.split('.').slice(1).join('.'),
+          doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+          fields:[]
+      }
     }
 
 table
-  = ws createoralter ws1 TABLE ws1 schema:schema table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen wsnocomment? options:Comment? ws{
+  = ws createoralter ws1 TABLE ws1 table:name ws lparen doc:WhitespaceSingleLineComment? fc:fields_and_constraints ws rparen wsnocomment? options:Comment? ws{
       return {
           type: 'table',
-          name: '['+schema+'].['+table+']',
-          schema: schema,
-          table: table,
+          name: table,
+          schema: table.split('.')[0],
+          table: table.split('.').slice(1).join('.'),
           doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
           options: options && parseJSON(options.multi || options.single || ''),
           fields: fc.filter(function(x){return x.isField}),
@@ -66,7 +66,7 @@ table
     }
 
 name =
-  "[" str:$[^\]]+ "]" {return str} /
+  '"' str:$[^"]+ '"' {return str} /
   $[A-Za-z0-9_$]+
 
 names = ws n:name ws o:order? m:(ws comma ws nn:name ws oo:order? {
@@ -88,7 +88,7 @@ namespace = name:name "." {return '['+name+'].'}
 fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
 
 params =
-  f:ws1 p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 {
+  f:ws1 lparen ff:ws1 p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 rparen ee:ws1 {
 
   var x=[p];
   q.forEach(function(pp){
@@ -176,8 +176,9 @@ fields =
 
   }
 
-param = n:param_name ws1 t:param_type d:(ws "=" ws v:value)? o:(ws1 out)? (ws1 "READONLY"i)? {return {name:n, def:t, out:!!o, default:!!d}}
-param_name = "@" n:name {return n}
+mode = "IN"i ws1 "OUT"i {return {dir: 'inout'}} / "IN"i {return {dir: 'in'}} / "OUT"i {return {dir: 'out'}}
+param = n:param_name ws1 mode:mode? ws t:param_type d:(ws ("DEFAULT"i / ":=") ws v:value)? {return {name:n, def:{...t, ...mode}, default:!!d}}
+param_name = n:name {return n}
 
 field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default? {
   var identity = !!i;
@@ -196,7 +197,7 @@ field = n:name ws1 t:param_type i:identity? not_nullable:not_nullable? d:default
 
 default = ws "DEFAULT"i ws lparen ws v:default_value ws rparen {return v}
 
-default_value = signed_number / string_literal / expression {return null}
+default_value = signed_number / string_literal
 
 constraint = "CONSTRAINT" ws1 n:name ws1 c:(pk_constraint / fk_constraint / unique_constraint / check_constraint) {
   c.isConstraint = true;
@@ -267,9 +268,11 @@ term = [^()]+ / "(" expression? ")"
 param_type = table_type / scalar_type
 
 not_nullable = ws x:("NULL"i / "NOT NULL"i) {return x.toLowerCase() === "not null"}
-identity = ws1 "IDENTITY" a:identity_arguments? {return a || {}}
-identity_arguments = ws lparen ws s:signed_number ws comma ws i:signed_number ws rparen {return {seed: s, increment: i}}
-table_type = n1:name "." n2:name {return {type:'table', typeName:n1+'.'+n2}}
+identity = ws1 "GENERATED"i ws1 "BY"i ws1 "DEFAULT"i ws1 "AS"i ws1 "IDENTITY"i a:identity_arguments? {return a || {}}
+identity_arguments = ws lparen s:identity_start i:identity_increment? ws rparen {return {seed: s, increment: i}}
+identity_start = ws "START"i ws1 "WITH"i ws1 s:signed_number {return s}
+identity_increment = ws "INCREMENT"i ws1 "BY"i ws1 i:signed_number {return i}
+table_type = n1:name "." n2:name {return {type:'nested', typeName:n1+'.'+n2}}
 
 scalar_type =  n:name
   size:( ( ws lparen ws s:(signed_number / "max"i) ws rparen {return s} )
@@ -280,7 +283,7 @@ scalar_type =  n:name
 signed_number =
   ( ( plus / minus )? numeric_literal ) {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;}
 
-value = lparen ws e:expression ws rparen / signed_number / string_literal / "NULL"i
+value = numeric_literal / string_literal / "NULL"i
 
 string_literal = quote s:([^'\r\n] / qq)* quote {return s.join('')}
 
@@ -302,6 +305,8 @@ CREATE =  "CREATE"i
 TYPE = "TYPE"i
 PROCEDURE = "PROCEDURE"i
 AS = "AS"i
+IS = "IS"i
+OF = "OF"i
 TABLE = "TABLE"i
 body = .*
 lparen = "("

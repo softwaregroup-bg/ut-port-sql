@@ -46,8 +46,9 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
     if (value === undefined) {
         calcNgram(def);
         return def;
-    } else if (value) {
+    } else if (value != null) {
         if (cbc && isEncrypted({name: column.name, def: {type: column.type.declaration, size: column.length}})) {
+            if (value === '') return Buffer.alloc(0);
             if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
             calcNgram(value);
             return cbc.encrypt(value, column.name);
@@ -66,13 +67,22 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
             return Buffer.from(value.data);
         } else if (typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value)) {
             return JSON.stringify(value);
+        } else if (
+            value != null &&
+            typeof value !== 'string' &&
+            value.toString &&
+            column.type &&
+            ['char', 'nchar', 'varchar', 'nvarchar', 'text', 'ntext', 'uniqueidentifier'].includes(column.type.declaration)
+        ) {
+            value = value.toString();
         }
     }
     calcNgram(value);
     return value;
 }
 
-function sqlType(def) {
+function sqlType(def, driver) {
+    if (driver === 'oracle') return def;
     let type;
     if (def.type === 'table') {
         type = def.create();
@@ -91,14 +101,14 @@ function sqlType(def) {
     return type;
 }
 
-function setParam(cbc, hmac, ngram, request, param, value, limit) {
+function setParam(cbc, hmac, ngram, request, param, value, driver) {
     if (param.encrypt && value != null) {
         if (!Buffer.isBuffer(value) && !(value instanceof Date) && typeof value === 'object') value = JSON.stringify(value);
         ngram && addNgram(hmac, ngram, ngram.add, 1, param.name, param.name, value);
         value = cbc.encrypt(value, param.name);
     }
     const hasValue = value !== undefined;
-    const type = sqlType(param.def);
+    const type = sqlType(param.def, driver);
     if (param.def && param.def.type === 'time' && value != null) {
         value = value?.includes?.('T') ? value : new Date('1970-01-01T' + value);
     } else if (param.def && /datetime/.test(param.def.type) && value != null && !(value instanceof Date)) {
@@ -107,8 +117,16 @@ function setParam(cbc, hmac, ngram, request, param, value, limit) {
         value = xmlBuilder.buildObject(value);
     } else if (param.def && param.def.type === 'rowversion' && value != null && !Buffer.isBuffer(value)) {
         value = Buffer.from(value.data ? value.data : []);
-    } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || param.def.type !== 'table')) {
+    } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || !['table', 'nested'].includes(param.def.type))) {
         value = JSON.stringify(value);
+    } else if (
+        value != null &&
+        typeof value !== 'string' &&
+        value.toString &&
+        param.def &&
+        ['char', 'nchar', 'varchar', 'nvarchar', 'text', 'ntext', 'uniqueidentifier'].includes(param.def.type)
+    ) {
+        value = value.toString();
     }
     if (param.out) {
         request.output(param.name, type, value);

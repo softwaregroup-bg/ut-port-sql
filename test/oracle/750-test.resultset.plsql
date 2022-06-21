@@ -1,0 +1,11 @@
+CREATE OR REPLACE PROCEDURE "test.resultset" (
+    message IN VARCHAR2
+) AS
+    c1 SYS_REFCURSOR;
+    c2 SYS_REFCURSOR;
+BEGIN
+  OPEN c1 FOR SELECT 'result' "resultSetName" FROM DUAL;
+  DBMS_SQL.RETURN_RESULT(c1);
+  OPEN c2 FOR SELECT message "column" FROM DUAL;
+  DBMS_SQL.RETURN_RESULT(c2);
+END;

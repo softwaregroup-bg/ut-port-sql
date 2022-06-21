@@ -9,7 +9,6 @@ const ROW_VERSION_INNER_TYPE = 'BINARY';
 const VAR_RE = /\$\{([^}]*)\}/g;
 const path = require('path');
 const get = require('lodash.get');
-const parserSP = require('./parsers/mssqlSP');
 const includes = require('ut-function.includes');
 const yaml = require('yaml');
 const fs = require('fs');
@@ -35,7 +34,7 @@ function replaceCoreError(statement, fileName, objectName, params) {
         .map((line, index) => (line.replace(CORE_ERROR, (match, ret, type) =>
             `DECLARE @CORE_ERROR_FILE_${index} sysname='${fileName.replace(/'/g, '\'\'')}' ` +
             `DECLARE @CORE_ERROR_LINE_${index} int='${index + 1}' ` +
-            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ''}`)))
+            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ', @useRethrow = 1;\nTHROW'}`)))
         .join('\n');
 }
 
@@ -63,15 +62,16 @@ const preProcess = (binding, statement, fileName, objectName, cbc) => {
 
 function getAlterStatement(binding, statement, fileName, objectName, cbc) {
     statement = preProcess(binding, statement, fileName, objectName, cbc);
-    if (statement.trim().match(/^CREATE\s+TYPE/i)) {
+    if (statement.trim().match(/^CREATE\s+TYPE|^CREATE\s+(\bOR\b\s+\bREPLACE\b\s+)/i)) {
         return statement.trim();
     } else {
         return statement.trim().replace(/^CREATE /i, 'ALTER ');
     }
 }
 
-function tableToType(binding) {
+function tableToType(binding, driver) {
     if (!binding || binding.type !== 'table') return '';
+    if (driver === 'oracle') return `TYPE "${binding.table}TT" IS TABLE OF "${binding.schema}.${binding.table}"%ROWTYPE;`;
     const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
     const columns = binding.fields.map(function(field) {
         changeRowVersionType(field);
@@ -84,8 +84,9 @@ function tableToType(binding) {
     return 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
 }
 
-function tableToTTU(binding) {
+function tableToTTU(binding, driver) {
     if (!binding || binding.type !== 'table') return '';
+    if (driver === 'oracle') return '';
     const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TTU]' : binding.name + 'TTU';
     const columns = binding.fields.map(function(field) {
         changeRowVersionType(field);
@@ -117,7 +118,7 @@ function getSource(binding, statement, fileName, objectName, cbc) {
     return statement.trim().replace(/^ALTER /i, 'CREATE ');
 }
 
-function addQuery(schema, queries, params, cbc) {
+function addQuery(schema, queries, params, cbc, driver) {
     if (schema.source[params.objectId] === undefined) {
         queries.push({
             binding: params.binding,
@@ -142,6 +143,7 @@ function addQuery(schema, queries, params, cbc) {
                 });
             }
             queries.push({
+                binding: params.binding,
                 fileName: params.fileName,
                 objectName: params.objectName,
                 objectId: params.objectId,
@@ -149,10 +151,24 @@ function addQuery(schema, queries, params, cbc) {
             });
         }
     }
+    if (driver === 'oracle' && params?.binding?.type === 'table type') {
+        const found = queries.findIndex(query => query?.binding?.type === 'table type' && params?.binding?.schema === query?.binding?.schema);
+        const last = queries[queries.length - 1];
+        if (found >= 0 && found < queries.length - 1) {
+            last.content = queries[found].content.replace(/^ {2}--types$/m, '  ' + last.content + '\n  --types');
+            queries.splice(found, 1);
+        } else {
+            last.content = `CREATE OR REPLACE PACKAGE "${params.binding.schema}"
+AS
+  ${last.content}
+  --types
+END;`;
+        }
+    }
 }
 
 function getObjectName(fileName) {
-    return fileName.replace(/\.(sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, '').replace(/\[|]/g, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
+    return fileName.replace(/\.(plsql|sql|js|json|yaml|fmt)$/i, '').replace(/^[^$-]*[$-]/, '').replace(/\[|]/g, ''); // remove "prefix[$-]" and ".sql/.js/.json" suffix
 }
 
 function shouldCreateTT(schemaConfig, tableName) {
@@ -198,7 +214,8 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
     });
 };
 
-function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
+function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) {
+    const parserSP = require('./parsers')(driver);
     files = files.sort().map(file => {
         return {
             originalName: file,
@@ -226,10 +243,11 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                 return;
             }
             switch (path.extname(fileName).toLowerCase()) {
+                case '.plsql':
                 case '.sql': {
                     schemaConfig.linkSP && (dbObjects[objectId] = fileName);
                     let fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
-                    const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
+                    const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
                     if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
                         fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
                             const params = {offset};
@@ -251,7 +269,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                         createStatement: getCreateStatement(binding, fileContent, fileName, objectName, cbc)
                     }, cbc);
                     if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
-                        const tt = tableToType(binding);
+                        const tt = tableToType(binding, driver);
                         if (tt) {
                             addQuery(schema, queries, {
                                 binding: parserSP.parse(tt),
@@ -260,9 +278,9 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'tt',
                                 fileContent: tt,
                                 createStatement: tt
-                            }, cbc);
+                            }, cbc, driver);
                         }
-                        const ttu = tableToTTU(binding);
+                        const ttu = tableToTTU(binding, driver);
                         if (ttu) {
                             addQuery(schema, queries, {
                                 binding: parserSP.parse(ttu),
@@ -271,7 +289,7 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc) {
                                 objectId: objectId + 'ttu',
                                 fileContent: ttu,
                                 createStatement: ttu
-                            }, cbc);
+                            }, cbc, driver);
                         }
                     };
                     if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
