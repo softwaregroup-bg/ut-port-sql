@@ -1,3 +1,12 @@
+# [8.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.6...v8.0.0) (2022-06-21)
+
+
+### Features
+
+* mssql@8, oracledb@5 ([#120](https://github.com/softwaregroup-bg/ut-port-sql/issues/120)) ([01ff684](https://github.com/softwaregroup-bg/ut-port-sql/commit/01ff68482dca64713b5c433ffced20711dff37a8))
+
+
+
 ## [7.44.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.5...v7.44.6) (2022-05-10)
 
 
