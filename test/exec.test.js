@@ -61,6 +61,23 @@ require('ut-run').run({
             },
             {
                 name: 'deadlock',
+                method: 'test.test.params',
+                params: {
+                    obj: {
+                        a: 1
+                    },
+                    tt: {
+                        obj: {
+                            a: 1
+                        }
+                    }
+                },
+                result: (result, assert) => {
+                    assert.ok(result, 'params passed');
+                }
+            },
+            {
+                name: 'deadlock',
                 method: 'test.test.deadlock',
                 params: {},
                 result: (result, assert) => {
