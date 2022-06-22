@@ -68,12 +68,13 @@ require('ut-run').run({
                     },
                     tt: {
                         obj: {
-                            a: 1
+                            b: 1
                         }
                     }
                 },
-                result: (result, assert) => {
-                    assert.ok(result, 'params passed');
+                result: ({obj, tt}, assert) => {
+                    assert.same(JSON.parse(Buffer.from(obj.obj.data).toString()), {a: 1}, 'obj returned');
+                    assert.same(JSON.parse(Buffer.from(tt[0].obj.data).toString()), {b: 1}, 'tt returned');
                 }
             },
             {
