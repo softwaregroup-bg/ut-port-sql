@@ -60,6 +60,24 @@ require('ut-run').run({
                 }
             },
             {
+                name: 'params',
+                method: 'test.test.params',
+                params: {
+                    obj: {
+                        a: 1
+                    },
+                    tt: {
+                        obj: {
+                            b: 1
+                        }
+                    }
+                },
+                result: ({obj, tt}, assert) => {
+                    assert.same(JSON.parse(Buffer.from(obj.obj.data).toString()), {a: 1}, 'obj returned');
+                    assert.same(JSON.parse(Buffer.from(tt[0].obj.data).toString()), {b: 1}, 'tt returned');
+                }
+            },
+            {
                 name: 'deadlock',
                 method: 'test.test.deadlock',
                 params: {},

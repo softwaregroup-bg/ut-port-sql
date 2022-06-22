@@ -66,7 +66,8 @@ function getValue(cbc, hmac, ngram, index, param, column, value, def, updated) {
         } else if (value.type === 'Buffer') {
             return Buffer.from(value.data);
         } else if (typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value)) {
-            return JSON.stringify(value);
+            value = JSON.stringify(value);
+            return column.type.declaration === 'varbinary' ? Buffer.from(value) : value;
         } else if (
             value != null &&
             typeof value !== 'string' &&
@@ -119,6 +120,7 @@ function setParam(cbc, hmac, ngram, request, param, value, driver) {
         value = Buffer.from(value.data ? value.data : []);
     } else if (value != null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value) && (!param.def || !['table', 'nested'].includes(param.def.type))) {
         value = JSON.stringify(value);
+        if (param.def.type === 'varbinary') value = Buffer.from(value);
     } else if (
         value != null &&
         typeof value !== 'string' &&
