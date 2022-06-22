@@ -1,3 +1,12 @@
+## [8.0.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.0...v8.0.1) (2022-06-22)
+
+
+### Bug Fixes
+
+* explicitly convert stringified object to buffer when varbinary ([#121](https://github.com/softwaregroup-bg/ut-port-sql/issues/121)) ([2738124](https://github.com/softwaregroup-bg/ut-port-sql/commit/273812440a64f2cc0d69ce65199aeaa4910eb606))
+
+
+
 # [8.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v7.44.6...v8.0.0) (2022-06-21)
 
 
