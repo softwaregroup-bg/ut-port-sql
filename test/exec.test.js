@@ -60,7 +60,7 @@ require('ut-run').run({
                 }
             },
             {
-                name: 'deadlock',
+                name: 'params',
                 method: 'test.test.params',
                 params: {
                     obj: {
