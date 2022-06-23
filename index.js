@@ -463,7 +463,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             this.checkConnection();
             const busConfig = this.bus.config;
 
-            function retrySchemaUpdate(failedQueue, retry) {
+            function retrySchemaUpdate(failedQueue, retry = true) {
                 const newFailedQueue = [];
                 const request = self.getRequest();
                 const errCollection = [];
