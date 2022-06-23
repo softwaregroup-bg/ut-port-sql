@@ -463,7 +463,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             this.checkConnection();
             const busConfig = this.bus.config;
 
-            function retrySchemaUpdate(failedQueue) {
+            function retrySchemaUpdate(failedQueue, retry = true) {
                 const newFailedQueue = [];
                 const request = self.getRequest();
                 const errCollection = [];
@@ -497,12 +497,9 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                 });
                 return promise
                     .then(() => {
-                        if (newFailedQueue.length === 0) {
-                            return;
-                        } else if (newFailedQueue.length === failedQueue.length) {
-                            throw self.errors['portSQL.retryFailedSchemas'](errCollection);
-                        }
-                        return retrySchemaUpdate(newFailedQueue);
+                        if (newFailedQueue.length === 0) return;
+                        if (!retry) throw self.errors['portSQL.retryFailedSchemas'](errCollection);
+                        return retrySchemaUpdate(newFailedQueue, newFailedQueue.length !== failedQueue.length);
                     });
             }
 
