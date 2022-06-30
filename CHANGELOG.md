@@ -1,3 +1,12 @@
+## [8.0.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.2...v8.0.3) (2022-06-30)
+
+
+### Bug Fixes
+
+* partial meta logging ([0eda7e8](https://github.com/softwaregroup-bg/ut-port-sql/commit/0eda7e836ce71682a885f3cc82908a3409384f98))
+
+
+
 ## [8.0.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.1...v8.0.2) (2022-06-23)
 
 
