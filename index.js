@@ -763,7 +763,14 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                         options: ngram.options,
                         add: (...params) => ngramParam.rows.add(...params)
                     }, request, param, value, driver);
-                    debug && (debugParams[param.name] = value);
+                    if (debug) {
+                        if (param.name === 'meta') {
+                            const {forward, globalId, language, 'auth.actorId': actorId, 'auth.sessionId': sessionId, 'auth.checkSession': checkSession} = value;
+                            debugParams[param.name] = {actorId, sessionId, checkSession, language, forward, globalId};
+                        } else {
+                            debugParams[param.name] = value;
+                        }
+                    };
                 });
                 if (ngramParam) request.input('ngram', ngramParam);
 
