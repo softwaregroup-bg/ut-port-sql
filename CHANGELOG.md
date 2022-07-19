@@ -1,3 +1,12 @@
+## [8.0.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.3...v8.0.4) (2022-07-19)
+
+
+### Bug Fixes
+
+* consider linkSP config in schema ([#123](https://github.com/softwaregroup-bg/ut-port-sql/issues/123)) ([b71254b](https://github.com/softwaregroup-bg/ut-port-sql/commit/b71254b842797bce82990e235b51e9c95cbc4902))
+
+
+
 ## [8.0.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.2...v8.0.3) (2022-06-30)
 
 
