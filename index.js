@@ -1061,7 +1061,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                         prev.source[cur.namespace] = '';
                     }
                     if ((cur.type === 'P') && (cur.colid === 1) && (self.config.linkSP || (objectList && objectList[cur.full]))) {
-                        if (self.includesConfig('linkSP', [full, namespace], true)) {
+                        if (!cur.name.startsWith('_') && self.includesConfig('linkSP', [full, namespace], true)) {
                             prev.parseList.push({
                                 source: cur.source,
                                 fileName: objectList && objectList[cur.full]

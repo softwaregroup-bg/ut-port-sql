@@ -48,19 +48,17 @@ require('ut-run').run({
     params: {
         steps: [
             {
-                name: 'exec',
                 method: 'test.query',
                 params: {
                     query: 'SELECT 1 AS test',
                     process: 'json'
                 },
-                result: (result, assert) => {
+                result(result, assert) {
                     assert.ok(Array.isArray(result.dataSet), 'result returned');
                     assert.equal(result.dataSet[0].test, 1, 'result correctness checked');
                 }
             },
             {
-                name: 'params',
                 method: 'test.test.params',
                 params: {
                     obj: {
@@ -72,17 +70,23 @@ require('ut-run').run({
                         }
                     }
                 },
-                result: ({obj, tt}, assert) => {
+                result({obj, tt}, assert) {
                     assert.same(JSON.parse(Buffer.from(obj.obj.data).toString()), {a: 1}, 'obj returned');
                     assert.same(JSON.parse(Buffer.from(tt[0].obj.data).toString()), {b: 1}, 'tt returned');
                 }
             },
             {
-                name: 'deadlock',
                 method: 'test.test.deadlock',
                 params: {},
-                result: (result, assert) => {
+                result(result, assert) {
                     assert.ok(result, 'deadlock retried');
+                }
+            },
+            {
+                method: 'test._test.private',
+                params: {},
+                error(error, assert) {
+                    assert.equal(error.type, 'bus.methodNotFound', 'SP is private because it starts with _');
                 }
             }
         ]
