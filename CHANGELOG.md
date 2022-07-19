@@ -1,3 +1,12 @@
+# [8.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.4...v8.1.0) (2022-07-19)
+
+
+### Features
+
+* stored procedures that start with _ to be private ([47be1dc](https://github.com/softwaregroup-bg/ut-port-sql/commit/47be1dc236ab45a35395977bbccd0ea2ff9df8de))
+
+
+
 ## [8.0.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.3...v8.0.4) (2022-07-19)
 
 
