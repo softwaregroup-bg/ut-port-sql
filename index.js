@@ -1420,9 +1420,11 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             function validation({name, def: {type, size, typeName}, doc}) {
                 let result;
                 switch (type) {
-                    case 'table':
-                        result = joi.array().items(joi.object().meta({className: typeName.replace('.', 'TableTypes.') + '.params'}));
+                    case 'table': {
+                        const item = joi.object().meta({className: typeName.replace('.', 'TableTypes.') + '.params'});
+                        result = joi.alternatives(joi.array().items(item), item);
                         break;
+                    }
                     case 'bit':
                         result = common.boolNull;
                         break;
