@@ -1,3 +1,12 @@
+## [8.1.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.0...v8.1.1) (2022-07-21)
+
+
+### Bug Fixes
+
+* improve type generation ([0af2345](https://github.com/softwaregroup-bg/ut-port-sql/commit/0af2345c2c90693c1204fd68d53ef0dfc61c667b))
+
+
+
 # [8.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.0.4...v8.1.0) (2022-07-19)
 
 
