@@ -554,7 +554,10 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             return innerPromise
                                 .then(function() {
                                     updated.length && self.log.info && self.log.info({
-                                        message: updated,
+                                        message: {
+                                            path: schemaConfig.path,
+                                            updated
+                                        },
                                         $meta: {
                                             mtid: 'event',
                                             method: 'update.' + paths
@@ -1543,3 +1546,5 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
         object[fieldName] = fieldValue;
     }
 };
+// http://ltp.sourceforge.net/coverage/lcov/geninfo.1.php
+// https://github.com/istanbuljs/istanbuljs/blob/master/packages/istanbul-lib-coverage/test/file.test.js
