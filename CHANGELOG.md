@@ -1,3 +1,12 @@
+## [8.1.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.1...v8.1.2) (2022-09-15)
+
+
+### Bug Fixes
+
+* use local config when interpolating *.sql files ([dac6f52](https://github.com/softwaregroup-bg/ut-port-sql/commit/dac6f52816e20f17e80c417865dfdd4098ad7f4d))
+
+
+
 ## [8.1.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.0...v8.1.1) (2022-07-21)
 
 
