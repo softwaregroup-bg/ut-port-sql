@@ -1,3 +1,7 @@
+## [8.1.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.2...v8.1.3) (2022-09-15)
+
+
+
 ## [8.1.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.1...v8.1.2) (2022-09-15)
 
 
