@@ -246,7 +246,8 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) 
                 case '.plsql':
                 case '.sql': {
                     includes(schemaConfig.linkSP, [objectId]) && (dbObjects[objectId] = fileName);
-                    let fileContent = interpolate(vfs.readFileSync(fileName).toString(), busConfig);
+                    let fileContent = interpolate(vfs.readFileSync(fileName).toString(), schemaConfig.config);
+                    fileContent = interpolate(fileContent, busConfig);
                     const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
                     if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
                         fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
