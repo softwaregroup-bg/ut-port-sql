@@ -360,8 +360,8 @@ function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) 
                 case '.yaml':
                     addSP(queries, {
                         fileName,
-                        objectName: objectName,
-                        objectId: objectId,
+                        objectName,
+                        objectId,
                         config: schemaConfig.config
                     });
                     break;
