@@ -1160,7 +1160,6 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             if (!this.config.doc || this.config.offline) {
                 return schema;
             }
-            return schema;
             this.checkConnection();
             const self = this;
             const schemas = this.getPaths('schema');
