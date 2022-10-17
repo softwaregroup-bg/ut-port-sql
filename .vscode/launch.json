@@ -25,7 +25,7 @@
     "inputs": [{
         "id": "test",
         "type": "pickString",
-        "default": "oracle.test.js",
+        "default": "exec.test.js",
         "description": "Test file to run",
         "options": [
             "exec.test.js",
