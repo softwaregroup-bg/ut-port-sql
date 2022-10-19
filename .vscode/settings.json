@@ -9,6 +9,7 @@
         "fsplus",
         "indexbyid",
         "indexmerge",
+        "infradb",
         "LISTAGG",
         "msnodesqlv",
         "ngram",
