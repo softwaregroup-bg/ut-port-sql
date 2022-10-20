@@ -1,6 +1,6 @@
 ALTER PROCEDURE test.[test.fetch]
     /*{
-        "data.content": 1
+        "data.txt": 1
     }*/
     @ngramTest [test].[ngramTT] READONLY
 AS
@@ -8,10 +8,9 @@ AS
 SELECT 'data' AS resultSetName
 
 SELECT
-    t.id, t.txt
+    id, txt
 FROM
-    test.test t
-JOIN
-    test.testSearch(@ngramTest, 1) s
-ON
-    s.id = t.id
+    test.test
+WHERE
+    id IN (SELECT id FROM test.testSearch(@ngramTest, 1))
+ORDER BY id

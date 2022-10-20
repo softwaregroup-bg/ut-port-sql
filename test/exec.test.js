@@ -95,20 +95,22 @@ require('ut-run').run({
             {
                 method: 'test.test.fetch',
                 params: {
-                    'data.content': Date.now().toString()
+                    'data.txt': 'abc'
                 },
                 result(result, assert) {
-                    assert.ok(Array.isArray(result.data) && !result.data.length, 'no records found');
+                    assert.strictSame(result.data, [{id: 1, txt: 'abcde'}], 'record found');
                 }
             },
             {
                 method: 'test.test.fetch',
                 params: {
-                    'data.content': 'abc'
+                    'data.txt': 'cde'
                 },
                 result(result, assert) {
-                    assert.ok(Array.isArray(result.data) && result.data.length === 1, 'record found');
-                    assert.equal(result.data[0].txt, 'abcde', 'the found record matches expectation');
+                    assert.strictSame(result.data, [
+                        {id: 1, txt: 'abcde'},
+                        {id: 2, txt: 'cdefg'}
+                    ], 'records found');
                 }
             }
         ]
