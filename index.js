@@ -955,7 +955,15 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                                 param.encrypt = true;
                             };
                             if (param.doc && /(^\{.*}$)|(^\[.*]$)/s.test(param.doc.trim())) {
-                                param.options = JSON.parse(param.doc);
+                                try {
+                                    param.options = JSON.parse(param.doc);
+                                } catch (e) {
+                                    throw this.errors['portSQL.docParseError']({
+                                        cause: e,
+                                        fileName: binding.name,
+                                        params: param
+                                    });
+                                }
                                 param.doc = param.options.docs;
                             }
                             if (param.def && param.def.type === 'table') {

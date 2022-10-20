@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "cdefg",
         "charkey",
         "colid",
         "datetime",
@@ -9,6 +10,7 @@
         "fsplus",
         "indexbyid",
         "indexmerge",
+        "infradb",
         "LISTAGG",
         "msnodesqlv",
         "ngram",
@@ -20,6 +22,7 @@
         "oracledb",
         "PDBS",
         "pdbseed",
+        "pegjs",
         "plsql",
         "PLUGGABLE",
         "Ppass",

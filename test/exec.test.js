@@ -1,4 +1,19 @@
 const path = require('path');
+const fetch = (txt, expectedResult = []) => ({
+    method: 'test.test.fetch',
+    params: {
+        'data.txt': txt
+    },
+    result(result, assert) {
+        assert.strictSame(result.data,
+            [
+                {id: 1, txt: 'abcde'},
+                {id: 2, txt: 'cdefg'}
+            ].filter(({txt}) => [].concat(expectedResult).find(t => t === txt)),
+            `test.test.fetch ${txt}`
+        );
+    }
+});
 /* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
     main: [
@@ -35,6 +50,9 @@ require('ut-run').run({
             allowQuery: true,
             logLevel: 'warn',
             linkSP: true,
+            createTT: true,
+            cbc: '75742d706f72742d73716c2121212d2d2d2d75742d706f72742d73716c212121',
+            hmac: '75742d706f72742d73716c2121212d2d2d2d75742d706f72742d73716c212121',
             connection: {
                 server: 'infradb14',
                 user: '${decrypt(\'3b280fb6a2c0c22483dfb73be18128774fa156653edd29eebed4f3c4e8f5c0fa\')}',
@@ -65,14 +83,14 @@ require('ut-run').run({
                         a: 1
                     },
                     tt: {
-                        obj: {
+                        content: {
                             b: 1
                         }
                     }
                 },
                 result({obj, tt}, assert) {
-                    assert.same(JSON.parse(Buffer.from(obj.obj.data).toString()), {a: 1}, 'obj returned');
-                    assert.same(JSON.parse(Buffer.from(tt[0].obj.data).toString()), {b: 1}, 'tt returned');
+                    assert.strictSame(JSON.parse(obj.obj), {a: 1}, 'obj returned');
+                    assert.strictSame(JSON.parse(tt[0].content), {b: 1}, 'tt returned');
                 }
             },
             {
@@ -88,7 +106,13 @@ require('ut-run').run({
                 error(error, assert) {
                     assert.equal(error.type, 'bus.methodNotFound', 'SP is private because it starts with _');
                 }
-            }
+            },
+            fetch('abc', 'abcde'),
+            fetch('abcde', 'abcde'),
+            fetch('cde', ['abcde', 'cdefg']),
+            fetch('abcdx', []),
+            fetch('xyabc', []),
+            fetch('abc cde', 'abcde')
         ]
     }
 });

@@ -4,37 +4,18 @@ const mssql = require('mssql');
 const lodashGet = require('lodash.get');
 const xmlBuilder = new xml2js.Builder({headless: true});
 const isEncrypted = item => item && ((item.def && item.def.type === 'varbinary' && item.def.size % 16 === 0) || (item.length % 16 === 0) || /^encrypted/.test(item.name));
-const WORDS = /(\p{Letter}|\d)+/gu;
-const LETTER = /\p{Letter}|\d/gu;
+const ngram = require('ut-function.ngram');
 const TAGS = /(\p{Letter}|\d|=|\.)+/gu;
 
 function addNgram(hmac, ngramParam, add, row, param, column, string) {
     const options = ngramParam.options && ngramParam.options[column];
     if (!options) return ngramParam;
     const id = typeof options === 'number' ? options : options.id;
-    const unique = new Set();
     const tags = options.tags || column?.endsWith?.('Tags');
-    const match = string.toLowerCase().match(tags ? TAGS : WORDS);
-    match && match.forEach(word => {
-        if (tags) {
-            unique.add(word);
-            return;
-        }
-        word = word.match(LETTER);
-        if (word) {
-            const {min = 3, max = 3, depth = word.length - min} = options;
-            const length = word.length;
-            if (min >= length) {
-                unique.add(word.join(''));
-            } else {
-                for (let i = 0; i <= depth && i <= length; i++) {
-                    for (let j = min; j <= max && i + j <= length; j++) {
-                        unique.add(word.slice(i, i + j).join(''));
-                    }
-                }
-            }
-        }
-    });
+    const unique = tags
+        ? new Set(string.toLowerCase().match(TAGS))
+        : ngram(string.toLowerCase(), options);
+
     unique.forEach(ngram => add(row, id || 0, param, hmac((options.name ? options.name : column) + ' ' + ngram)));
 }
 

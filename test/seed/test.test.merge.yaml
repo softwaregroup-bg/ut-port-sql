@@ -1,0 +1,3 @@
+data:
+  - {id: 1, txt: abcde}
+  - {id: 2, txt: cdefg}
