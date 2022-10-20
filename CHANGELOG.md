@@ -1,3 +1,12 @@
+## [8.1.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.3...v8.1.4) (2022-10-20)
+
+
+### Bug Fixes
+
+* better doc parse error + usage of ut-function.ngram ([#126](https://github.com/softwaregroup-bg/ut-port-sql/issues/126)) ([6070dd5](https://github.com/softwaregroup-bg/ut-port-sql/commit/6070dd5d47d8a3d64d630051c425ddf065160e6e))
+
+
+
 ## [8.1.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.2...v8.1.3) (2022-09-15)
 
 
