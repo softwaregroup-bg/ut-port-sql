@@ -74,8 +74,8 @@ require('ut-run').run({
                     }
                 },
                 result({obj, tt}, assert) {
-                    assert.same(JSON.parse(obj.obj), {a: 1}, 'obj returned');
-                    assert.same(JSON.parse(tt[0].content), {b: 1}, 'tt returned');
+                    assert.strictSame(JSON.parse(obj.obj), {a: 1}, 'obj returned');
+                    assert.strictSame(JSON.parse(tt[0].content), {b: 1}, 'tt returned');
                 }
             },
             {
