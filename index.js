@@ -21,6 +21,8 @@ function changeRowVersionType(field) {
     }
 }
 
+const lower = (string, start) => string.charAt(start).toLowerCase() + string.slice(start + 1);
+
 module.exports = function({utPort, registerErrors, vfs, joi}) {
     if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
 
@@ -237,7 +239,6 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     }
                 };
             } else delete this.cbc;
-            const lower = (string, start) => string.charAt(start).toLowerCase() + string.slice(start + 1);
             const rename = (name) => {
                 if (name.startsWith('encrypted') && name.length > 9) return lower(name, 9);
                 else if (name.startsWith('stable') && name.length > 6) return lower(name, 6);
@@ -585,7 +586,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
         execTemplate(template, params) {
             const self = this;
             return template.render(params).then(function(query) {
-                return self.exec({query: query, process: 'json'})
+                return self.exec({query, process: 'json'})
                     .then(result => result && result.dataSet);
             });
         }
@@ -664,7 +665,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     if (this.cbc && isEncrypted(column)) {
                         pipeline.push(record => {
                             if (record[key]) { // value is not null
-                                record[key] = this.cbc.decrypt(record[key], column.name);
+                                record[key.startsWith('stable') ? lower(key, 6) : key] = this.cbc.decrypt(record[key], column.name);
                             }
                         });
                     }
@@ -839,7 +840,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                                     }
                                     if (Object.prototype.hasOwnProperty.call(namedSet, name)) {
                                         throw self.errors['portSQL.duplicateResultSetName']({
-                                            name: name
+                                            name
                                         });
                                     }
                                     if (single) {
