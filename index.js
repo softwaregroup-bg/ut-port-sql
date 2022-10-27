@@ -665,8 +665,9 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     if (this.cbc && isEncrypted(column)) {
                         pipeline.push(record => {
                             if (record[key]) { // value is not null
-                                record[key.startsWith('stable') ? lower(key, 6) : key] = this.cbc.decrypt(record[key], column.name);
+                                record[key] = this.cbc.decrypt(record[key], column.name);
                             }
+                            if (key.startsWith('stable')) record[lower(key, 6)] = record[key];
                         });
                     }
                 } else if (column.type.declaration === 'xml') {
