@@ -1,3 +1,12 @@
+## [8.1.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.4...v8.1.5) (2022-10-31)
+
+
+### Bug Fixes
+
+* decrypt stable encrypted column in result ([153c537](https://github.com/softwaregroup-bg/ut-port-sql/commit/153c537ba41f84234e3a90b81b6ac9539aacc6dd))
+
+
+
 ## [8.1.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.3...v8.1.4) (2022-10-20)
 
 
