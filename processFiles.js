@@ -185,9 +185,9 @@ function interpolate(txt, params = {}) {
     });
 };
 
-const addSP = (queries, {fileName, objectName, objectId, createParams}) => {
+const addSP = (queries, {fileName, objectName, objectId, config, createParams}) => {
     const params = path.extname(fileName).toLowerCase() === '.yaml'
-        ? yaml.parse(interpolate(fs.readFileSync(fileName, 'utf8'), createParams.config))
+        ? yaml.parse(interpolate(fs.readFileSync(fileName, 'utf8'), config))
         : require(fileName);
     queries.push({
         fileName,
@@ -201,7 +201,7 @@ const addSP = (queries, {fileName, objectName, objectId, createParams}) => {
 
             return this.methods[objectName].call(
                 this,
-                typeof params === 'function' ? params(createParams) : params,
+                typeof params === 'function' ? params(config, createParams) : params,
                 {
                     auth: {
                         actorId: 0
@@ -363,10 +363,8 @@ module.exports = createParams => ({
                             fileName,
                             objectName,
                             objectId,
-                            createParams: {
-                                ...createParams,
-                                config: schemaConfig.config
-                            }
+                            config: schemaConfig.config,
+                            createParams
                         });
                         break;
                     default:
