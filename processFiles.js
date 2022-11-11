@@ -185,9 +185,9 @@ function interpolate(txt, params = {}) {
     });
 };
 
-const addSP = (queries, {fileName, objectName, objectId, config}) => {
+const addSP = (queries, {fileName, objectName, objectId, createParams}) => {
     const params = path.extname(fileName).toLowerCase() === '.yaml'
-        ? yaml.parse(interpolate(fs.readFileSync(fileName, 'utf8'), config))
+        ? yaml.parse(interpolate(fs.readFileSync(fileName, 'utf8'), createParams.config))
         : require(fileName);
     queries.push({
         fileName,
@@ -201,7 +201,7 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
 
             return this.methods[objectName].call(
                 this,
-                typeof params === 'function' ? params(config, this.errors) : params,
+                typeof params === 'function' ? params(createParams) : params,
                 {
                     auth: {
                         actorId: 0
@@ -214,173 +214,174 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
     });
 };
 
-function processFiles(schema, busConfig, schemaConfig, files, vfs, cbc, driver) {
-    const parserSP = require('./parsers')(driver);
-    files = files.sort().map(file => {
-        return {
-            originalName: file,
-            name: interpolate(file, busConfig)
-        };
-    });
-    if (schemaConfig.exclude) {
-        files = files.filter(file => !includes(schemaConfig.exclude, [file.originalName]));
-    }
-    if (schemaConfig.config && schemaConfig.config.exclude) {
-        files = files.filter(file => !includes(schemaConfig.config.exclude, [file.originalName]));
-    }
-    const objectIds = files.reduce(function(prev, cur) {
-        prev[getObjectName(cur.name).toLowerCase()] = true;
-        return prev;
-    }, {});
-    const queries = [];
-    const dbObjects = {};
-    files.forEach(function(file) {
-        const objectName = getObjectName(file.name);
-        const objectId = objectName.toLowerCase();
-        const fileName = path.join(schemaConfig.path, file.originalName);
-        try {
-            if (!vfs.isFile(fileName)) {
-                return;
-            }
-            switch (path.extname(fileName).toLowerCase()) {
-                case '.plsql':
-                case '.sql': {
-                    includes(schemaConfig.linkSP, [objectId]) && (dbObjects[objectId] = fileName);
-                    let fileContent = interpolate(vfs.readFileSync(fileName).toString(), schemaConfig.config);
-                    fileContent = interpolate(fileContent, busConfig);
-                    const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
-                    if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
-                        fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
-                            const params = {offset};
-                            if (p1) {
-                                p1.split(',').forEach(part => {
-                                    const [key, value] = part.split('=').map(str => str.trim());
-                                    params[key] = value;
-                                });
-                            }
-                            return mssqlQueries.permissionCheck(params);
-                        });
-                    }
-                    addQuery(schema, queries, {
-                        binding,
-                        fileName,
-                        objectName,
-                        objectId,
-                        fileContent,
-                        createStatement: getCreateStatement(binding, fileContent, fileName, objectName, cbc)
-                    }, cbc);
-                    if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
-                        const tt = tableToType(binding, driver);
-                        if (tt) {
-                            addQuery(schema, queries, {
-                                binding: parserSP.parse(tt),
-                                fileName,
-                                objectName: objectName + 'TT',
-                                objectId: objectId + 'tt',
-                                fileContent: tt,
-                                createStatement: tt
-                            }, cbc, driver);
-                        }
-                        const ttu = tableToTTU(binding, driver);
-                        if (ttu) {
-                            addQuery(schema, queries, {
-                                binding: parserSP.parse(ttu),
-                                fileName,
-                                objectName: objectName + 'TTU',
-                                objectId: objectId + 'ttu',
-                                fileContent: ttu,
-                                createStatement: ttu
-                            }, cbc, driver);
-                        }
-                    };
-                    if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
-                        const [namespace, table] = objectName.split('.');
-                        const ngramTT = mssqlQueries.ngramTT(namespace, table);
-                        addQuery(schema, queries, {
-                            binding: parserSP.parse(ngramTT),
-                            fileName,
-                            objectName: namespace + '.ngramTT',
-                            objectId: namespace + '.ngramtt',
-                            fileContent: ngramTT,
-                            createStatement: ngramTT
-                        }, cbc);
-                        schema.source[namespace + '.ngramtt'] = true;
-                        if (binding.options.ngram.index) {
-                            const ngramIndex = mssqlQueries.ngramIndex(namespace, table);
-                            addQuery(schema, queries, {
-                                binding: parserSP.parse(ngramIndex),
-                                fileName,
-                                objectName: objectName + 'Index',
-                                objectId: objectId + 'index',
-                                fileContent: ngramIndex,
-                                createStatement: ngramIndex
-                            }, cbc);
-                            const ngramIndexById = mssqlQueries.ngramIndexById(namespace, table);
-                            addQuery(schema, queries, {
-                                fileName,
-                                objectName: 'ix' + objectName + 'IndexById',
-                                objectId: 'ix' + objectId + 'indexbyid',
-                                fileContent: ngramIndexById,
-                                createStatement: ngramIndexById
-                            }, cbc);
-                            const ngramIndexTT = mssqlQueries.ngramIndexTT(namespace);
-                            addQuery(schema, queries, {
-                                binding: parserSP.parse(ngramIndexTT),
-                                fileName,
-                                objectName: namespace + '.ngramIndexTT',
-                                objectId: namespace + '.ngramindextt',
-                                fileContent: ngramIndexTT,
-                                createStatement: ngramIndexTT
-                            }, cbc);
-                            schema.source[namespace + '.ngramindextt'] = true;
-                            const ngramMerge = mssqlQueries.ngramMerge(namespace, table);
-                            addQuery(schema, queries, {
-                                fileName,
-                                objectName: objectName + 'IndexMerge',
-                                objectId: objectId + 'indexmerge',
-                                fileContent: ngramMerge,
-                                createStatement: ngramMerge
-                            }, cbc);
-                        }
-                        if (binding.options.ngram.search) {
-                            const ngramSearch = mssqlQueries.ngramSearch(namespace, table);
-                            addQuery(schema, queries, {
-                                fileName,
-                                objectName: objectName + 'Search',
-                                objectId: objectId + 'search',
-                                fileContent: ngramSearch,
-                                createStatement: ngramSearch
-                            }, cbc);
-                        }
-                    }
-                    break;
-                }
-                case '.js':
-                case '.json':
-                case '.yaml':
-                    addSP(queries, {
-                        fileName,
-                        objectName,
-                        objectId,
-                        config: schemaConfig.config
-                    });
-                    break;
-                default:
-                    throw new Error('Unsupported file extension');
+module.exports = createParams => ({
+    processFiles(schema, busConfig, schemaConfig, files, cbc, driver) {
+        const parserSP = require('./parsers')(driver);
+        files = files.sort().map(file => {
+            return {
+                originalName: file,
+                name: interpolate(file, busConfig)
             };
-        } catch (error) {
-            error.message = error.message +
-                ' (' +
-                fileName +
-                (error.location ? `:${error.location.start.line}:${error.location.start.column}` : '') +
-                ')';
-            throw error;
+        });
+        if (schemaConfig.exclude) {
+            files = files.filter(file => !includes(schemaConfig.exclude, [file.originalName]));
         }
-    });
-    return {queries, dbObjects};
-};
-
-module.exports = {
-    processFiles,
+        if (schemaConfig.config && schemaConfig.config.exclude) {
+            files = files.filter(file => !includes(schemaConfig.config.exclude, [file.originalName]));
+        }
+        const objectIds = files.reduce(function(prev, cur) {
+            prev[getObjectName(cur.name).toLowerCase()] = true;
+            return prev;
+        }, {});
+        const queries = [];
+        const dbObjects = {};
+        files.forEach(function(file) {
+            const objectName = getObjectName(file.name);
+            const objectId = objectName.toLowerCase();
+            const fileName = path.join(schemaConfig.path, file.originalName);
+            try {
+                if (!createParams.vfs.isFile(fileName)) {
+                    return;
+                }
+                switch (path.extname(fileName).toLowerCase()) {
+                    case '.plsql':
+                    case '.sql': {
+                        includes(schemaConfig.linkSP, [objectId]) && (dbObjects[objectId] = fileName);
+                        let fileContent = interpolate(createParams.vfs.readFileSync(fileName).toString(), schemaConfig.config);
+                        fileContent = interpolate(fileContent, busConfig);
+                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
+                        if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
+                            fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
+                                const params = {offset};
+                                if (p1) {
+                                    p1.split(',').forEach(part => {
+                                        const [key, value] = part.split('=').map(str => str.trim());
+                                        params[key] = value;
+                                    });
+                                }
+                                return mssqlQueries.permissionCheck(params);
+                            });
+                        }
+                        addQuery(schema, queries, {
+                            binding,
+                            fileName,
+                            objectName,
+                            objectId,
+                            fileContent,
+                            createStatement: getCreateStatement(binding, fileContent, fileName, objectName, cbc)
+                        }, cbc);
+                        if (shouldCreateTT(schemaConfig, objectId) && !objectIds[objectId + 'tt']) {
+                            const tt = tableToType(binding, driver);
+                            if (tt) {
+                                addQuery(schema, queries, {
+                                    binding: parserSP.parse(tt),
+                                    fileName,
+                                    objectName: objectName + 'TT',
+                                    objectId: objectId + 'tt',
+                                    fileContent: tt,
+                                    createStatement: tt
+                                }, cbc, driver);
+                            }
+                            const ttu = tableToTTU(binding, driver);
+                            if (ttu) {
+                                addQuery(schema, queries, {
+                                    binding: parserSP.parse(ttu),
+                                    fileName,
+                                    objectName: objectName + 'TTU',
+                                    objectId: objectId + 'ttu',
+                                    fileContent: ttu,
+                                    createStatement: ttu
+                                }, cbc, driver);
+                            }
+                        };
+                        if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
+                            const [namespace, table] = objectName.split('.');
+                            const ngramTT = mssqlQueries.ngramTT(namespace, table);
+                            addQuery(schema, queries, {
+                                binding: parserSP.parse(ngramTT),
+                                fileName,
+                                objectName: namespace + '.ngramTT',
+                                objectId: namespace + '.ngramtt',
+                                fileContent: ngramTT,
+                                createStatement: ngramTT
+                            }, cbc);
+                            schema.source[namespace + '.ngramtt'] = true;
+                            if (binding.options.ngram.index) {
+                                const ngramIndex = mssqlQueries.ngramIndex(namespace, table);
+                                addQuery(schema, queries, {
+                                    binding: parserSP.parse(ngramIndex),
+                                    fileName,
+                                    objectName: objectName + 'Index',
+                                    objectId: objectId + 'index',
+                                    fileContent: ngramIndex,
+                                    createStatement: ngramIndex
+                                }, cbc);
+                                const ngramIndexById = mssqlQueries.ngramIndexById(namespace, table);
+                                addQuery(schema, queries, {
+                                    fileName,
+                                    objectName: 'ix' + objectName + 'IndexById',
+                                    objectId: 'ix' + objectId + 'indexbyid',
+                                    fileContent: ngramIndexById,
+                                    createStatement: ngramIndexById
+                                }, cbc);
+                                const ngramIndexTT = mssqlQueries.ngramIndexTT(namespace);
+                                addQuery(schema, queries, {
+                                    binding: parserSP.parse(ngramIndexTT),
+                                    fileName,
+                                    objectName: namespace + '.ngramIndexTT',
+                                    objectId: namespace + '.ngramindextt',
+                                    fileContent: ngramIndexTT,
+                                    createStatement: ngramIndexTT
+                                }, cbc);
+                                schema.source[namespace + '.ngramindextt'] = true;
+                                const ngramMerge = mssqlQueries.ngramMerge(namespace, table);
+                                addQuery(schema, queries, {
+                                    fileName,
+                                    objectName: objectName + 'IndexMerge',
+                                    objectId: objectId + 'indexmerge',
+                                    fileContent: ngramMerge,
+                                    createStatement: ngramMerge
+                                }, cbc);
+                            }
+                            if (binding.options.ngram.search) {
+                                const ngramSearch = mssqlQueries.ngramSearch(namespace, table);
+                                addQuery(schema, queries, {
+                                    fileName,
+                                    objectName: objectName + 'Search',
+                                    objectId: objectId + 'search',
+                                    fileContent: ngramSearch,
+                                    createStatement: ngramSearch
+                                }, cbc);
+                            }
+                        }
+                        break;
+                    }
+                    case '.js':
+                    case '.json':
+                    case '.yaml':
+                        addSP(queries, {
+                            fileName,
+                            objectName,
+                            objectId,
+                            createParams: {
+                                ...createParams,
+                                config: schemaConfig.config
+                            }
+                        });
+                        break;
+                    default:
+                        throw new Error('Unsupported file extension');
+                };
+            } catch (error) {
+                error.message = error.message +
+                    ' (' +
+                    fileName +
+                    (error.location ? `:${error.location.start.line}:${error.location.start.column}` : '') +
+                    ')';
+                throw error;
+            }
+        });
+        return {queries, dbObjects};
+    },
     getObjectName
-};
+});

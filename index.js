@@ -23,9 +23,10 @@ function changeRowVersionType(field) {
 
 const lower = (string, start) => string.charAt(start).toLowerCase() + string.slice(start + 1);
 
-module.exports = function({utPort, registerErrors, vfs, joi}) {
+module.exports = function(createParams) {
+    const {utPort, registerErrors, vfs, joi} = createParams;
     if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
-
+    const {getObjectName, processFiles} = require('./processFiles')(createParams)
     return class SqlPort extends utPort {
         constructor() {
             super(...arguments);
@@ -511,7 +512,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             if (!folders || !folders.length) {
                 return schema;
             }
-            const {processFiles} = require('./processFiles');
+
             return folders.reduce((promise, schemaConfig) =>
                 promise.then(allDbObjects =>
                     new Promise((resolve, reject) => {
@@ -520,7 +521,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                                 reject(err);
                                 return;
                             }
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc, this.config.connection.driver);
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver);
 
                             const request = self.getRequest();
                             const updated = [];
@@ -1020,7 +1021,6 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                     )
                 )
             ).sort().forEach(file => {
-                const {getObjectName} = require('./processFiles');
                 const method = getObjectName(path.basename(file));
                 const [schema, table, command] = method.split('.', 3);
                 if (command) {
@@ -1493,7 +1493,6 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
             const schema = {
                 source: {}
             };
-            const {processFiles} = require('./processFiles');
             const procedures = {};
             for (const schemaConfig of folders) {
                 Object.assign(procedures, await new Promise((resolve, reject) => {
@@ -1502,7 +1501,7 @@ module.exports = function({utPort, registerErrors, vfs, joi}) {
                             reject(err);
                             return;
                         }
-                        const {queries} = processFiles(schema, busConfig, schemaConfig, files, vfs, this.cbc, this.config.connection.driver);
+                        const {queries} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver);
                         resolve(Object.fromEntries(queries.map(query => {
                             switch (query?.binding?.type) {
                                 case 'procedure':
