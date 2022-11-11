@@ -201,7 +201,7 @@ const addSP = (queries, {fileName, objectName, objectId, config}) => {
 
             return this.methods[objectName].call(
                 this,
-                typeof params === 'function' ? params(config) : params,
+                typeof params === 'function' ? params(config, this.errors) : params,
                 {
                     auth: {
                         actorId: 0
