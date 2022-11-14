@@ -26,7 +26,7 @@ const lower = (string, start) => string.charAt(start).toLowerCase() + string.sli
 module.exports = function(createParams) {
     const {utPort, registerErrors, vfs, joi} = createParams;
     if (!vfs) throw new Error('ut-run@10.19.0 or newer is required');
-    const {getObjectName, processFiles} = require('./processFiles')(createParams)
+    const {getObjectName, processFiles} = require('./processFiles')(createParams);
     return class SqlPort extends utPort {
         constructor() {
             super(...arguments);
