@@ -47,7 +47,7 @@ db:
     password: <db password>
     connectionTimeout: 60000
     requestTimeout: 60000
-    # other parameters to pass - see general and tedious options in mssql module
+    # other parameters to pass: see general and tedious options in mssql module
     options: # this can be skipped if the below defaults are acceptable
       encrypt: true
       trustServerCertificate: true
