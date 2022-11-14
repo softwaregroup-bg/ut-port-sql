@@ -7,7 +7,7 @@
     "lodash.get": "4.4.2",
     "mssql": "8.1.2",
     "oracledb": "5.4.0",
-    "ut-function.common-joi": "^1.7.2",
+    "ut-function.common-joi": "^1.9.1",
     "ut-function.includes": "^1.2.1",
     "ut-function.ngram": "1.1.0",
     "uuid": "8.3.2",
