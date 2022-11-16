@@ -885,6 +885,12 @@ module.exports = function(createParams) {
                     .catch(function(err) {
                         const errorLines = err.message?.split('\n') || [''];
                         err.message = errorLines.shift();
+                        if (err.originalError) {
+                            err.cause = err.originalError;
+                            if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
+                                err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
+                            }
+                        }
                         const errorType = err.type || err.message;
                         const error = (errorType && self.errors.getError(errorType)) || self.errors.portSQL;
                         if (error.type === err.message) {
