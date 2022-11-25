@@ -1,3 +1,12 @@
+## [8.1.8](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.7...v8.1.8) (2022-11-25)
+
+
+### Bug Fixes
+
+* portSQL.retryFailedSchemas to be logged as 'fatal' #UTCORE-121 ([#131](https://github.com/softwaregroup-bg/ut-port-sql/issues/131)) ([325c14d](https://github.com/softwaregroup-bg/ut-port-sql/commit/325c14d0015a3a8103c4a59aed32c63d0c587c49)), closes [#UTCORE-121](https://github.com/softwaregroup-bg/ut-port-sql/issues/UTCORE-121)
+
+
+
 ## [8.1.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.6...v8.1.7) (2022-11-16)
 
 
