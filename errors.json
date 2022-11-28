@@ -13,7 +13,10 @@
     "portSQL.singleResultExpected": "Expected single or no result",
     "portSQL.wrongXmlFormat": "Wrong XML format in result",
     "portSQL.updateSchema": "Schema update error",
-    "portSQL.retryFailedSchemas": "Retries exceeded for failed schemas",
+    "portSQL.retryFailedSchemas": {
+        "message": "Retries exceeded for failed schemas",
+        "fatal": true
+    },
     "portSQL.noRowsExpected": "No rows were expected in the result",
     "portSQL.singleResultsetExpected": "Single resultset expected",
     "portSQL.oneRowExpected": "Exactly one row was expected in the result",

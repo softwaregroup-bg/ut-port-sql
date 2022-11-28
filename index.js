@@ -500,11 +500,7 @@ module.exports = function(createParams) {
                 return promise
                     .then(() => {
                         if (newFailedQueue.length === 0) return;
-                        if (!retry) {
-                            const error = self.errors['portSQL.retryFailedSchemas'](new Error(errCollection.join('\n')));
-                            self.log?.fatal?.(error);
-                            throw error;
-                        }
+                        if (!retry) throw self.errors['portSQL.retryFailedSchemas'](new Error(errCollection.join('\n')));
                         return retrySchemaUpdate(newFailedQueue, newFailedQueue.length !== failedQueue.length);
                     });
             }
