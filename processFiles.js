@@ -7,6 +7,7 @@ const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
 const ENCRYPTSTABLE_RE = /(?:NULL|0x.*)\/\*encryptStable (.*)\*\//gi;
 const ROW_VERSION_INNER_TYPE = 'BINARY';
 const VAR_RE = /\$\{([^}]*)\}/g;
+const SECTION_RE = /--\{([^}\s]+)[^}]*\}/g;
 const path = require('path');
 const get = require('lodash.get');
 const includes = require('ut-function.includes');
@@ -176,13 +177,14 @@ function shouldCreateTT(schemaConfig, tableName) {
 }
 
 function interpolate(txt, params = {}) {
-    return txt.replace(VAR_RE, (placeHolder, label) => {
+    const replacer = (placeHolder, label) => {
         const value = get(params, label, placeHolder);
         switch (typeof value) {
             case 'object': return JSON.stringify(value);
             default: return value;
         }
-    });
+    };
+    return txt.replace(VAR_RE, replacer).replace(SECTION_RE, replacer);
 };
 
 const addSP = (queries, {fileName, objectName, objectId, config, createParams}) => {
