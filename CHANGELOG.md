@@ -1,3 +1,12 @@
+# [8.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.9...v8.2.0) (2022-12-13)
+
+
+### Features
+
+* --{param} replacer ([1ca161f](https://github.com/softwaregroup-bg/ut-port-sql/commit/1ca161f3f75570135e69d22f61c0eec8b976ab43))
+
+
+
 ## [8.1.9](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.8...v8.1.9) (2022-11-28)
 
 
