@@ -20,16 +20,46 @@
   function parseJSON(text) {
     return /(^\{.*}$)|(^\[.*]$)/s.test(text.trim()) ? JSON.parse(text) : text;
   }
+  function print(statement) {
+    return ';PRINT(\'ut-cover '
+      + statement.location.start.line + ' '
+      + statement.location.start.column + ' '
+      + statement.location.end.line + ' '
+      + statement.location.end.column + '\');'
+  }
+  function instrument(statement, index, array) {
+    if (/^END\s/i.test(statement.statement)) return statement.statement;
+    let result = statement.statement
+    if (/^IF|^ELSE/i.test(statement.statement)) {
+      const begin = array[index + 1] && /^IF|^ELSE/i.test(statement.statement) && !/^BEGIN|^IF|^ELSE/i.test(array[index + 1].statement);
+      return begin ? result.substr(0, statement.index) + ' BEGIN' + print(statement) + result.substr(statement.index) : result;
+    }
+    const end = index && /^IF|^ELSE/i.test(array[index-1].statement) && !/^BEGIN|^IF|^ELSE/i.test(statement.statement);
+    return result.substr(0, statement.index) + print(statement) + (end ? 'END' : '') + result.substr(statement.index);
+  }
 }
 
-create = procedure / tableValue / table
+createBody = procedureBody / tableValue / table
 
 createoralter = "ALTER"i / "CREATE"i
 
 procedure
   = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body {
       return {
-          type:'procedure',
+            type:'procedure',
+            name: '['+schema+'].['+table+']',
+            schema: schema,
+            table: table,
+            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+            params:params
+        }
+    }
+
+procedureBody
+  = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body:bodyParse {
+      return {
+            body: body,
+            type:'procedure',
             name: '['+schema+'].['+table+']',
             schema: schema,
             table: table,
@@ -65,9 +95,8 @@ table
       }
     }
 
-name =
-  "[" str:$[^\]]+ "]" {return str} /
-  $[A-Za-z0-9_$]+
+name_brackets = "[" str:$[^\]]+ "]" {return str}
+name = name_brackets / $[A-Za-z0-9_$]+
 
 names = ws n:name ws o:order? m:(ws comma ws nn:name ws oo:order? {
           return {
@@ -85,7 +114,7 @@ names = ws n:name ws o:order? m:(ws comma ws nn:name ws oo:order? {
 schema = name:name "." {return name}
 namespace = name:name "." {return '['+name+'].'}
 
-fullname = ns:namespace? n:name? {return (ns||'')+'['+n+']'}
+reference = ns:namespace* n:name {return (ns||'')+'['+n+']'}
 
 params =
   f:ws1 p:param q:(ws comma ws:ws r:param { return [ws, r]})* e:ws1 {
@@ -219,7 +248,7 @@ action = "NO ACTION"i / "SET DEFAULT"i / "SET NULL"i / "CASCADE"i / "RESTRICT"i
 clause = "DELETE"i / "UPDATE"i / "INSERT"i
 
 fk_constraint
-  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws "REFERENCES"i ws t:fullname ws lparen ws c:name ws rparen a:fk_clause_actions {
+  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws "REFERENCES"i ws t:reference ws lparen ws c:name ws rparen a:fk_clause_actions {
       return {
           type: "FOREIGN KEY",
             referenceTable: t,
@@ -282,7 +311,7 @@ signed_number =
 
 value = lparen ws e:expression ws rparen / signed_number / string_literal / "NULL"i
 
-string_literal = quote s:([^'\r\n] / qq)* quote {return s.join('')}
+string_literal = quote s:([^'] / qq)* quote {return s.join('')}
 
 qq = quote quote {return '\''}
 
@@ -366,3 +395,83 @@ index
           filter
         }
     }
+
+bodyParse =  x: statement+ {
+  const result = [];
+    x.forEach(item => {
+      if (item?.start) {
+          result.push(item)
+      } else {
+        result[result.length-1].statement += item.statement;
+        result[result.length-1].location.end = item.location.end;
+      }
+      if (!item?.whitespace) result[result.length-1].index = result[result.length-1].statement.length;
+      if (item?.reference) {
+        result[result.length-1].reference||=[];
+        if (!result[result.length-1].reference.includes(item.reference)) result[result.length-1].reference.push(item.reference);
+      }
+    })
+    const statements = result.reduceRight((prev, item) => {
+       if (
+        (prev.length && prev[0].statement.match(/^SELECT\s/i) && item.statement.match(/^INSERT\s/i)) ||
+        (prev.length && prev[0].statement.match(/^SET\s/i) && item.statement.match(/^UPDATE\s/i))
+       ) {
+         prev[0].statement = item.statement + prev[0].statement;
+         prev[0].index += item.statement.length;
+         prev[0].location.start = item.location.start;
+       } else
+         prev.unshift(item);
+       return prev;
+    }, []);
+    return {
+      text: statements.map(instrument).join('') + '\n',
+      statements
+    }
+}
+statement =
+  ws1 {return {whitespace: true, statement: text(), location: location()}} /
+  value {return {statement: text(), location: location()}} /
+  ("(" ws ")") {return {statement: text(), location: location()}} /
+  relation: relation {return {statement: text(), location: location(), reference: relation.reference}} /
+  name_brackets {return {statement: text(), location: location()}} /
+  case {return {statement: text(), location: location()}} /
+  start {return {start: true, statement: text(), location: location()}} /
+  skip {return {statement: text(), location: location()}}
+case = "CASE"i $ws1 $(!("END"i end) (case/(!ws1 .))+ ws1)+ ("END"i end)
+relation =
+  ("FROM"i / "REFERENCES"i / "JOIN"i / "INTO"i) ws1 reference:reference {return {reference}}
+end = &[^A-Za-z0-9_]
+start =
+  "SET"i end /
+  "SELECT"i end /
+  "DECLARE"i end /
+  "BEGIN"i ws1 "TRY"i end /
+  "BEGIN"i ws1 "CATCH"i end /
+  "BEGIN"i end /
+  "END"i ws1 "TRY"i end /
+  "END"i ws1 "CATCH"i end /
+  "END"i end /
+  "ELSE"i (ws1 "IF"i)? end /
+  "IF"i end /
+  "RAISERROR"i end /
+  "RETURN"i end /
+  "ROLLBACK"i (ws1 "TRANSACTION"i)? end /
+  "COMMIT"i (ws1 "TRANSACTION"i)? end /
+  "EXEC"i end /
+  "CREATE"i end /
+  "DROP"i end /
+  "ALTER"i end /
+  "DELETE"i end /
+  "UPDATE"i end /
+  "INSERT"i end /
+  "RENAME"i end /
+  "WITH"i end /
+  "DENY"i end /
+  "GRANT"i end /
+  "REVOKE"i end /
+  "TRUNCATE"i ws1 "TABLE"i end /
+  "DISABLE"i ws1 "TRIGGER"i end /
+  "ENABLE"i ws1 "TRIGGER"i end /
+  "BULK"i ws1 "INSERT"i end
+
+skip = !start (!(WhiteSpace / LineTerminatorSequence / case / "'" / "(") .)+

@@ -536,7 +536,15 @@ module.exports = function(createParams) {
                             }
                             queries.forEach((query) => {
                                 innerPromise = innerPromise.then(() => {
-                                    const operation = query.callSP ? query.callSP.apply(self) : request.batch(query.content);
+                                    const operation = query.callSP ? query.callSP.apply(self) : request.batch(query.content).catch(err => {
+                                        if (err.originalError) {
+                                            err.cause = err.originalError;
+                                            if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
+                                                err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
+                                            }
+                                        }
+                                        throw err;
+                                    });
                                     return operation
                                         .then(() => updated.push(query.objectName))
                                         .catch((err) => {
@@ -906,8 +914,9 @@ module.exports = function(createParams) {
                         if (debug) {
                             err.storedProcedure = name;
                             err.params = debugParams;
-                            err.fileName = (fileName || name) + ':' + err.lineNumber + ':1';
+                            err.fileName = (fileName || name);
                             const stack = errToThrow.stack.split('\n');
+                            errorLines.unshift('    at ' + err?.originalError?.info?.procName + ':' + err.lineNumber);
                             stack.splice.apply(stack, [1, 0].concat(errorLines));
                             errToThrow.stack = stack.join('\n');
                         }
@@ -918,7 +927,7 @@ module.exports = function(createParams) {
             return function callLinkedSpWrapper(msg, $meta) {
                 return callLinkedSP(msg, $meta)
                     .catch(function(e) {
-                        if (e.cause.number === 1205 && self.config.retryOnDeadlock) {
+                        if (e.cause.number in [1205, 101205] && self.config.retryOnDeadlock) {
                             self.log.warn && self.log.warn({ $meta: { mtid: 'event', method: 'portSQL.deadlock' }, method: $meta.method });
                             return callLinkedSP(msg, $meta);
                         }

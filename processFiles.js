@@ -33,9 +33,10 @@ function replaceCoreError(statement, fileName, objectName, params) {
     return statement
         .split('\n')
         .map((line, index) => (line.replace(CORE_ERROR, (match, ret, type) =>
-            `DECLARE @CORE_ERROR_FILE_${index} sysname='${fileName.replace(/'/g, '\'\'')}' ` +
-            `DECLARE @CORE_ERROR_LINE_${index} int='${index + 1}' ` +
-            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ', @useRethrow = 1;\nTHROW'}`)))
+            `DECLARE @CORE_ERROR_FILE_${index} SYSNAME='${fileName.replace(/'/g, '\'\'')}' ` +
+            `DECLARE @CORE_ERROR_LINE_${index} INT='${index + 1}' ` +
+            `DECLARE @ERROR_NUMBER_LINE_${index} INT=ERROR_NUMBER()+100000 ` +
+            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : `, @errorNumber = @ERROR_NUMBER_LINE_${index};`}`)))
         .join('\n');
 }
 
@@ -251,7 +252,7 @@ module.exports = createParams => ({
                         includes(schemaConfig.linkSP, [objectId]) && (dbObjects[objectId] = fileName);
                         let fileContent = interpolate(createParams.vfs.readFileSync(fileName).toString(), schemaConfig.config);
                         fileContent = interpolate(fileContent, busConfig);
-                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
+                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent, fileName);
                         if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
                             fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
                                 const params = {offset};
