@@ -660,7 +660,8 @@ consumption of stored JSON by just renaming the columns in the result set.
 ## Bulk import and export
 
 SQL port can scan folders for `*.fmt` files and create methods, which invoke the
-bulk copy utility [bcp](https://docs.microsoft.com/en-us/sql/tools/bcp-utility)
+bulk copy utility `bcp` (included with
+[ODBC Driver for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server))
 to import or export big amounts of data in efficient way.
 Pass the the list of folders in the `format` configuration property:
 

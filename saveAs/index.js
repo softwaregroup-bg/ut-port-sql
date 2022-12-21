@@ -32,41 +32,44 @@ module.exports = async(port, request, { saveAs }, name) => {
     const key = crypto.randomBytes(32);
     const iv = crypto.randomBytes(16);
     const writer = crypto.createCipheriv(algorithm, key, iv);
-    writer.pipe(fs.createWriteStream(outputFilePath));
+    writer.pipe(fs.createWriteStream(outputFilePath)).on('error', error => port.log.error && port.log.error(error));
 
     return new Promise((resolve, reject) => {
         let replied = false;
         const reply = err => {
             if (replied) return;
             replied = true;
-            writer.end();
-            if (!err) {
-                try {
-                    formatter.onDone();
-                    if (saveAs.stream) {
-                        return resolve(Object.assign(fs.createReadStream(outputFilePath).pipe(
-                            crypto.createDecipheriv(algorithm, key, iv)
-                        ), {
-                            toJSON: () => ({path: outputFilePath}),
-                            httpResponse: () => ({
-                                type: formatter.mime,
-                                header: ['content-disposition', `attachment; filename="${path.basename(saveAs.stream)}"`]
-                            })
-                        }));
-                    } else return resolve({outputFilePath, encryption: {algorithm, key: key.toString('hex'), iv: iv.toString('hex')}});
-                } catch (e) {
-                    err = e;
+            writer.end(() => {
+                if (!err) {
+                    try {
+                        formatter.onDone();
+                        if (saveAs.stream) {
+                            const pipe = fs.createReadStream(outputFilePath).pipe(
+                                crypto.createDecipheriv(algorithm, key, iv)
+                            );
+                            pipe.on('error', error => port.log.error && port.log.error(error));
+                            return resolve(Object.assign(pipe, {
+                                toJSON: () => ({path: outputFilePath}),
+                                httpResponse: () => ({
+                                    type: formatter.mime,
+                                    header: ['content-disposition', `attachment; filename="${path.basename(saveAs.stream)}"`]
+                                })
+                            }));
+                        } else return resolve({outputFilePath, encryption: {algorithm, key: key.toString('hex'), iv: iv.toString('hex')}});
+                    } catch (e) {
+                        err = e;
+                    }
+                } else {
+                    request.cancel();
                 }
-            } else {
-                request.cancel();
-            }
-            port.log.error && port.log.error(err);
-            try {
-                fs.unlinkSync(outputFilePath);
-            } catch (e) {
-                port.log.error && port.log.error(e);
-            }
-            reject(port.errors['portSQL.exportError'](err));
+                port.log.error && port.log.error(err);
+                try {
+                    fs.unlinkSync(outputFilePath);
+                } catch (e) {
+                    port.log.error && port.log.error(e);
+                }
+                reject(port.errors['portSQL.exportError'](err));
+            });
         };
 
         const wrap = fn => async(...params) => {
