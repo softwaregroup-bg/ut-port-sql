@@ -1,3 +1,12 @@
+## [8.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.2.0...v8.2.1) (2022-12-21)
+
+
+### Bug Fixes
+
+* export streaming ([1ea2a61](https://github.com/softwaregroup-bg/ut-port-sql/commit/1ea2a615d621a66c75dee9219b03020b46a1035f))
+
+
+
 # [8.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.1.9...v8.2.0) (2022-12-13)
 
 
