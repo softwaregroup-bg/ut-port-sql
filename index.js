@@ -927,7 +927,7 @@ module.exports = function(createParams) {
             return function callLinkedSpWrapper(msg, $meta) {
                 return callLinkedSP(msg, $meta)
                     .catch(function(e) {
-                        if (e.cause.number in [1205, 101205] && self.config.retryOnDeadlock) {
+                        if ([1205, 101205].includes(e.cause?.number) && self.config.retryOnDeadlock) {
                             self.log.warn && self.log.warn({ $meta: { mtid: 'event', method: 'portSQL.deadlock' }, method: $meta.method });
                             return callLinkedSP(msg, $meta);
                         }
