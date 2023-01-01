@@ -218,6 +218,7 @@ module.exports = function(createParams) {
 
         start() {
             const cbcStable = fieldName => String(fieldName).startsWith('stable');
+            this.cover = this.config.cover ? {} : null;
             if (this.config.cbc) {
                 const {encrypt, decrypt} = crypto.cbc(this.config.cbc);
                 this.cbc = {
@@ -303,6 +304,7 @@ module.exports = function(createParams) {
             const connection = this.connection;
             this.connection = null;
             await (connection && connection.close());
+            if (this.cover) require('./cover')(this.cover);
             return super.stop(...arguments);
         }
 
@@ -521,7 +523,7 @@ module.exports = function(createParams) {
                                 reject(err);
                                 return;
                             }
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver);
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver, this.cover);
 
                             const request = self.getRequest();
                             const updated = [];
@@ -632,9 +634,15 @@ module.exports = function(createParams) {
             });
         }
 
-        getRequestMssql() {
+        getRequestMssql(fileName) {
             const request = new this.mssql.Request(this.connection);
             request.on('info', (info) => {
+                if (fileName && info.message?.startsWith('ut-cover')) {
+                    const statement = this.cover[fileName] ||= {};
+                    const statementId = info.message.substr(9);
+                    statement[statementId] = (statement[statementId] || 0) + 1;
+                    return;
+                };
                 if (typeof info.includes === 'function' && info.includes('The module will still be created')) {
                     this.log.debug && this.log.debug({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
                 } else {
@@ -648,9 +656,9 @@ module.exports = function(createParams) {
             return new OracleRequest(this.connection);
         }
 
-        getRequest() {
-            if (this.oracle) return this.getRequestOracle();
-            return this.getRequestMssql();
+        getRequest(fileName) {
+            if (this.oracle) return this.getRequestOracle(fileName);
+            return this.getRequestMssql(fileName);
         }
 
         getRowTransformer(columns = {}) {
@@ -740,7 +748,7 @@ module.exports = function(createParams) {
 
             function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
-                const request = self.getRequest();
+                const request = self.getRequest(fileName);
                 const getParam = name => flatten ? lodashGet(msg, name.split(flatten)) : msg[name];
                 const debug = self.isDebug();
                 const debugParams = {};

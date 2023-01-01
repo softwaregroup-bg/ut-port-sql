@@ -20,26 +20,28 @@
   function parseJSON(text) {
     return /(^\{.*}$)|(^\[.*]$)/s.test(text.trim()) ? JSON.parse(text) : text;
   }
-  function print(statement) {
+  function print(statement, next) {
+    if (!/^END\b/i.test(next?.statement || '')) next = statement;
     return ';PRINT(\'ut-cover '
       + statement.location.start.line + ' '
       + statement.location.start.column + ' '
-      + statement.location.end.line + ' '
-      + statement.location.end.column + '\');'
+      + next.location.end.line + ' '
+      + next.location.end.column + '\');'
   }
   function instrument(statement, index, array) {
-    if (/^END\s/i.test(statement.statement)) return statement.statement;
+    if (/^END\b/i.test(statement.statement)) return statement.statement;
     let result = statement.statement
-    if (/^IF|^ELSE/i.test(statement.statement)) {
-      const begin = array[index + 1] && /^IF|^ELSE/i.test(statement.statement) && !/^BEGIN|^IF|^ELSE/i.test(array[index + 1].statement);
-      return begin ? result.substr(0, statement.index) + ' BEGIN' + print(statement) + result.substr(statement.index) : result;
+    if (/^IF|^ELSE|^WHILE/i.test(statement.original)) {
+      const begin = array[index + 1] && !/^BEGIN|^IF|^ELSE|^WHILE/i.test(array[index + 1].statement);
+      return begin ? result.substr(0, statement.index) + ' BEGIN' + print(statement, array[index + 1]) + result.substr(statement.index) : result;
     }
-    const end = index && /^IF|^ELSE/i.test(array[index-1].statement) && !/^BEGIN|^IF|^ELSE/i.test(statement.statement);
-    return result.substr(0, statement.index) + print(statement) + (end ? 'END' : '') + result.substr(statement.index);
+    const end = index && /^IF|^ELSE|^WHILE/i.test(array[index-1].original) && !/^BEGIN|^IF|^ELSE|^WHILE/i.test(statement.statement);
+    return result.substr(0, statement.index) + print(statement, array[index + 1]) + (end ? 'END' : '') + result.substr(statement.index);
   }
 }
 
 createBody = procedureBody / tableValue / table
+create = procedure / tableValue / table
 
 createoralter = "ALTER"i / "CREATE"i
 
@@ -55,16 +57,21 @@ procedure
         }
     }
 
+headerParse = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 {
+  return {schema, table, doc, text: text()}
+}
+
 procedureBody
-  = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 body:bodyParse {
+  =  header:headerParse body:bodyParse {
       return {
-            body: body,
+            body: header.text + body.text,
+            statements: body.statements,
             type:'procedure',
-            name: '['+schema+'].['+table+']',
-            schema: schema,
-            table: table,
-            doc: doc && doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
-            params:params
+            name: '['+header.schema+'].['+header.table+']',
+            schema: header.schema,
+            table: header.table,
+            doc: header.doc && header.doc.single.replace(/^\s+/, '').replace(/\s+$/, '') || false,
+            params:header.params
         }
     }
 
@@ -309,7 +316,7 @@ scalar_type =  n:name
 signed_number =
   ( ( plus / minus )? numeric_literal ) {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;}
 
-value = lparen ws e:expression ws rparen / signed_number / string_literal / "NULL"i
+value = lparen ws e:expression ws rparen / signed_number / string_literal / "NULL"i end
 
 string_literal = quote s:([^'] / qq)* quote {return s.join('')}
 
@@ -405,7 +412,10 @@ bodyParse =  x: statement+ {
         result[result.length-1].statement += item.statement;
         result[result.length-1].location.end = item.location.end;
       }
-      if (!item?.whitespace) result[result.length-1].index = result[result.length-1].statement.length;
+      if (!item?.whitespace) {
+        result[result.length-1].index = result[result.length-1].statement.length;
+        if (/@@ROWCOUNT|ROWCOUNT_BIG/i.test(item.statement)) result[result.length-1].rowcount = true;
+      }
       if (item?.reference) {
         result[result.length-1].reference||=[];
         if (!result[result.length-1].reference.includes(item.reference)) result[result.length-1].reference.push(item.reference);
@@ -413,14 +423,25 @@ bodyParse =  x: statement+ {
     })
     const statements = result.reduceRight((prev, item) => {
        if (
-        (prev.length && prev[0].statement.match(/^SELECT\s/i) && item.statement.match(/^INSERT\s/i)) ||
-        (prev.length && prev[0].statement.match(/^SET\s/i) && item.statement.match(/^UPDATE\s/i))
+         (prev.length && prev[0].rowcount) ||
+         (prev.length && prev[0].statement.startsWith(';')) ||
+         (prev.length && prev[0].statement.match(/^(INSERT|UPDATE|DELETE|SET)\b/i) && item.statement.match(/^WHEN\b/i)) ||
+         (prev.length && prev[0].statement.match(/^WHEN\b/i) && item.statement.match(/^(MERGE|WITH|INSERT|DELETE|UPDATE|SET)\b/i)) ||
+         (prev.length && prev[0].statement.match(/^WITH\b/i) && item.statement.match(/^MERGE\b/i)) ||
+         (prev.length && prev[0].statement.match(/^(WITH|UNION)\b/i) && item.statement.match(/^SELECT\b/i)) ||
+         (prev.length && prev[0].statement.match(/^(UPDATE|INSERT)\b/i) && item.statement.match(/^WITH\b/i)) ||
+         (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR)\b/i)) ||
+         (prev.length && prev[0].statement.match(/^SET\b/i) && item.statement.match(/^UPDATE\b/i)) ||
+         (prev.length && prev[0].statement.match(/^CURSOR\b/i) && item.statement.match(/^DECLARE\b/i))
        ) {
          prev[0].statement = item.statement + prev[0].statement;
          prev[0].index += item.statement.length;
          prev[0].location.start = item.location.start;
-       } else
+         prev[0].rowcount = item.rowcount;
+       } else {
+         item.original = item.statement;
          prev.unshift(item);
+       }
        return prev;
     }, []);
     return {
@@ -442,9 +463,15 @@ relation =
   ("FROM"i / "REFERENCES"i / "JOIN"i / "INTO"i) ws1 reference:reference {return {reference}}
 end = &[^A-Za-z0-9_]
 start =
+  ";" /
   "SET"i end /
   "SELECT"i end /
   "DECLARE"i end /
+  "CURSOR"i end /
+  "OPEN"i end /
+  "FETCH"i ws1 "FROM"i end /
+  "CLOSE"i end /
+  "DEALLOCATE"i end /
   "BEGIN"i ws1 "TRY"i end /
   "BEGIN"i ws1 "CATCH"i end /
   "BEGIN"i end /
@@ -453,7 +480,9 @@ start =
   "END"i end /
   "ELSE"i (ws1 "IF"i)? end /
   "IF"i end /
+  "WHILE"i end /
   "RAISERROR"i end /
+  "THROW"i end /
   "RETURN"i end /
   "ROLLBACK"i (ws1 "TRANSACTION"i)? end /
   "COMMIT"i (ws1 "TRANSACTION"i)? end /
@@ -464,12 +493,17 @@ start =
   "DELETE"i end /
   "UPDATE"i end /
   "INSERT"i end /
+  "MERGE"i end /
+  "WHEN"i end /
+  "UNION"i (ws1 "ALL"i)? end /
   "RENAME"i end /
   "WITH"i end /
   "DENY"i end /
   "GRANT"i end /
   "REVOKE"i end /
   "TRUNCATE"i ws1 "TABLE"i end /
+  "CREATE"i ws1 "TABLE"i end /
+  "DROP"i ws1 "TABLE"i end /
   "DISABLE"i ws1 "TRIGGER"i end /
   "ENABLE"i ws1 "TRIGGER"i end /
   "BULK"i ws1 "INSERT"i end

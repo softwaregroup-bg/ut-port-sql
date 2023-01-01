@@ -10,6 +10,7 @@
     "ut-function.common-joi": "^1.9.1",
     "ut-function.includes": "^1.2.1",
     "ut-function.ngram": "1.1.0",
+    "istanbul-lib-coverage": "^3.2.0",
     "uuid": "8.3.2",
     "xml2js": "0.4.22",
     "yaml": "1.10.0"
@@ -29,7 +30,7 @@
     "lint": "ut-lint .",
     "doc": "ut-doc",
     "release": "ut-release",
-    "genParser": "pegjs parsers/mssqlSP.pegjs",
+    "genParser": "pegjs --allowed-start-rules create,createBody parsers/mssqlSP.pegjs",
     "genParserOracle": "pegjs parsers/oracleSP.pegjs",
     "changelog": "ut-changelog",
     "check": "ut-check",

@@ -1,5 +1,5 @@
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
-const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?$/mi;
+const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?(?:$|;)/mi;
 const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
 const PERMISSION_CHECK = /--ut-permission-check(.*)$/gm;
 const mssqlQueries = require('./sql');
@@ -218,7 +218,7 @@ const addSP = (queries, {fileName, objectName, objectId, config, createParams}) 
 };
 
 module.exports = createParams => ({
-    processFiles(schema, busConfig, schemaConfig, files, cbc, driver) {
+    processFiles(schema, busConfig, schemaConfig, files, cbc, driver, cover) {
         const parserSP = require('./parsers')(driver);
         files = files.sort().map(file => {
             return {
@@ -252,7 +252,11 @@ module.exports = createParams => ({
                         includes(schemaConfig.linkSP, [objectId]) && (dbObjects[objectId] = fileName);
                         let fileContent = interpolate(createParams.vfs.readFileSync(fileName).toString(), schemaConfig.config);
                         fileContent = interpolate(fileContent, busConfig);
-                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent, fileName);
+                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent, fileName, {startRule: cover ? 'createBody' : 'create'});
+                        if (cover && binding && binding.type === 'procedure') {
+                            fileContent = binding.body;
+                            cover[fileName] = Object.fromEntries(Array.from(fileContent.matchAll(/;PRINT\('ut-cover (\d+ \d+ \d+ \d+)'\);/g)).map(([, x]) => [x, 0]));
+                        }
                         if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
                             fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
                                 const params = {offset};
