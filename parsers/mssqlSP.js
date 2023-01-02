@@ -531,7 +531,7 @@ function peg$parse(input, options) {
                 result.push(item)
             } else {
               result[result.length-1].statement += item.statement;
-              result[result.length-1].location.end = item.location.end;
+              if (!item?.whitespace) result[result.length-1].location.end = item.location.end;
             }
             if (!item?.whitespace) {
               result[result.length-1].index = result[result.length-1].statement.length;
@@ -553,6 +553,7 @@ function peg$parse(input, options) {
                (prev.length && prev[0].statement.match(/^(UPDATE|INSERT)\b/i) && item.statement.match(/^WITH\b/i)) ||
                (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR)\b/i)) ||
                (prev.length && prev[0].statement.match(/^SET\b/i) && item.statement.match(/^UPDATE\b/i)) ||
+               (prev.length && prev[0].statement.match(/^EXEC\b/i) && item.statement.match(/^INSERT\b/i)) ||
                (prev.length && prev[0].statement.match(/^CURSOR\b/i) && item.statement.match(/^DECLARE\b/i))
              ) {
                prev[0].statement = item.statement + prev[0].statement;
