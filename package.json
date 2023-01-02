@@ -27,7 +27,7 @@
   },
   "scripts": {
     "lint": "ut-lint .",
-    "doc": "ut-doc",
+    "doc": "ut-run doc",
     "release": "ut-release",
     "genParser": "pegjs --allowed-start-rules create,createBody parsers/mssqlSP.pegjs",
     "genParserOracle": "pegjs parsers/oracleSP.pegjs",
