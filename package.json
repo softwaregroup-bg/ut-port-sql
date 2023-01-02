@@ -18,9 +18,8 @@
   "devDependencies": {
     "json-schema-to-markdown": "1.1.1",
     "pegjs": "0.10.0",
-    "tap": "^16.2.0",
-    "ut-run": "^10.70.24",
-    "ut-tools": "^6.41.5",
+    "tap": "^16.3.2",
+    "ut-run": "^10.70.27",
     "why-is-node-running": "^2.2.2"
   },
   "peerDependencies": {
