@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "8.3.0-cover.2",
+  "version": "8.3.0-cover.3",
   "main": "./index.js",
   "dependencies": {
     "json-stringify-deterministic": "1.0.1",
@@ -27,7 +27,6 @@
   },
   "scripts": {
     "lint": "ut-lint .",
-    "doc": "ut-run doc",
     "release": "ut-release",
     "genParser": "pegjs --allowed-start-rules create,createBody parsers/mssqlSP.pegjs",
     "genParserOracle": "pegjs parsers/oracleSP.pegjs",
