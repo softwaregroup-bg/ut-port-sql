@@ -6783,7 +6783,7 @@ function peg$parse(input, options) {
         return begin ? result.substr(0, statement.index) + ' BEGIN' + print(statement, array[index + 1]) + result.substr(statement.index) : result;
       }
       const end = index && /^IF|^ELSE|^WHILE/i.test(array[index-1].original) && !/^BEGIN|^IF|^ELSE|^WHILE/i.test(statement.statement);
-      return result.substr(0, statement.index) + print(statement, array[index + 1]) + (end ? 'END' : '') + result.substr(statement.index);
+      return result.substr(0, statement.index) + print(statement, array[index + 1]) + (end ? 'END;' : '') + result.substr(statement.index);
     }
 
 
