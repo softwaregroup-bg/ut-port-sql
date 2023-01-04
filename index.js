@@ -639,6 +639,7 @@ module.exports = function(createParams) {
             request.on('info', (info) => {
                 if (info.message?.startsWith('ut-cover')) {
                     const [fileName, statementId] = info.message.substr(9).split('=');
+                    this.cover = this.cover || {};
                     const statement = this.cover[fileName] ||= {};
                     statement[statementId] = (statement[statementId] || 0) + 1;
                     return;
