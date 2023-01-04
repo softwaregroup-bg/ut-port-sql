@@ -662,6 +662,8 @@ function peg$parse(input, options) {
       peg$c277 = peg$literalExpectation("ENABLE", true),
       peg$c278 = "bulk",
       peg$c279 = peg$literalExpectation("BULK", true),
+      peg$c280 = "waitfor",
+      peg$c281 = peg$literalExpectation("WAITFOR", true),
 
       peg$currPos          = 0,
       peg$savedPos         = 0,
@@ -6553,6 +6555,29 @@ function peg$parse(input, options) {
                                                                                             peg$currPos = s0;
                                                                                             s0 = peg$FAILED;
                                                                                           }
+                                                                                          if (s0 === peg$FAILED) {
+                                                                                            s0 = peg$currPos;
+                                                                                            if (input.substr(peg$currPos, 7).toLowerCase() === peg$c280) {
+                                                                                              s1 = input.substr(peg$currPos, 7);
+                                                                                              peg$currPos += 7;
+                                                                                            } else {
+                                                                                              s1 = peg$FAILED;
+                                                                                              if (peg$silentFails === 0) { peg$fail(peg$c281); }
+                                                                                            }
+                                                                                            if (s1 !== peg$FAILED) {
+                                                                                              s2 = peg$parseend();
+                                                                                              if (s2 !== peg$FAILED) {
+                                                                                                s1 = [s1, s2];
+                                                                                                s0 = s1;
+                                                                                              } else {
+                                                                                                peg$currPos = s0;
+                                                                                                s0 = peg$FAILED;
+                                                                                              }
+                                                                                            } else {
+                                                                                              peg$currPos = s0;
+                                                                                              s0 = peg$FAILED;
+                                                                                            }
+                                                                                          }
                                                                                         }
                                                                                       }
                                                                                     }
@@ -6771,6 +6796,7 @@ function peg$parse(input, options) {
     function print(statement, next) {
       if (!/^END\b/i.test(next?.statement || '')) next = statement;
       return ';PRINT(\'ut-cover '
+        + options.filename + '='
         + statement.location.start.line + ' '
         + statement.location.start.column + ' '
         + next.location.end.line + ' '

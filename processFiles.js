@@ -255,7 +255,7 @@ module.exports = createParams => ({
                         const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent, fileName, {startRule: cover ? 'createBody' : 'create'});
                         if (cover && binding && binding.type === 'procedure') {
                             fileContent = binding.body;
-                            cover[fileName] = Object.fromEntries(Array.from(fileContent.matchAll(/;PRINT\('ut-cover (\d+ \d+ \d+ \d+)'\);/g)).map(([, x]) => [x, 0]));
+                            cover[fileName] = Object.fromEntries(Array.from(fileContent.matchAll(/;PRINT\('ut-cover [^=]*=(\d+ \d+ \d+ \d+)'\);/g)).map(([, x]) => [x, 0]));
                         }
                         if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
                             fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {

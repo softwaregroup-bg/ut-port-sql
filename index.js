@@ -634,12 +634,12 @@ module.exports = function(createParams) {
             });
         }
 
-        getRequestMssql(fileName) {
+        getRequestMssql() {
             const request = new this.mssql.Request(this.connection);
             request.on('info', (info) => {
-                if (fileName && info.message?.startsWith('ut-cover')) {
+                if (info.message?.startsWith('ut-cover')) {
+                    const [fileName, statementId] = info.message.substr(9).split('=');
                     const statement = this.cover[fileName] ||= {};
-                    const statementId = info.message.substr(9);
                     statement[statementId] = (statement[statementId] || 0) + 1;
                     return;
                 };

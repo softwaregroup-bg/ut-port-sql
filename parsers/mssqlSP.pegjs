@@ -23,6 +23,7 @@
   function print(statement, next) {
     if (!/^END\b/i.test(next?.statement || '')) next = statement;
     return ';PRINT(\'ut-cover '
+      + options.filename + '='
       + statement.location.start.line + ' '
       + statement.location.start.column + ' '
       + next.location.end.line + ' '
@@ -507,6 +508,7 @@ start =
   "DROP"i ws1 "TABLE"i end /
   "DISABLE"i ws1 "TRIGGER"i end /
   "ENABLE"i ws1 "TRIGGER"i end /
-  "BULK"i ws1 "INSERT"i end
+  "BULK"i ws1 "INSERT"i end /
+  "WAITFOR"i end
 
 skip = !start (!(WhiteSpace / LineTerminatorSequence / case / "'" / "(") .)+
