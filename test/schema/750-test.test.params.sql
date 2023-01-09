@@ -3,6 +3,8 @@ ALTER PROCEDURE test.[test.params]
     @test INT,
     @tt test.customTT READONLY
 AS
+DECLARE @callParams XML
+
 SELECT 'obj' AS resultSetName, 1 AS single
 SELECT @obj obj
 

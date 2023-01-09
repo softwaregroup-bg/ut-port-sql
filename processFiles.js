@@ -1,6 +1,6 @@
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
 const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?(?:$|;)/mi;
-const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
+const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML($|;.*$)/m;
 const PERMISSION_CHECK = /--ut-permission-check(.*)$/gm;
 const mssqlQueries = require('./sql');
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
@@ -26,7 +26,7 @@ function replaceAuditLog(binding, statement) {
 }
 
 function replaceCallParams(binding, statement) {
-    return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding));
+    return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding) + '$1');
 }
 
 function replaceCoreError(statement, fileName, objectName, params) {
