@@ -1,0 +1,4 @@
+{
+    "test": "Test error",
+    "test.securityViolation": "Security violation error"
+}
