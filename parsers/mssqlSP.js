@@ -156,7 +156,7 @@ function peg$parse(input, options) {
               }
           },
       peg$c5 = function(schema, table, doc, params) {
-        return {schema, table, doc, text: text()}
+        return {schema, table, doc, params, text: text()}
       },
       peg$c6 = function(header, body) {
             return {

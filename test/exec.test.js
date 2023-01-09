@@ -19,13 +19,16 @@ require('ut-run').run({
     main: [
         () => ({
             test: () => [
+                require('./errors'),
                 (...params) => class db extends require('../')(...params) {},
                 function sql() {
                     return {
                         namespace: 'test',
                         schema: [{
                             path: path.join(__dirname, 'schema'),
-                            linkSP: true
+                            permissionCheck: true,
+                            linkSP: true,
+                            createTT: true
                         }],
                         seed: [{
                             path: path.join(__dirname, 'seed')
@@ -49,8 +52,6 @@ require('ut-run').run({
             imports: ['sql'],
             allowQuery: true,
             logLevel: 'warn',
-            linkSP: true,
-            createTT: true,
             cover: true,
             cbc: '75742d706f72742d73716c2121212d2d2d2d75742d706f72742d73716c212121',
             hmac: '75742d706f72742d73716c2121212d2d2d2d75742d706f72742d73716c212121',
@@ -92,6 +93,15 @@ require('ut-run').run({
                 result({obj, tt}, assert) {
                     assert.strictSame(JSON.parse(obj.obj), {a: 1}, 'obj returned');
                     assert.strictSame(JSON.parse(tt[0].content), {b: 1}, 'tt returned');
+                }
+            },
+            {
+                name: 'securityViolation',
+                method: 'test.test.params',
+                $meta: {frontEnd: 'fake'},
+                params: {},
+                error(error, assert) {
+                    assert.equal(error.type, 'test.securityViolation');
                 }
             },
             {

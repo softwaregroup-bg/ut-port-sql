@@ -59,7 +59,7 @@ procedure
     }
 
 headerParse = ws createoralter ws1 PROCEDURE ws1 schema:schema table:name doc:WhitespaceSingleLineComment? params:params? AS ws1 {
-  return {schema, table, doc, text: text()}
+  return {schema, table, doc, params, text: text()}
 }
 
 procedureBody
