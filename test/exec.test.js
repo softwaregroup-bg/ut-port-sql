@@ -1,19 +1,4 @@
 const path = require('path');
-const fetch = (txt, expectedResult = []) => ({
-    method: 'test.test.fetch',
-    params: {
-        'data.txt': txt
-    },
-    result(result, assert) {
-        assert.strictSame(result.data,
-            [
-                {id: 1, txt: 'abcde'},
-                {id: 2, txt: 'cdefg'}
-            ].filter(({txt}) => [].concat(expectedResult).find(t => t === txt)),
-            `test.test.fetch ${txt}`
-        );
-    }
-});
 /* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
     main: [
