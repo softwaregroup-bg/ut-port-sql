@@ -1,19 +1,4 @@
 const path = require('path');
-const fetch = (txt, expectedResult = []) => ({
-    method: 'test.test.fetch',
-    params: {
-        'data.txt': txt
-    },
-    result(result, assert) {
-        assert.strictSame(result.data,
-            [
-                {id: 1, txt: 'abcde'},
-                {id: 2, txt: 'cdefg'}
-            ].filter(({txt}) => [].concat(expectedResult).find(t => t === txt)),
-            `test.test.fetch ${txt}`
-        );
-    }
-});
 /* eslint-disable no-template-curly-in-string */
 require('ut-run').run({
     main: [
@@ -40,7 +25,8 @@ require('ut-run').run({
                             ]);
                         }
                     };
-                }
+                },
+                ...require('./jobs')
             ]
         })
     ],
@@ -63,67 +49,11 @@ require('ut-run').run({
             create: {
                 user: '${decrypt(\'289fd8ff4717c56d59b1ebc6987fbd1f1f0df4849705f6216b319763c8edb252\')}'
             }
+        },
+        utRun: {
+            test: {
+                jobs: 'test'
+            }
         }
-    },
-    params: {
-        steps: [
-            {
-                method: 'test.query',
-                params: {
-                    query: 'SELECT 1 AS test',
-                    process: 'json'
-                },
-                result(result, assert) {
-                    assert.ok(Array.isArray(result.dataSet), 'result returned');
-                    assert.equal(result.dataSet[0].test, 1, 'result correctness checked');
-                }
-            },
-            {
-                method: 'test.test.params',
-                params: {
-                    obj: {
-                        a: 1
-                    },
-                    tt: {
-                        content: {
-                            b: 1
-                        }
-                    }
-                },
-                result({obj, tt}, assert) {
-                    assert.strictSame(JSON.parse(obj.obj), {a: 1}, 'obj returned');
-                    assert.strictSame(JSON.parse(tt[0].content), {b: 1}, 'tt returned');
-                }
-            },
-            {
-                name: 'securityViolation',
-                method: 'test.test.params',
-                $meta: {frontEnd: 'fake'},
-                params: {},
-                error(error, assert) {
-                    assert.equal(error.type, 'test.securityViolation');
-                }
-            },
-            {
-                method: 'test.test.deadlock',
-                params: {},
-                result(result, assert) {
-                    assert.ok(result, 'deadlock retried');
-                }
-            },
-            {
-                method: 'test._test.private',
-                params: {},
-                error(error, assert) {
-                    assert.equal(error.type, 'bus.methodNotFound', 'SP is private because it starts with _');
-                }
-            },
-            fetch('abc', 'abcde'),
-            fetch('abcde', 'abcde'),
-            fetch('cde', ['abcde', 'cdefg']),
-            fetch('abcdx', []),
-            fetch('xyabc', []),
-            fetch('abc cde', 'abcde')
-        ]
     }
 });

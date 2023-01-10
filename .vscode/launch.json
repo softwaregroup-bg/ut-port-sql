@@ -21,6 +21,25 @@
             "NODE_PATH": "dev"
         },
         "outputCapture": "std"
+    }, {
+        "name": "Test single",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceRoot}/test/${input:test}",
+        "args": [],
+        "cwd": "${workspaceRoot}",
+        "console": "integratedTerminal",
+        "runtimeArgs": [
+            "--preserve-symlinks",
+            "--nolazy",
+            "--max_old_space_size=500000"
+        ],
+        "env": {
+            "ut_port_sql_test_run__test__prompt": "1",
+            "UT_ENV": "test",
+            "NODE_PATH": "dev"
+        },
+        "outputCapture": "std"
     }],
     "inputs": [{
         "id": "test",
