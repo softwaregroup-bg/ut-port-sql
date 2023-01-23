@@ -15,16 +15,21 @@ DECLARE
     @errmsg NVARCHAR(2048),
     @severity TINYINT,
     @state TINYINT,
-    @errorMessage VARCHAR(250),
-    @errorCode VARCHAR(100) = SUBSTRING(@type, 1, CHARINDEX(' ', @type + ' ') - 1),
-    @actionId VARCHAR(100) = ISNULL(OBJECT_SCHEMA_NAME(@procId, @dbId) + '.' + OBJECT_NAME(@procId, @dbId), '<SQL>')
+    @errorMessage VARCHAR(250)
 
 SELECT
     @severity = ISNULL(error_severity(), 16),
     @state = ISNULL(error_state(), 1),
     @errmsg = @type + CHAR(10) + '    at ' + ISNULL(OBJECT_SCHEMA_NAME(@procId, @dbId) + '.' + OBJECT_NAME(@procId, @dbId), '<SQL>') +
     ' (' + @file + ':' +
-    LTRIM(STR(CASE WHEN ISNULL(error_procedure(), 'errorStack') = 'errorStack' THEN @fileLine ELSE ISNULL(error_line(), 1) END)) +
+    LTRIM(STR(
+        CASE
+            ISNULL(error_procedure(), 'core.errorStack')
+            WHEN 'core.errorStack' THEN @fileLine
+            WHEN 'errorStack' THEN @fileLine
+            ELSE ISNULL(error_line(), 1)
+        END
+    )) +
     ':1) errno:' +
     LTRIM(STR(ISNULL(error_number(), 0)))
 

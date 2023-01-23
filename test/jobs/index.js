@@ -3,5 +3,6 @@ module.exports = [
     require('./fetch'),
     require('./params'),
     require('./private'),
-    require('./query')
+    require('./query'),
+    require('./stack')
 ];
