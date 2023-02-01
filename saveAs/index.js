@@ -95,7 +95,7 @@ module.exports = async(port, request, { saveAs }, name) => {
                 formatter.onResultSet(row);
             } else {
                 if (typeof transform === 'function') {
-                    if (transform.constructor.name !== 'AsyncFunction') {
+                    if (transform.constructor.name === 'AsyncFunction') {
                         request.pause();
                         await transform(row);
                         request.resume();
