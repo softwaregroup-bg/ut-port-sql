@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "8.3.0-cover.10",
+  "version": "8.3.0-cover.11",
   "main": "./index.js",
   "dependencies": {
     "json-stringify-deterministic": "1.0.1",
