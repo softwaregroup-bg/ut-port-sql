@@ -304,7 +304,7 @@ module.exports = function(createParams) {
             const connection = this.connection;
             this.connection = null;
             await (connection && connection.close());
-            if (this.cover) require('./cover')(this.cover);
+            if (this.config.cover) require('./cover')(this.cover);
             return super.stop(...arguments);
         }
 
