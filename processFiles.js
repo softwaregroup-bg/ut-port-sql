@@ -186,7 +186,7 @@ function interpolate(txt, params = {}) {
         }
     };
     return txt.replace(VAR_RE, replacer).replace(SECTION_RE, replacer);
-};
+}
 
 const addSP = (queries, {fileName, objectName, objectId, config, createParams}) => {
     const params = path.extname(fileName).toLowerCase() === '.yaml'
@@ -300,7 +300,7 @@ module.exports = createParams => ({
                                     createStatement: ttu
                                 }, cbc, driver);
                             }
-                        };
+                        }
                         if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
                             const [namespace, table] = objectName.split('.');
                             const ngramTT = mssqlQueries.ngramTT(namespace, table);
@@ -376,7 +376,7 @@ module.exports = createParams => ({
                         break;
                     default:
                         throw new Error('Unsupported file extension');
-                };
+                }
             } catch (error) {
                 error.message = error.message +
                     ' (' +
