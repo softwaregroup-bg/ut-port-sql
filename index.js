@@ -244,7 +244,8 @@ module.exports = function(createParams) {
                             parseList: [{
                                 source: fs.readFileSync(file).toString(),
                                 fileName: file
-                            }]
+                            }],
+                            types: schema.types
                         });
                     } finally {
                         resolveConnected(false);
