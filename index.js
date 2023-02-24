@@ -14,6 +14,15 @@ const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
 const { dirname } = require('path');
 
+const setCause = err => {
+    if (err.originalError) {
+        err.cause = err.originalError;
+        if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
+            err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
+        }
+    }
+};
+
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
         field.type = ROW_VERSION_INNER_TYPE;
@@ -530,6 +539,7 @@ module.exports = function(createParams) {
                                     return true;
                                 })
                                 .catch((err) => {
+                                    setCause(err);
                                     const newErr = err;
                                     newErr.fileName = schema.fileName;
                                     newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
@@ -582,12 +592,7 @@ module.exports = function(createParams) {
                             queries.forEach((query) => {
                                 innerPromise = innerPromise.then(() => {
                                     const operation = query.callSP ? query.callSP.apply(self) : request.batch(query.content).catch(err => {
-                                        if (err.originalError) {
-                                            err.cause = err.originalError;
-                                            if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
-                                                err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
-                                            }
-                                        }
+                                        setCause(err);
                                         throw err;
                                     });
                                     return operation
@@ -971,12 +976,7 @@ module.exports = function(createParams) {
                     .catch(function(err) {
                         const errorLines = err.message?.split('\n') || [''];
                         err.message = errorLines.shift();
-                        if (err.originalError) {
-                            err.cause = err.originalError;
-                            if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
-                                err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
-                            }
-                        }
+                        setCause(err);
                         const errorType = err.type || err.message;
                         const error = (errorType && self.errors.getError(errorType)) || self.errors.portSQL;
                         if (error.type === err.message) {
