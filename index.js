@@ -900,7 +900,7 @@ module.exports = function(createParams) {
                         const errToThrow = error({
                             cause: err,
                             params: {
-                                method
+                                method: err.method || method
                             }
                         });
                         if (debug) {
