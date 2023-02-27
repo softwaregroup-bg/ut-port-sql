@@ -975,18 +975,20 @@ module.exports = function(createParams) {
                     })
                     .catch(function(err) {
                         const errorLines = err.message?.split('\n') || [''];
-                        err.message = errorLines.shift();
+                        const [errorMessage, ...errorParams] = errorLines.shift().split(' ');
                         setCause(err);
-                        const errorType = err.type || err.message;
+                        const errorType = err.type || errorMessage;
                         const error = (errorType && self.errors.getError(errorType)) || self.errors.portSQL;
-                        if (error.type === err.message) {
-                            // use default message
-                            delete err.message;
-                        }
+                        if (error.type !== errorMessage) err.message = errorMessage;
                         const errToThrow = error({
                             cause: err,
                             params: {
-                                method: err.method || method
+                                method,
+                                ...errorParams.join('').split(',').reduce((all, part) => {
+                                    const [key, value = key] = part.split('=').map(str => str.replace(/^\s*@?/, ''));
+                                    all[key] = value;
+                                    return all;
+                                }, {})
                             }
                         });
                         if (debug) {
