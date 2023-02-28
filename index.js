@@ -13,6 +13,7 @@ const bcp = require('./bcp');
 const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
 const { dirname } = require('path');
+const minimist = require('minimist');
 
 const setCause = err => {
     if (err.originalError) {
@@ -975,7 +976,8 @@ module.exports = function(createParams) {
                     })
                     .catch(function(err) {
                         const errorLines = err.message?.split('\n') || [''];
-                        const [errorMessage, ...errorParams] = errorLines.shift().split(' ');
+                        const [errorMessage, ...args] = errorLines.shift().split(' ');
+                        const {_, ...errorParams} = minimist(args);
                         setCause(err);
                         const errorType = err.type || errorMessage;
                         const error = (errorType && self.errors.getError(errorType)) || self.errors.portSQL;
@@ -984,11 +986,7 @@ module.exports = function(createParams) {
                             cause: err,
                             params: {
                                 method,
-                                ...errorParams.join('').split(',').reduce((all, part) => {
-                                    const [key, value = key] = part.split('=').map(str => str.replace(/^\s*@?/, ''));
-                                    all[key] = value;
-                                    return all;
-                                }, {})
+                                ...errorParams
                             }
                         });
                         if (debug) {
