@@ -17,7 +17,7 @@ module.exports = function test() {
                 params: {},
                 error(error, assert) {
                     assert.same(error.type, 'test.errorParams', 'Error type');
-                    assert.same(error.message, 'test.test.errorParams bar 5', 'Error message');
+                    assert.same(error.message, 'test.test.errorParams bar 5 etc', 'Error message');
                 }
             }]);
         }
