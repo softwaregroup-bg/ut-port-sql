@@ -978,6 +978,10 @@ module.exports = function(createParams) {
                         const errorLines = err.message?.split('\n') || [''];
                         const [errorMessage, ...args] = errorLines.shift().split(' ');
                         const {_, ...errorParams} = minimist(args);
+                        if (errorLines[0]?.startsWith('-')) {
+                            Object.assign(errorParams, minimist(errorLines.shift().split(' ')));
+                            delete errorParams._;
+                        }
                         setCause(err);
                         const errorType = err.type || errorMessage;
                         const error = (errorType && self.errors.getError(errorType)) || self.errors.portSQL;
