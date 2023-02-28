@@ -1,5 +1,6 @@
 {
     "test": "Test error",
     "test.error": "Test error message",
+    "test.errorParams": "{method} {foo} {n}",
     "test.securityViolation": "Security violation error"
 }

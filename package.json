@@ -4,14 +4,15 @@
   "main": "./index.js",
   "dependencies": {
     "chokidar": "3.5.3",
+    "istanbul-lib-coverage": "^3.2.0",
     "json-stringify-deterministic": "1.0.1",
     "lodash.get": "4.4.2",
+    "minimist": "1.2.6",
     "mssql": "8.1.2",
     "oracledb": "5.4.0",
     "ut-function.common-joi": "^1.9.1",
     "ut-function.includes": "^1.2.1",
     "ut-function.ngram": "1.1.0",
-    "istanbul-lib-coverage": "^3.2.0",
     "uuid": "8.3.2",
     "xml2js": "0.4.22",
     "yaml": "1.10.0"
