@@ -8,7 +8,7 @@ const uuid = require('uuid');
 const path = require('path');
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
-const {setParam, isEncrypted} = require('./params');
+const {setParam, isEncrypted, addNgram} = require('./params');
 const bcp = require('./bcp');
 const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
@@ -1540,6 +1540,43 @@ module.exports = function(createParams) {
                 }));
             }
             return procedures;
+        }
+
+        encryptField(message) {
+            const { data: msg, options = {} } = message;
+            const { rowId = 1, ngramFilename, ngramOptions, encrypt } = options;
+            let output;
+            const add = (row, id, _, ngram) => this.writeNgram(ngram, id, row, ngramFilename, ngramOptions.name);
+            if (this.cbc) {
+                output = '0x' + this.cbc.encrypt(msg, encrypt === 'stable').toString('hex');
+                ngramFilename && addNgram(this.hmac, {
+                    options: {
+                        [ngramOptions.id]: ngramOptions
+                    }
+                }, add, rowId, ngramOptions.id, ngramOptions.id, msg);
+            }
+            return output;
+        }
+
+        writeNgram(ngram, field, row, fileName, idName) {
+            const rowBuffer = Buffer.alloc(8);
+            rowBuffer.writeBigInt64LE(BigInt(row));
+            fs.appendFileSync(
+                fileName,
+                Buffer.concat([
+                    ngram,
+                    Uint8Array.from([field]),
+                    rowBuffer,
+                    // @ts-ignore
+                    Buffer.from((idName + ' '.repeat(128)).substring(0, 128), 0, 128)
+                ], 41 + 128)
+            );
+        }
+
+        handlers() {
+            return {
+                'db.encrypt.field': this.encryptField
+            };
         }
     };
 
