@@ -8,7 +8,7 @@ const uuid = require('uuid');
 const path = require('path');
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
-const {setParam, isEncrypted} = require('./params');
+const {setParam, isEncrypted, addNgram} = require('./params');
 const bcp = require('./bcp');
 const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
@@ -49,6 +49,7 @@ module.exports = function(createParams) {
 
         get defaults() {
             return {
+                namespace: ['db'],
                 retrySchemaUpdate: true,
                 type: 'sql',
                 cache: false,
@@ -1631,6 +1632,47 @@ module.exports = function(createParams) {
                 }));
             }
             return procedures;
+        }
+
+        encryptField(msg, $meta) {
+            const { data, options = {} } = msg;
+            const { rowId = 1, ngramFilename, ngramOptions, encrypt } = options;
+            let output = null;
+            const add = (row, id, _, ngram) => this.writeNgram(ngram, id, row, ngramFilename, ngramOptions.name, $meta.auth.actorId);
+            if (this.cbc) {
+                output = '0x' + this.cbc.encrypt(data, encrypt === 'stable').toString('hex');
+                ngramFilename && addNgram(this.hmac, {
+                    options: {
+                        [ngramOptions.id]: ngramOptions
+                    }
+                }, add, rowId, ngramOptions.id, ngramOptions.id, data);
+            }
+            return output;
+        }
+
+        writeNgram(ngram, field, row, fileName, idName, actorId) {
+            const actorBuffer = Buffer.alloc(8);
+            actorBuffer.writeBigInt64LE(BigInt(actorId));
+            const rowBuffer = Buffer.alloc(4);
+            rowBuffer.writeInt32LE(Number(row));
+
+            fs.appendFileSync(
+                fileName,
+                Buffer.concat([
+                    actorBuffer,
+                    ngram,
+                    Uint8Array.from([field]),
+                    rowBuffer,
+                    // @ts-ignore
+                    Buffer.from((idName + ' '.repeat(128)).substring(0, 128), 0, 128)
+                ], 173) // 8 + 32 + 1 + 4 + 128
+            );
+        }
+
+        handlers() {
+            return {
+                'db.encrypt.field': this.encryptField
+            };
         }
     };
 
