@@ -49,6 +49,7 @@ module.exports = function(createParams) {
 
         get defaults() {
             return {
+                namespace: ['db'],
                 retrySchemaUpdate: true,
                 type: 'sql',
                 cache: false,
@@ -1633,34 +1634,38 @@ module.exports = function(createParams) {
             return procedures;
         }
 
-        encryptField(message) {
-            const { data: msg, options = {} } = message;
+        encryptField(msg, $meta) {
+            const { data, options = {} } = msg;
             const { rowId = 1, ngramFilename, ngramOptions, encrypt } = options;
-            let output;
-            const add = (row, id, _, ngram) => this.writeNgram(ngram, id, row, ngramFilename, ngramOptions.name);
+            let output = null;
+            const add = (row, id, _, ngram) => this.writeNgram(ngram, id, row, ngramFilename, ngramOptions.name, $meta.auth.actorId);
             if (this.cbc) {
-                output = '0x' + this.cbc.encrypt(msg, encrypt === 'stable').toString('hex');
+                output = '0x' + this.cbc.encrypt(data, encrypt === 'stable').toString('hex');
                 ngramFilename && addNgram(this.hmac, {
                     options: {
                         [ngramOptions.id]: ngramOptions
                     }
-                }, add, rowId, ngramOptions.id, ngramOptions.id, msg);
+                }, add, rowId, ngramOptions.id, ngramOptions.id, data);
             }
             return output;
         }
 
-        writeNgram(ngram, field, row, fileName, idName) {
-            const rowBuffer = Buffer.alloc(8);
-            rowBuffer.writeBigInt64LE(BigInt(row));
+        writeNgram(ngram, field, row, fileName, idName, actorId) {
+            const actorBuffer = Buffer.alloc(8);
+            actorBuffer.writeBigInt64LE(BigInt(actorId));
+            const rowBuffer = Buffer.alloc(4);
+            rowBuffer.writeInt32LE(Number(row));
+
             fs.appendFileSync(
                 fileName,
                 Buffer.concat([
+                    actorBuffer,
                     ngram,
                     Uint8Array.from([field]),
                     rowBuffer,
                     // @ts-ignore
                     Buffer.from((idName + ' '.repeat(128)).substring(0, 128), 0, 128)
-                ], 41 + 128)
+                ], 173) // 8 + 32 + 1 + 4 + 128
             );
         }
 
