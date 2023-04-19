@@ -257,7 +257,8 @@ module.exports = createParams => ({
                             fileContent = binding.body;
                             cover[fileName] = Object.fromEntries(Array.from(fileContent.matchAll(/;PRINT\('ut-cover [^=]*=(\d+ \d+ \d+ \d+)'\);/g)).map(([, x]) => [x, 0]));
                         }
-                        if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
+                        const {permissionCheck = true} = schemaConfig;
+                        if (binding && binding.type === 'procedure' && includes(permissionCheck, [objectId])) {
                             fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
                                 const params = {offset};
                                 if (p1) {
