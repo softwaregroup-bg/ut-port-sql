@@ -1,6 +1,9 @@
 # [9.0.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.0-cover.19...v9.0.0) (2023-04-19)
 
+### BREAKING CHANGES
 
+* `--ut-permission-check` is replaced by default with a call to `[user].[permission.check]`,
+  you can opt-out via permissionCheck: false in the schema object
 
 ## [8.2.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v8.3.0-cover.10...v8.2.2) (2023-02-01)
 
