@@ -8,11 +8,21 @@ const uuid = require('uuid');
 const path = require('path');
 const saveAs = require('./saveAs');
 const ROW_VERSION_INNER_TYPE = 'BINARY';
-const {setParam, isEncrypted} = require('./params');
+const {setParam, isEncrypted, addNgram} = require('./params');
 const bcp = require('./bcp');
 const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
 const { dirname } = require('path');
+const minimist = require('minimist');
+
+const setCause = err => {
+    if (err.originalError) {
+        err.cause = err.originalError;
+        if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
+            err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
+        }
+    }
+};
 
 function changeRowVersionType(field) {
     if (field && (field.type.toUpperCase() === 'ROWVERSION' || field.type.toUpperCase() === 'TIMESTAMP')) {
@@ -39,6 +49,7 @@ module.exports = function(createParams) {
 
         get defaults() {
             return {
+                namespace: ['db'],
                 retrySchemaUpdate: true,
                 type: 'sql',
                 cache: false,
@@ -154,6 +165,7 @@ module.exports = function(createParams) {
         }
 
         async init() {
+            this.watchFolders = new Map();
             switch (this.config.connection && this.config.connection.driver) {
                 case 'oracle':
                     delete this.mssql;
@@ -204,8 +216,9 @@ module.exports = function(createParams) {
                 .then(this.doc.bind(this))
                 .then((v) => { this.connectionReady = true; return v; })
                 .then(this.updateSchema.bind(this, {paths: 'seed', retry: false, load: false}))
+                .then(this.watch.bind(this))
                 .catch((err) => {
-                    try { this.connection.close(); } catch (e) {};
+                    try { this.connection.close(); } catch (e) {}
                     if (this.config.retry) {
                         this.retryTimeout = setTimeout(this.connect.bind(this), 10000);
                         this.log.error && this.log.error(err);
@@ -216,8 +229,48 @@ module.exports = function(createParams) {
                 });
         }
 
+        async watch(schema) {
+            if (!this.config.watch) return schema;
+            const fsWatcher = require('chokidar').watch(Array.from(this.watchFolders.keys()).map(x => x + '/*'), {
+                ignoreInitial: true,
+                ignored: ['.git/**', 'node_modules/**', 'ui/**', '.lint/**', 'dist/**']
+            });
+            fsWatcher.on('error', error => this.error(error));
+            fsWatcher.on('all', async(event, file) => {
+                let resolveConnected;
+                this.isConnected = new Promise(resolve => {
+                    resolveConnected = resolve;
+                });
+                this?.log?.warn?.({
+                    $meta: {mtid: 'event', method: 'update'},
+                    event,
+                    file
+                });
+                try {
+                    const {paths, load} = this.watchFolders.get(path.dirname(file));
+                    try {
+                        schema.source[getObjectName(path.basename(file)).toLowerCase()] = 'watch';
+                        await this.updateSchema({paths, retry: false, load, updateFile: file}, schema);
+                        await this.linkSP({
+                            parseList: [{
+                                source: fs.readFileSync(file).toString(),
+                                fileName: file
+                            }],
+                            types: schema.types
+                        });
+                    } finally {
+                        resolveConnected(false);
+                    }
+                } catch (error) {
+                    this.error(error);
+                }
+            });
+            return schema;
+        }
+
         start() {
             const cbcStable = fieldName => String(fieldName).startsWith('stable');
+            this.cover = this.config.cover ? {} : null;
             if (this.config.cbc) {
                 const {encrypt, decrypt} = crypto.cbc(this.config.cbc);
                 this.cbc = {
@@ -283,7 +336,7 @@ module.exports = function(createParams) {
                     value.schema.forEach(schema => {
                         schema.skipTableType = (schema.skipTableType || []).concat(value.skipTableType);
                     });
-                };
+                }
                 if (this.config.createTT != null && value.schema) {
                     value.schema.forEach(schema => {
                         if (schema.createTT == null) schema.createTT = this.config.createTT;
@@ -303,6 +356,7 @@ module.exports = function(createParams) {
             const connection = this.connection;
             this.connection = null;
             await (connection && connection.close());
+            if (this.config.cover) require('./cover')(this.cover);
             return super.stop(...arguments);
         }
 
@@ -391,7 +445,7 @@ module.exports = function(createParams) {
 
             if (!this.config.allowQuery || !message.query) {
                 return Promise.reject(this.bus.errors['bus.methodNotFound']({params: {method: methodName}}));
-            };
+            }
 
             const debug = this.isDebug();
             const request = this.getRequest();
@@ -461,7 +515,7 @@ module.exports = function(createParams) {
             }, []);
         }
 
-        updateSchema({paths, retry, load}, schema) {
+        updateSchema({paths, retry, load, updateFile}, schema) {
             this.checkConnection();
             const busConfig = this.bus.config;
 
@@ -487,6 +541,7 @@ module.exports = function(createParams) {
                                     return true;
                                 })
                                 .catch((err) => {
+                                    setCause(err);
                                     const newErr = err;
                                     newErr.fileName = schema.fileName;
                                     newErr.message = newErr.message + ' (' + newErr.fileName + ':' + (newErr.lineNumber || 1) + ':1)';
@@ -506,7 +561,7 @@ module.exports = function(createParams) {
             }
 
             const self = this;
-            const folders = this.getPaths(paths);
+            const folders = this.getPaths(paths).filter(name => updateFile ? path.dirname(updateFile) === name.path : true);
             const failedQueries = [];
             let hashDropped = false;
             if (!folders || !folders.length) {
@@ -517,11 +572,13 @@ module.exports = function(createParams) {
                 promise.then(allDbObjects =>
                     new Promise((resolve, reject) => {
                         vfs.readdir(schemaConfig.path, (err, files) => {
+                            if (updateFile) files = files.filter(name => path.join(schemaConfig.path, name) === updateFile);
                             if (err) {
                                 reject(err);
                                 return;
                             }
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver);
+                            if (this.config.watch) this.watchFolders.set(schemaConfig.path, {paths, load});
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver, this.cover);
 
                             const request = self.getRequest();
                             const updated = [];
@@ -536,7 +593,10 @@ module.exports = function(createParams) {
                             }
                             queries.forEach((query) => {
                                 innerPromise = innerPromise.then(() => {
-                                    const operation = query.callSP ? query.callSP.apply(self) : request.batch(query.content);
+                                    const operation = query.callSP ? query.callSP.apply(self) : request.batch(query.content).catch(err => {
+                                        setCause(err);
+                                        throw err;
+                                    });
                                     return operation
                                         .then(() => updated.push(query.objectName))
                                         .catch((err) => {
@@ -579,7 +639,7 @@ module.exports = function(createParams) {
                         .then(() => (objectList));
                 })
                 .then(function(objectList) {
-                    if (!load || self.config.offline) return schema;
+                    if (!load || self.config.offline || updateFile) return schema;
                     return self.loadSchema(objectList, false, hashDropped);
                 });
         }
@@ -627,6 +687,13 @@ module.exports = function(createParams) {
         getRequestMssql() {
             const request = new this.mssql.Request(this.connection);
             request.on('info', (info) => {
+                if (info.message?.startsWith('ut-cover')) {
+                    const [fileName, statementId] = info.message.substr(9).split('=');
+                    this.cover = this.cover || {};
+                    const statement = this.cover[fileName] ||= {};
+                    statement[statementId] = (statement[statementId] || 0) + 1;
+                    return;
+                }
                 if (typeof info.includes === 'function' && info.includes('The module will still be created')) {
                     this.log.debug && this.log.debug({ $meta: { mtid: 'event', method: 'mssql.message' }, message: info });
                 } else {
@@ -640,9 +707,9 @@ module.exports = function(createParams) {
             return new OracleRequest(this.connection);
         }
 
-        getRequest() {
-            if (this.oracle) return this.getRequestOracle();
-            return this.getRequestMssql();
+        getRequest(fileName) {
+            if (this.oracle) return this.getRequestOracle(fileName);
+            return this.getRequestMssql(fileName);
         }
 
         getRowTransformer(columns = {}) {
@@ -702,7 +769,7 @@ module.exports = function(createParams) {
                         record[key.substr(0, key.length - 5)] = record[key] ? JSON.parse(record[key]) : record[key];
                         delete record[key];
                     });
-                };
+                }
             });
             if (pipeline.length) {
                 if (isAsync) {
@@ -732,7 +799,7 @@ module.exports = function(createParams) {
 
             function callLinkedSP(msg, $meta) {
                 self.checkConnection(true);
-                const request = self.getRequest();
+                const request = self.getRequest(fileName);
                 const getParam = name => flatten ? lodashGet(msg, name.split(flatten)) : msg[name];
                 const debug = self.isDebug();
                 const debugParams = {};
@@ -776,7 +843,7 @@ module.exports = function(createParams) {
                         } else {
                             debugParams[param.name] = value;
                         }
-                    };
+                    }
                 });
                 if (ngramParam) request.input('ngram', ngramParam);
 
@@ -818,6 +885,8 @@ module.exports = function(createParams) {
                             }
                             let name = null;
                             let single = false;
+                            let debug = false;
+                            let hidden = false;
                             for (let i = 0; i < resultSets.length; ++i) {
                                 if (name == null) {
                                     if (!isNamingResultSet(resultSets[i])) {
@@ -827,6 +896,8 @@ module.exports = function(createParams) {
                                     } else {
                                         name = resultSets[i][0].resultSetName;
                                         single = !!resultSets[i][0].single;
+                                        debug = resultSets[i][0].debug;
+                                        hidden = resultSets[i][0].hidden;
                                         if (name === 'ut-error') {
                                             error = self.errors.getError(resultSets[i][0] && resultSets[i][0].type) || self.errors.portSQL;
                                             error = Object.assign(error(), resultSets[i][0]);
@@ -845,7 +916,15 @@ module.exports = function(createParams) {
                                             name
                                         });
                                     }
-                                    if (single) {
+                                    if (debug || hidden) {
+                                        self.log?.table?.({
+                                            name: fileName + ' ' + name,
+                                            rows: resultSets[i]
+                                        });
+                                    }
+                                    if (hidden) {
+                                        // skip
+                                    } else if (single) {
                                         if (resultSets[i].length === 0) {
                                             namedSet[name] = null;
                                         } else if (resultSets[i].length === 1) {
@@ -873,6 +952,20 @@ module.exports = function(createParams) {
                             } else {
                                 return namedSet;
                             }
+                        } else {
+                            let debugName = '';
+                            resultSets = resultSets.filter(resultset => {
+                                if (debugName) {
+                                    self.log?.table?.({
+                                        name: fileName + ' ' + debugName,
+                                        rows: resultset
+                                    });
+                                    debugName = '';
+                                    return false;
+                                }
+                                debugName = isNamingResultSet(resultset) && (resultset[0].debug || resultset[0].hidden) && resultset[0].resultSetName;
+                                return !debugName;
+                            });
                         }
                         if (outParams.length) {
                             resultSets.push([outParams.reduce(function(prev, curr) {
@@ -884,41 +977,40 @@ module.exports = function(createParams) {
                     })
                     .catch(function(err) {
                         const errorLines = err.message?.split('\n') || [''];
-                        err.message = errorLines.shift();
-                        if (err.originalError) {
-                            err.cause = err.originalError;
-                            if (Array.isArray(err.cause.errors) && err.cause.errors.length) {
-                                err.cause.message = [err.cause.message, ...err.cause.errors].join('\n');
-                            }
+                        const [errorMessage, ...args] = errorLines.shift().split(' ');
+                        const {_, ...errorParams} = minimist(args);
+                        if (errorLines[0]?.startsWith('-')) {
+                            Object.assign(errorParams, minimist(errorLines.shift().split(' ')));
+                            delete errorParams._;
                         }
-                        const errorType = err.type || err.message;
+                        setCause(err);
+                        const errorType = err.type || errorMessage;
                         const error = (errorType && self.errors.getError(errorType)) || self.errors.portSQL;
-                        if (error.type === err.message) {
-                            // use default message
-                            delete err.message;
-                        }
+                        if (error.type !== errorMessage) err.message = errorMessage;
                         const errToThrow = error({
                             cause: err,
                             params: {
-                                method
+                                method,
+                                ...errorParams
                             }
                         });
                         if (debug) {
                             err.storedProcedure = name;
                             err.params = debugParams;
-                            err.fileName = (fileName || name) + ':' + err.lineNumber + ':1';
+                            err.fileName = (fileName || name);
                             const stack = errToThrow.stack.split('\n');
+                            errorLines.unshift('    at ' + err?.originalError?.info?.procName + ':' + err.lineNumber);
                             stack.splice.apply(stack, [1, 0].concat(errorLines));
                             errToThrow.stack = stack.join('\n');
                         }
                         throw errToThrow;
                     });
-            };
+            }
 
             return function callLinkedSpWrapper(msg, $meta) {
                 return callLinkedSP(msg, $meta)
                     .catch(function(e) {
-                        if (e.cause.number === 1205 && self.config.retryOnDeadlock) {
+                        if ([1205, 101205].includes(e.cause?.number) && self.config.retryOnDeadlock) {
                             self.log.warn && self.log.warn({ $meta: { mtid: 'event', method: 'portSQL.deadlock' }, method: $meta.method });
                             return callLinkedSP(msg, $meta);
                         }
@@ -962,7 +1054,7 @@ module.exports = function(createParams) {
                             (update.indexOf(param.name) >= 0) && (param.update = param.name.replace(/\$update$/i, ''));
                             if (isEncrypted(param) && this.cbc) {
                                 param.encrypt = true;
-                            };
+                            }
                             if (param.doc && /(^\{.*}$)|(^\[.*]$)/s.test(param.doc.trim())) {
                                 try {
                                     param.options = JSON.parse(param.doc);
@@ -1086,7 +1178,7 @@ module.exports = function(createParams) {
                                 fileName: objectList && objectList[cur.full]
                             });
                         }
-                    };
+                    }
                     return prev;
                 }, schema);
                 result.recordsets[1]?.reduce(function(prev, cur) { // extract columns of user defined table types
@@ -1348,7 +1440,7 @@ module.exports = function(createParams) {
                         });
                     }
                 };
-            };
+            }
 
             return this.createPool();
         }
@@ -1389,7 +1481,7 @@ module.exports = function(createParams) {
                     .then(() => this.connection.connect())
                     .catch((err) => {
                         this.log && this.log.error && this.log.error(err);
-                        try { conCreate.close(); } catch (e) {};
+                        try { conCreate.close(); } catch (e) {}
                         throw err;
                     });
             } else {
@@ -1540,6 +1632,47 @@ module.exports = function(createParams) {
                 }));
             }
             return procedures;
+        }
+
+        encryptField(msg, $meta) {
+            const { data, options = {} } = msg;
+            const { rowId = 1, ngramFilename, ngramOptions, encrypt } = options;
+            let output = null;
+            const add = (row, id, _, ngram) => this.writeNgram(ngram, id, row, ngramFilename, ngramOptions.name, $meta.auth.actorId);
+            if (this.cbc) {
+                output = '0x' + this.cbc.encrypt(data, encrypt === 'stable').toString('hex');
+                ngramFilename && addNgram(this.hmac, {
+                    options: {
+                        [ngramOptions.id]: ngramOptions
+                    }
+                }, add, rowId, ngramOptions.id, ngramOptions.id, data);
+            }
+            return output;
+        }
+
+        writeNgram(ngram, field, row, fileName, idName, actorId) {
+            const actorBuffer = Buffer.alloc(8);
+            actorBuffer.writeBigInt64LE(BigInt(actorId));
+            const rowBuffer = Buffer.alloc(4);
+            rowBuffer.writeInt32LE(Number(row));
+
+            fs.appendFileSync(
+                fileName,
+                Buffer.concat([
+                    actorBuffer,
+                    ngram,
+                    Uint8Array.from([field]),
+                    rowBuffer,
+                    // @ts-ignore
+                    Buffer.from((idName + ' '.repeat(128)).substring(0, 128), 0, 128)
+                ], 173) // 8 + 32 + 1 + 4 + 128
+            );
+        }
+
+        handlers() {
+            return {
+                'db.encrypt.field': this.encryptField
+            };
         }
     };
 

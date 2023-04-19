@@ -49,6 +49,7 @@
         "traceid",
         "trancount",
         "uniqueidentifier",
+        "UPDLOCK",
         "Uuser",
         "VARBINARY",
         "varchar"

@@ -184,4 +184,4 @@ function setParam(cbc, hmac, ngram, request, param, value, driver) {
     return value;
 }
 
-module.exports = {setParam, isEncrypted};
+module.exports = {setParam, isEncrypted, addNgram};

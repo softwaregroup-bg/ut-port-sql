@@ -1,6 +1,6 @@
 const AUDIT_LOG = /^[\s+]{0,}--ut-audit-params$/m;
-const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?$/mi;
-const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML$/m;
+const CORE_ERROR = /^[\s+]{0,}(RETURN)? EXEC \[?core]?\.\[?error]?(?:[\s+]{0,}(@type = .*))?(?:$|;)/mi;
+const CALL_PARAMS = /^[\s+]{0,}DECLARE @callParams XML($|;.*$)/m;
 const PERMISSION_CHECK = /--ut-permission-check(.*)$/gm;
 const mssqlQueries = require('./sql');
 const ENCRYPT_RE = /(?:NULL|0x.*)\/\*encrypt (.*)\*\//gi;
@@ -26,16 +26,17 @@ function replaceAuditLog(binding, statement) {
 }
 
 function replaceCallParams(binding, statement) {
-    return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding));
+    return statement.trim().replace(CALL_PARAMS, mssqlQueries.callParams(binding) + '$1');
 }
 
 function replaceCoreError(statement, fileName, objectName, params) {
     return statement
         .split('\n')
         .map((line, index) => (line.replace(CORE_ERROR, (match, ret, type) =>
-            `DECLARE @CORE_ERROR_FILE_${index} sysname='${fileName.replace(/'/g, '\'\'')}' ` +
-            `DECLARE @CORE_ERROR_LINE_${index} int='${index + 1}' ` +
-            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : ', @useRethrow = 1;\nTHROW'}`)))
+            `DECLARE @CORE_ERROR_FILE_${index} SYSNAME='${fileName.replace(/'/g, '\'\'')}' ` +
+            `DECLARE @CORE_ERROR_LINE_${index} INT='${index + 1}' ` +
+            `DECLARE @ERROR_NUMBER_LINE_${index} INT=ERROR_NUMBER()+100000 ` +
+            `${ret || ''} EXEC [core].[errorStack] @procid=@@PROCID, @file=@CORE_ERROR_FILE_${index}, @fileLine=@CORE_ERROR_LINE_${index}, @params = ${params}${type ? `, ${type}` : `, @errorNumber = @ERROR_NUMBER_LINE_${index};`}`)))
         .join('\n');
 }
 
@@ -185,7 +186,7 @@ function interpolate(txt, params = {}) {
         }
     };
     return txt.replace(VAR_RE, replacer).replace(SECTION_RE, replacer);
-};
+}
 
 const addSP = (queries, {fileName, objectName, objectId, config, createParams}) => {
     const params = path.extname(fileName).toLowerCase() === '.yaml'
@@ -217,7 +218,7 @@ const addSP = (queries, {fileName, objectName, objectId, config, createParams}) 
 };
 
 module.exports = createParams => ({
-    processFiles(schema, busConfig, schemaConfig, files, cbc, driver) {
+    processFiles(schema, busConfig, schemaConfig, files, cbc, driver, cover) {
         const parserSP = require('./parsers')(driver);
         files = files.sort().map(file => {
             return {
@@ -251,8 +252,13 @@ module.exports = createParams => ({
                         includes(schemaConfig.linkSP, [objectId]) && (dbObjects[objectId] = fileName);
                         let fileContent = interpolate(createParams.vfs.readFileSync(fileName).toString(), schemaConfig.config);
                         fileContent = interpolate(fileContent, busConfig);
-                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent);
-                        if (binding && binding.type === 'procedure' && includes(schemaConfig.permissionCheck, [objectId])) {
+                        const binding = fileContent.trim().match(/^(\bCREATE\b|\bALTER\b)\s+(\bOR\b\s+\bREPLACE\b\s+)?(PROCEDURE|TABLE|TYPE)/i) && parserSP.parse(fileContent, fileName, {startRule: cover ? 'createBody' : 'create'});
+                        if (cover && binding && binding.type === 'procedure') {
+                            fileContent = binding.body;
+                            cover[fileName] = Object.fromEntries(Array.from(fileContent.matchAll(/;PRINT\('ut-cover [^=]*=(\d+ \d+ \d+ \d+)'\);/g)).map(([, x]) => [x, 0]));
+                        }
+                        const {permissionCheck = true} = schemaConfig;
+                        if (binding && binding.type === 'procedure' && includes(permissionCheck, [objectId])) {
                             fileContent = fileContent.replace(PERMISSION_CHECK, (match, p1, offset) => {
                                 const params = {offset};
                                 if (p1) {
@@ -295,7 +301,7 @@ module.exports = createParams => ({
                                     createStatement: ttu
                                 }, cbc, driver);
                             }
-                        };
+                        }
                         if (binding && binding.type === 'table' && binding.options && binding.options.ngram) {
                             const [namespace, table] = objectName.split('.');
                             const ngramTT = mssqlQueries.ngramTT(namespace, table);
@@ -371,7 +377,7 @@ module.exports = createParams => ({
                         break;
                     default:
                         throw new Error('Unsupported file extension');
-                };
+                }
             } catch (error) {
                 error.message = error.message +
                     ' (' +
