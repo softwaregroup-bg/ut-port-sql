@@ -429,9 +429,9 @@ bodyParse =  x: statement+ {
          (prev.length && prev[0].statement.match(/^(INSERT|UPDATE|DELETE|SET)\b/i) && item.statement.match(/^WHEN\b/i)) ||
          (prev.length && prev[0].statement.match(/^WHEN\b/i) && item.statement.match(/^(MERGE|WITH|INSERT|DELETE|UPDATE|SET)\b/i)) ||
          (prev.length && prev[0].statement.match(/^WITH\b/i) && item.statement.match(/^MERGE\b/i)) ||
-         (prev.length && prev[0].statement.match(/^(WITH|UNION)\b/i) && item.statement.match(/^SELECT\b/i)) ||
+         (prev.length && prev[0].statement.match(/^(WITH|UNION|EXCEPT|INTERSECT)\b/i) && item.statement.match(/^SELECT\b/i)) ||
          (prev.length && prev[0].statement.match(/^(UPDATE|INSERT)\b/i) && item.statement.match(/^WITH\b/i)) ||
-         (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR)\b/i)) ||
+         (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR|EXCEPT|INTERSECT)\b/i)) ||
          (prev.length && prev[0].statement.match(/^SET\b/i) && item.statement.match(/^UPDATE\b/i)) ||
          (prev.length && prev[0].statement.match(/^EXEC\b/i) && item.statement.match(/^INSERT\b/i)) ||
          (prev.length && prev[0].statement.match(/^CURSOR\b/i) && item.statement.match(/^DECLARE\b/i))
@@ -509,6 +509,8 @@ start =
   "DISABLE"i ws1 "TRIGGER"i end /
   "ENABLE"i ws1 "TRIGGER"i end /
   "BULK"i ws1 "INSERT"i end /
-  "WAITFOR"i end
+  "WAITFOR"i end /
+  "EXCEPT"i /
+  "INTERSECT"i
 
 skip = !start (!(WhiteSpace / LineTerminatorSequence / case / "'" / "(") .)+

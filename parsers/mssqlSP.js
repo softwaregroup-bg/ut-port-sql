@@ -549,9 +549,9 @@ function peg$parse(input, options) {
                (prev.length && prev[0].statement.match(/^(INSERT|UPDATE|DELETE|SET)\b/i) && item.statement.match(/^WHEN\b/i)) ||
                (prev.length && prev[0].statement.match(/^WHEN\b/i) && item.statement.match(/^(MERGE|WITH|INSERT|DELETE|UPDATE|SET)\b/i)) ||
                (prev.length && prev[0].statement.match(/^WITH\b/i) && item.statement.match(/^MERGE\b/i)) ||
-               (prev.length && prev[0].statement.match(/^(WITH|UNION)\b/i) && item.statement.match(/^SELECT\b/i)) ||
+               (prev.length && prev[0].statement.match(/^(WITH|UNION|EXCEPT|INTERSECT)\b/i) && item.statement.match(/^SELECT\b/i)) ||
                (prev.length && prev[0].statement.match(/^(UPDATE|INSERT)\b/i) && item.statement.match(/^WITH\b/i)) ||
-               (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR)\b/i)) ||
+               (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR|EXCEPT|INTERSECT)\b/i)) ||
                (prev.length && prev[0].statement.match(/^SET\b/i) && item.statement.match(/^UPDATE\b/i)) ||
                (prev.length && prev[0].statement.match(/^EXEC\b/i) && item.statement.match(/^INSERT\b/i)) ||
                (prev.length && prev[0].statement.match(/^CURSOR\b/i) && item.statement.match(/^DECLARE\b/i))
@@ -664,6 +664,10 @@ function peg$parse(input, options) {
       peg$c279 = peg$literalExpectation("BULK", true),
       peg$c280 = "waitfor",
       peg$c281 = peg$literalExpectation("WAITFOR", true),
+      peg$c282 = "except",
+      peg$c283 = peg$literalExpectation("EXCEPT", true),
+      peg$c284 = "intersect",
+      peg$c285 = peg$literalExpectation("INTERSECT", true),
 
       peg$currPos          = 0,
       peg$savedPos         = 0,
@@ -6576,6 +6580,24 @@ function peg$parse(input, options) {
                                                                                             } else {
                                                                                               peg$currPos = s0;
                                                                                               s0 = peg$FAILED;
+                                                                                            }
+                                                                                            if (s0 === peg$FAILED) {
+                                                                                              if (input.substr(peg$currPos, 6).toLowerCase() === peg$c282) {
+                                                                                                s0 = input.substr(peg$currPos, 6);
+                                                                                                peg$currPos += 6;
+                                                                                              } else {
+                                                                                                s0 = peg$FAILED;
+                                                                                                if (peg$silentFails === 0) { peg$fail(peg$c283); }
+                                                                                              }
+                                                                                              if (s0 === peg$FAILED) {
+                                                                                                if (input.substr(peg$currPos, 9).toLowerCase() === peg$c284) {
+                                                                                                  s0 = input.substr(peg$currPos, 9);
+                                                                                                  peg$currPos += 9;
+                                                                                                } else {
+                                                                                                  s0 = peg$FAILED;
+                                                                                                  if (peg$silentFails === 0) { peg$fail(peg$c285); }
+                                                                                                }
+                                                                                              }
                                                                                             }
                                                                                           }
                                                                                         }
