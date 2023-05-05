@@ -1,3 +1,12 @@
+## [9.0.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.1...v9.0.2) (2023-05-05)
+
+
+### Bug Fixes
+
+* improve SQL parser ([94cf843](https://github.com/softwaregroup-bg/ut-port-sql/commit/94cf843b15b545e1bdc3239d2798eef739685ef7))
+
+
+
 ## [9.0.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.0...v9.0.1) (2023-04-19)
 
 
