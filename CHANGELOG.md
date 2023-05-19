@@ -1,3 +1,12 @@
+## [9.0.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.2...v9.0.3) (2023-05-19)
+
+
+### Bug Fixes
+
+* parse WITH MERGE ([6245117](https://github.com/softwaregroup-bg/ut-port-sql/commit/6245117ae886e1a91185dc56ae934f9422610536))
+
+
+
 ## [9.0.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.1...v9.0.2) (2023-05-05)
 
 
