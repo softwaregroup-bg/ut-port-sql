@@ -430,7 +430,7 @@ bodyParse =  x: statement+ {
          (prev.length && prev[0].statement.match(/^WHEN\b/i) && item.statement.match(/^(MERGE|WITH|INSERT|DELETE|UPDATE|SET)\b/i)) ||
          (prev.length && prev[0].statement.match(/^WITH\b/i) && item.statement.match(/^MERGE\b/i)) ||
          (prev.length && prev[0].statement.match(/^(WITH|UNION|EXCEPT|INTERSECT)\b/i) && item.statement.match(/^SELECT\b/i)) ||
-         (prev.length && prev[0].statement.match(/^(UPDATE|INSERT)\b/i) && item.statement.match(/^WITH\b/i)) ||
+         (prev.length && prev[0].statement.match(/^(UPDATE|INSERT|MERGE)\b/i) && item.statement.match(/^WITH\b/i)) ||
          (prev.length && prev[0].statement.match(/^SELECT\b/i) && item.statement.match(/^(INSERT|WITH|UNION|CURSOR|EXCEPT|INTERSECT)\b/i)) ||
          (prev.length && prev[0].statement.match(/^SET\b/i) && item.statement.match(/^UPDATE\b/i)) ||
          (prev.length && prev[0].statement.match(/^EXEC\b/i) && item.statement.match(/^INSERT\b/i)) ||
