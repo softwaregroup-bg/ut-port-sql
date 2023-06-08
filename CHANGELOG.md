@@ -1,3 +1,12 @@
+## [9.0.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.3...v9.0.4) (2023-06-08)
+
+
+### Bug Fixes
+
+* utf decrypt ([9809238](https://github.com/softwaregroup-bg/ut-port-sql/commit/980923858a029fb7631aaebe34a1bca3dee441de))
+
+
+
 ## [9.0.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.2...v9.0.3) (2023-05-19)
 
 
