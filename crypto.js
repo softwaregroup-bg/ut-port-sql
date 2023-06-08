@@ -67,7 +67,7 @@ module.exports = {
         };
         const decryptStable = value => {
             const decipher = crypto.createDecipheriv('aes-256-cbc', key, zeroes);
-            return decipher.update(value).toString('utf8') + decipher.final('utf8');
+            return Buffer.concat([decipher.update(value), decipher.final()]).toString('utf8');
         };
 
         return {
