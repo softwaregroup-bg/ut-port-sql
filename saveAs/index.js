@@ -33,7 +33,7 @@ module.exports = async(port, request, { saveAs }, name) => {
     const iv = crypto.randomBytes(16);
     const writer = crypto.createCipheriv(algorithm, key, iv);
     const fileStream = fs.createWriteStream(outputFilePath);
-    writer.pipe(fileStream).on('error', error => port.log.error && port.log.error(error));
+    writer.pipe(fileStream);
 
     return new Promise((resolve, reject) => {
         let replied = false;
