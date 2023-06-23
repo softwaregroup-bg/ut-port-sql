@@ -32,17 +32,17 @@ module.exports = async(port, request, { saveAs }, name) => {
     const key = crypto.randomBytes(32);
     const iv = crypto.randomBytes(16);
     const writer = crypto.createCipheriv(algorithm, key, iv);
-    writer.pipe(fs.createWriteStream(outputFilePath)).on('error', error => port.log.error && port.log.error(error));
+    const fileStream = fs.createWriteStream(outputFilePath);
+    writer.pipe(fileStream).on('error', error => port.log.error && port.log.error(error));
 
     return new Promise((resolve, reject) => {
         let replied = false;
         const reply = err => {
             if (replied) return;
             replied = true;
-            writer.end(() => {
+            fileStream.on('finish', () => {
                 if (!err) {
                     try {
-                        formatter.onDone();
                         if (saveAs.stream) {
                             const pipe = fs.createReadStream(outputFilePath).pipe(
                                 crypto.createDecipheriv(algorithm, key, iv)
@@ -70,6 +70,8 @@ module.exports = async(port, request, { saveAs }, name) => {
                 }
                 reject(port.errors['portSQL.exportError'](err));
             });
+            formatter.onDone();
+            writer.end();
         };
 
         const wrap = fn => async(...params) => {
