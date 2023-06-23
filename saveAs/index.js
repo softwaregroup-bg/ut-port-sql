@@ -37,39 +37,43 @@ module.exports = async(port, request, { saveAs }, name) => {
 
     return new Promise((resolve, reject) => {
         let replied = false;
-        const reply = err => {
+
+        const abort = err => {
             if (replied) return;
             replied = true;
+
+            port.log.error?.(err);
+            request.cancel();
+            fs.unlink(outputFilePath, err => err && port.log.error?.(err));
+            reject(port.errors['portSQL.exportError'](err));
+        };
+
+        const reply = () => {
+            if (replied) return;
+            replied = true;
+
             fileStream.on('finish', () => {
-                if (!err) {
-                    try {
-                        if (saveAs.stream) {
-                            const pipe = fs.createReadStream(outputFilePath).pipe(
-                                crypto.createDecipheriv(algorithm, key, iv)
-                            );
-                            pipe.on('error', error => port.log.error && port.log.error(error));
-                            return resolve(Object.assign(pipe, {
-                                toJSON: () => ({path: outputFilePath}),
-                                httpResponse: () => ({
-                                    type: formatter.mime,
-                                    header: ['content-disposition', `attachment; filename="${path.basename(saveAs.stream)}"`]
-                                })
-                            }));
-                        } else return resolve({outputFilePath, encryption: {algorithm, key: key.toString('hex'), iv: iv.toString('hex')}});
-                    } catch (e) {
-                        err = e;
-                    }
-                } else {
-                    request.cancel();
-                }
-                port.log.error && port.log.error(err);
                 try {
-                    fs.unlinkSync(outputFilePath);
+                    if (saveAs.stream) {
+                        const pipe = fs.createReadStream(outputFilePath).pipe(
+                            crypto.createDecipheriv(algorithm, key, iv)
+                        );
+                        pipe.on('error', error => port.log.error?.(error));
+                        return resolve(Object.assign(pipe, {
+                            toJSON: () => ({path: outputFilePath}),
+                            httpResponse: () => ({
+                                type: formatter.mime,
+                                header: ['content-disposition', `attachment; filename="${path.basename(saveAs.stream)}"`]
+                            })
+                        }));
+                    } else return resolve({outputFilePath, encryption: {algorithm, key: key.toString('hex'), iv: iv.toString('hex')}});
                 } catch (e) {
-                    port.log.error && port.log.error(e);
+                    port.log.error?.(err);
+                    fs.unlink(outputFilePath, err => err && port.log.error?.(err));
+                    reject(port.errors['portSQL.exportError'](err));
                 }
-                reject(port.errors['portSQL.exportError'](err));
             });
+
             formatter.onDone();
             writer.end();
         };
@@ -78,16 +82,18 @@ module.exports = async(port, request, { saveAs }, name) => {
             try {
                 await fn(...params);
             } catch (e) {
-                reply(e);
+                abort(e);
             }
         };
 
-        let transform;
+        writer.on('error', abort);
+        fileStream.on('error', abort);
 
         formatter.on('data', data => {
             writer.write(data);
         });
-
+        
+        let transform;
         request.on('recordset', wrap(columns => {
             transform = port.getRowTransformer(columns);
         }));
@@ -109,10 +115,8 @@ module.exports = async(port, request, { saveAs }, name) => {
             }
         }));
 
-        request.on('error', reply);
-
+        request.on('error', abort);
         request.on('done', () => reply());
-
         request.execute(name);
     });
 };
