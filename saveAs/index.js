@@ -68,9 +68,9 @@ module.exports = async(port, request, { saveAs }, name) => {
                         }));
                     } else return resolve({outputFilePath, encryption: {algorithm, key: key.toString('hex'), iv: iv.toString('hex')}});
                 } catch (e) {
-                    port.log.error?.(err);
+                    port.log.error?.(e);
                     fs.unlink(outputFilePath, err => err && port.log.error?.(err));
-                    reject(port.errors['portSQL.exportError'](err));
+                    reject(port.errors['portSQL.exportError'](e));
                 }
             });
 
@@ -92,7 +92,7 @@ module.exports = async(port, request, { saveAs }, name) => {
         formatter.on('data', data => {
             writer.write(data);
         });
-        
+
         let transform;
         request.on('recordset', wrap(columns => {
             transform = port.getRowTransformer(columns);
