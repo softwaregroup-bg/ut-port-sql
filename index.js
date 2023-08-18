@@ -63,6 +63,7 @@ module.exports = function(createParams) {
                 cbcStable: {},
                 compatibilityLevel: 120,
                 cbcDate: {},
+                xmlParserOptions: {},
                 connection: {
                     driver: 'mssql',
                     TrustServerCertificate: 'yes',
@@ -308,6 +309,7 @@ module.exports = function(createParams) {
                 charkey: 'text',
                 mergeAttrs: true,
                 explicitArray: false,
+                ...this.config.xmlParserOptions,
                 ...this.cbc && {
                     tagNameProcessors: [rename],
                     attrNameProcessors: [rename],
