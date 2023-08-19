@@ -1,3 +1,12 @@
+## [9.0.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.5...v9.0.6) (2023-08-19)
+
+
+### Bug Fixes
+
+* xmlParserOptions to be passed to xml2js parser ([#142](https://github.com/softwaregroup-bg/ut-port-sql/issues/142)) ([387db0b](https://github.com/softwaregroup-bg/ut-port-sql/commit/387db0b0a463aa10c1a218eb5e86d5403cdc81ff))
+
+
+
 ## [9.0.5](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.4...v9.0.5) (2023-06-29)
 
 
