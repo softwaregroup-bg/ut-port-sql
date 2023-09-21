@@ -1,3 +1,12 @@
+## [9.0.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.6...v9.0.7) (2023-09-21)
+
+
+### Bug Fixes
+
+* **CBI-999:** drop inline function ([#144](https://github.com/softwaregroup-bg/ut-port-sql/issues/144)) ([5d5d46f](https://github.com/softwaregroup-bg/ut-port-sql/commit/5d5d46f7c7865ab6dbdf9db2a688c639d4e086c3))
+
+
+
 ## [9.0.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.5...v9.0.6) (2023-08-19)
 
 
