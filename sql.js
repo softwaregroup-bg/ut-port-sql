@@ -83,7 +83,7 @@ module.exports = {
         SELECT
             1 sort,
             s.name + '.' + o.name [name],
-            'IF (OBJECT_ID(''[' + s.name + '].[' + o.name + ']'') IS NOT NULL) DROP ' + CASE o.type WHEN 'FN' THEN 'FUNCTION' ELSE 'PROCEDURE' END + ' [' + s.name + '].[' + o.name + ']' [drop],
+            'IF (OBJECT_ID(''[' + s.name + '].[' + o.name + ']'') IS NOT NULL) DROP ' + CASE WHEN o.type IN ('FN', 'IF') THEN 'FUNCTION' ELSE 'PROCEDURE' END + ' [' + s.name + '].[' + o.name + ']' [drop],
             p.name [param],
             SCHEMA_NAME(t.schema_id) + '.' + t.name [type]
         FROM
