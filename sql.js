@@ -41,6 +41,15 @@ module.exports = {
             ${loadDbo ? '' : 'AND SCHEMA_NAME(o.schema_id) != \'dbo\''}
             ${partial ? 'AND ISNULL(c.colid, 1)=1' : ''}
         UNION ALL
+        SELECT
+            0, 0, 0, 'I', SCHEMA_NAME(o.schema_id), i.name, i.name, NULL FROM sys.indexes i
+        JOIN
+            sys.objects o
+            ON o.object_id = i.object_id
+            AND USER_NAME(OBJECTPROPERTY(o.object_id, 'OwnerId')) IN (USER_NAME(), 'dbo')
+            AND OBJECTPROPERTY(o.object_id, 'IsMSShipped') = 0
+            AND i.name IS NOT NULL
+        UNION ALL
         SELECT 0,0,0,'S',name,NULL,NULL,NULL FROM sys.schemas WHERE principal_id = USER_ID()
         UNION ALL
         SELECT

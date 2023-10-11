@@ -374,6 +374,13 @@ Note the **camelCase** naming convention. File names, including extension are
     SELECT x columnName1, y columnName2, ...
   ```
 
+* `800-schemaName.tableName.columnName1ColumnName2.sql` for **creating indexes**.
+
+```sql
+CREATE NONCLUSTERED INDEX [schemaName.tableName.columnName1ColumnName2]
+ON schemaName.tableName(columnName1, columnName2)
+```
+
 * `850-schemaName.data.sql` for **loading system default data**.
   `WARNING - THIS IS DEPRECATED.`
   `THE RECOMMENDED APPROACH IS TO LOAD DATA THROUGH *.yaml FILES`
