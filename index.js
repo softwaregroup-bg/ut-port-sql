@@ -14,6 +14,7 @@ const lodashGet = require('lodash.get');
 const OracleRequest = require('./OracleRequest');
 const { dirname } = require('path');
 const minimist = require('minimist');
+const parserDefault = require('./parsers/mssqlDefault');
 
 const setCause = err => {
     if (err.originalError) {
@@ -55,6 +56,7 @@ module.exports = function(createParams) {
                 cache: false,
                 offline: false,
                 allowQuery: false,
+                alterTable: false,
                 retry: 10000,
                 paramsOutName: 'out',
                 doc: false,
@@ -580,7 +582,7 @@ module.exports = function(createParams) {
                                 return;
                             }
                             if (this.config.watch) this.watchFolders.set(schemaConfig.path, {paths, load});
-                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver, this.cover);
+                            const {queries, dbObjects} = processFiles(schema, busConfig, schemaConfig, files, this.cbc, this.config.connection.driver, this.cover, this.config.alterTable);
 
                             const request = self.getRequest();
                             const updated = [];
@@ -1144,6 +1146,31 @@ module.exports = function(createParams) {
         }
 
         loadSchema(objectList, hash, setHash) {
+            const extractColumn = array => (prev, cur) => { // extract columns
+                changeRowVersionType(cur);
+                if (!(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
+                    throw self.errors['portSQL.unexpectedColumnType']({
+                        type: cur.type,
+                        userDefinedTableType: cur.name
+                    });
+                }
+                cur.name = cur.name && cur.name.toLowerCase();
+                try {
+                    cur.default && (cur.default = parserDefault.parse(cur.default));
+                } catch (err) {
+                    err.type = cur.type;
+                    err.userDefinedTableType = cur.name;
+                    throw self.errors['portSQL.parserError'](err);
+                }
+                if (array) {
+                    const type = prev[cur.name] || (prev[cur.name] = []);
+                    type.push(cur);
+                } else {
+                    const type = prev[cur.name] || (prev[cur.name] = {});
+                    type[cur.column.toLowerCase()] = cur;
+                }
+                return prev;
+            };
             const self = this;
             const schema = this.getPaths('schema');
             const cacheFile = name => path.join(this.bus.config.workDir, 'ut-port-sql', name ? name + '.json' : '');
@@ -1160,7 +1187,7 @@ module.exports = function(createParams) {
             const request = this.getRequest();
             request.multiple = true;
             return request.query(this.systemQueries.loadSchema(this.config.updates === false || this.config.updates === 'false', this.config.loadDbo)).then(function(result) {
-                const schema = {source: {}, parseList: [], types: {}, deps: {}};
+                const schema = {source: {}, parseList: [], types: {}, deps: {}, tables: {}};
                 result.recordsets[0].reduce(function(prev, cur) { // extract source code of procedures, views, functions, triggers
                     const full = cur.full;
                     const namespace = cur.namespace;
@@ -1183,27 +1210,8 @@ module.exports = function(createParams) {
                     }
                     return prev;
                 }, schema);
-                result.recordsets[1]?.reduce(function(prev, cur) { // extract columns of user defined table types
-                    const parserDefault = require('./parsers/mssqlDefault');
-                    changeRowVersionType(cur);
-                    if (!(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
-                        throw self.errors['portSQL.unexpectedColumnType']({
-                            type: cur.type,
-                            userDefinedTableType: cur.name
-                        });
-                    }
-                    cur.name = cur.name && cur.name.toLowerCase();
-                    try {
-                        cur.default && (cur.default = parserDefault.parse(cur.default));
-                    } catch (err) {
-                        err.type = cur.type;
-                        err.userDefinedTableType = cur.name;
-                        throw self.errors['portSQL.parserError'](err);
-                    }
-                    const type = prev[cur.name] || (prev[cur.name] = []);
-                    type.push(cur);
-                    return prev;
-                }, schema.types);
+                result.recordsets[1]?.reduce(extractColumn(true), schema.types); // extract columns of user defined table types
+                result.recordsets[3]?.reduce(extractColumn(false), schema.tables); // extract columns of user tables
                 result.recordsets[2]?.reduce(function(prev, cur) { // extract dependencies
                     cur.name = cur.name && cur.name.toLowerCase();
                     cur.type = cur.type && cur.type.toLowerCase();
