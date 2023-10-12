@@ -143,6 +143,7 @@ module.exports = {
             sys.systypes AS st ON st.xusertype = c.user_type_id
         WHERE
             USER_NAME(OBJECTPROPERTY(o.object_id, 'OwnerId')) IN (USER_NAME(),'dbo')
+            AND o.type = 'U'
             AND OBJECTPROPERTY(o.object_id, 'IsMSShipped') = 0
             AND SCHEMA_NAME(o.schema_id) != 'dbo'
             ${partial ? 'AND 1 = 2' : ''}

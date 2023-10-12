@@ -1148,7 +1148,7 @@ module.exports = function(createParams) {
         loadSchema(objectList, hash, setHash) {
             const extractColumn = array => (prev, cur) => { // extract columns
                 changeRowVersionType(cur);
-                if (!(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
+                if (array && !(self.mssql[cur.type.toUpperCase()] instanceof Function)) {
                     throw self.errors['portSQL.unexpectedColumnType']({
                         type: cur.type,
                         userDefinedTableType: cur.name
