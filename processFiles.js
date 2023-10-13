@@ -71,18 +71,21 @@ function getAlterStatement(binding, statement, fileName, objectName, cbc) {
     }
 }
 
+const fieldDef = genNullable => field => {
+    changeRowVersionType(field);
+    return `[${field.column}] [${field.type}]` +
+        (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
+        (field.length !== null && field.scale === null ? `(${field.length})` : '') +
+        (genNullable && !field.nullable ? ' NOT NULL' : '') +
+        (typeof field.default === 'number' ? ` DEFAULT(${field.default})` : '') +
+        (typeof field.default === 'string' ? ` DEFAULT('${field.default.replace(/'/g, '\'\'')}')` : '');
+};
+
 function tableToType(binding, driver) {
     if (!binding || binding.type !== 'table') return '';
     if (driver === 'oracle') return `TYPE "${binding.table}TT" IS TABLE OF "${binding.schema}.${binding.table}"%ROWTYPE;`;
     const name = binding.name.match(/]$/) ? binding.name.slice(0, -1) + 'TT]' : binding.name + 'TT';
-    const columns = binding.fields.map(function(field) {
-        changeRowVersionType(field);
-        return `[${field.column}] [${field.type}]` +
-            (field.length !== null && field.scale !== null ? `(${field.length},${field.scale})` : '') +
-            (field.length !== null && field.scale === null ? `(${field.length})` : '') +
-            (typeof field.default === 'number' ? ` DEFAULT(${field.default})` : '') +
-            (typeof field.default === 'string' ? ` DEFAULT('${field.default.replace(/'/g, '\'\'')}')` : '');
-    });
+    const columns = binding.fields.map(fieldDef(false));
     return 'CREATE TYPE ' + name + ' AS TABLE (\r\n  ' + columns.join(',\r\n  ') + '\r\n)';
 }
 
@@ -218,7 +221,7 @@ const addSP = (queries, {fileName, objectName, objectId, config, createParams}) 
 };
 
 module.exports = createParams => ({
-    processFiles(schema, busConfig, schemaConfig, files, cbc, driver, cover) {
+    processFiles(schema, busConfig, schemaConfig, files, cbc, driver, cover, alterTable) {
         const parserSP = require('./parsers')(driver);
         files = files.sort().map(file => {
             return {
@@ -269,6 +272,36 @@ module.exports = createParams => ({
                                 }
                                 return mssqlQueries.permissionCheck(params);
                             });
+                        }
+                        if (alterTable && binding && binding.type === 'table') {
+                            let add = '';
+                            const alter = [];
+                            binding.fields.forEach(field => {
+                                const table = schema.tables[binding.schema + '.' + binding.table];
+                                if (table) {
+                                    const existing = table[field.column.toLowerCase()];
+                                    if (!existing) {
+                                        // add missing column
+                                        if (add) add = add + ',\n';
+                                        add += fieldDef(true)(field);
+                                    } else if (existing && existing.type === field.type && field.length && existing.length < field.length) {
+                                        // alter smaller column
+                                        alter.push(fieldDef(true)(field));
+                                    }
+                                }
+                            });
+                            let alterTable = '';
+                            if (add) alterTable = `ALTER TABLE ${binding.name} ADD\n${add};\n`;
+                            if (alter.length) alterTable += alter.map(col => `ALTER TABLE ${binding.name} ALTER COLUMN ${col};\n`).join('');
+                            if (alterTable) {
+                                addQuery(schema, queries, {
+                                    fileName,
+                                    objectName: objectName + 'Alter',
+                                    objectId: objectId + 'alter',
+                                    fileContent: alterTable,
+                                    createStatement: alterTable
+                                }, cbc);
+                            }
                         }
                         addQuery(schema, queries, {
                             binding,

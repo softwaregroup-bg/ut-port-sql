@@ -13,9 +13,9 @@ MERGE INTO test.test AS target
 USING (SELECT id, txt FROM @data) AS source
     ON target.id = source.id
 WHEN NOT MATCHED BY target THEN
-    INSERT (id, txt)
-    VALUES (source.id, source.txt)
-OUTPUT INSERTED.* INTO @inserted;
+    INSERT (id, txt, column1, column3, column4)
+    VALUES (source.id, source.txt, '.', 0, 0)
+OUTPUT INSERTED.id, INSERTED.txt INTO @inserted(id, txt);
 
 INSERT INTO @ngramIndex(id, field, ngram)
 SELECT r.id, n.field, n.ngram

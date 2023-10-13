@@ -4,5 +4,6 @@ module.exports = [
     require('./params'),
     require('./private'),
     require('./query'),
+    require('./table'),
     require('./error')
 ];

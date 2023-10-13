@@ -118,7 +118,37 @@ module.exports = {
             sys.types t ON t.schema_id=s.schema_id and t.is_user_defined=1
         WHERE
             user_name(s.principal_id) in (USER_NAME(),'dbo')
-        ORDER BY 1`;
+        ORDER BY 1
+
+        SELECT
+            SCHEMA_NAME(o.schema_id) + '.' + o.name name,
+            c.name [column],
+            st.name type,
+            CASE
+                WHEN st.name IN ('decimal', 'numeric') THEN CAST(c.[precision] AS VARCHAR)
+                WHEN st.name IN ('datetime2', 'time', 'datetimeoffset') THEN CAST(c.[scale] AS VARCHAR)
+                WHEN st.name IN ('varchar', 'varbinary', 'char', 'binary') AND c.max_length >= 0 THEN CAST(c.max_length AS VARCHAR)
+                WHEN st.name IN ('nvarchar', 'nchar') AND c.max_length >= 0 THEN CAST(c.max_length / 2 AS VARCHAR)
+                WHEN st.name IN ('varchar', 'varbinary', 'char', 'binary', 'nvarchar', 'nchar') AND c.max_length < 0 THEN 'max'
+            END [length],
+            CASE
+                WHEN st.name IN ('decimal', 'numeric') THEN c.scale
+            END scale,
+            OBJECT_DEFINITION(c.default_object_id) [default]
+        FROM
+            sys.objects o
+        JOIN
+            sys.columns c ON o.object_id = c.object_id
+        JOIN
+            sys.systypes AS st ON st.xusertype = c.user_type_id
+        WHERE
+            USER_NAME(OBJECTPROPERTY(o.object_id, 'OwnerId')) IN (USER_NAME(),'dbo')
+            AND o.type = 'U'
+            AND OBJECTPROPERTY(o.object_id, 'IsMSShipped') = 0
+            AND SCHEMA_NAME(o.schema_id) != 'dbo'
+            ${partial ? 'AND 1 = 2' : ''}
+        ORDER BY
+            1, c.column_id`;
     },
     refreshView: function(drop) {
         return `
