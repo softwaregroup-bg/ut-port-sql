@@ -1,3 +1,12 @@
+# [9.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.1.0...v9.2.0) (2023-10-13)
+
+
+### Features
+
+* alter table ([869eb65](https://github.com/softwaregroup-bg/ut-port-sql/commit/869eb65ebef5215df3d26a102a9d10e378a76c98))
+
+
+
 # [9.1.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.0.7...v9.1.0) (2023-10-11)
 
 
