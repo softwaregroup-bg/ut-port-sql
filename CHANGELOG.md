@@ -1,3 +1,12 @@
+## [9.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.0...v9.2.1) (2023-11-03)
+
+
+### Bug Fixes
+
+* support computed columns ([7b591f2](https://github.com/softwaregroup-bg/ut-port-sql/commit/7b591f257e4fb1b78a43155400ed5cd29ea64e2a))
+
+
+
 # [9.2.0](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.1.0...v9.2.0) (2023-10-13)
 
 
