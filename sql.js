@@ -31,7 +31,7 @@ module.exports = {
         FROM
             sys.objects o
         LEFT JOIN
-            dbo.syscomments c on o.object_id = c.id
+            dbo.syscomments c on o.object_id = c.id and o.type != 'U'
         LEFT JOIN
             sys.synonyms s on s.object_id = o.object_id
         WHERE
