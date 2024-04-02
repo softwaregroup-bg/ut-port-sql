@@ -995,7 +995,8 @@ module.exports = function(createParams) {
                             cause: err,
                             params: {
                                 method,
-                                ...errorParams
+                                ...errorParams,
+                                ...(err.params ?? {})
                             }
                         });
                         if (debug) {
