@@ -907,5 +907,3 @@ The automatically created search function expects 2 parameters:
 * `@fuzzy` - a float value, that specifies how many of the n-grams must match,
   where 1 means 100%. The function returns the list of keys that contain the
   passed n-grams
-
----
