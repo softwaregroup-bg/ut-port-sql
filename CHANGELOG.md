@@ -1,3 +1,13 @@
+## [9.2.2](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.1...v9.2.2) (2024-04-04)
+
+
+### Bug Fixes
+
+* APEXG-2852 add missing error params ([1993500](https://github.com/softwaregroup-bg/ut-port-sql/commit/1993500fd05abeb846c1c1706382d595383b3510))
+* APEXG-2852 comments ([0fe9f79](https://github.com/softwaregroup-bg/ut-port-sql/commit/0fe9f792e1856dbee6057d83a8631147d9ee6110))
+
+
+
 ## [9.2.1](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.0...v9.2.1) (2023-11-03)
 
 
