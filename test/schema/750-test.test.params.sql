@@ -1,6 +1,6 @@
 ALTER PROCEDURE test.[test.params]
     @obj VARBINARY(128),
-    @test INT,
+    @test INT = 0,
     @tt test.customTT READONLY,
     @meta core.metaDataTT READONLY
 AS
@@ -14,6 +14,9 @@ BEGIN TRY
 
     SELECT 'tt' AS resultSetName
     SELECT * FROM @tt
+
+    SELECT 'test' AS resultSetName, 1 AS single
+    SELECT @test test
 
     IF @test = 1
     BEGIN

@@ -16,13 +16,7 @@ require('ut-run').run({
                         }],
                         seed: [{
                             path: path.join(__dirname, 'oracleSeed')
-                        }],
-                        'test.test.deadlock': function(_, $meta) {
-                            return Promise.all([
-                                this.exec({}, {method: 'test.test.selectHoldLock'}),
-                                this.exec({reverse: true}, {method: 'test.test.selectHoldLock'})
-                            ]);
-                        }
+                        }]
                     };
                 }
             ]
