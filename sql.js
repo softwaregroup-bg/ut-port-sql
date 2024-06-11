@@ -255,7 +255,7 @@ module.exports = {
     createDatabase: function({
         connection: {database},
         compatibilityLevel,
-        recoveryModel
+        recoveryModel = ''
     }) {
         return `
         IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${database}')
