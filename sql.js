@@ -252,14 +252,19 @@ module.exports = {
         sql += 'FOR XML RAW(\'params\'), BINARY BASE64, TYPE)';
         return sql;
     },
-    createDatabase: function(name, level) {
+    createDatabase: function({
+        connection: {database},
+        compatibilityLevel,
+        recoveryModel
+    }) {
         return `
-        IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${name}')
+        IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = '${database}')
         BEGIN
-          CREATE DATABASE [${name}]
-          ${level && `ALTER DATABASE [${name}] SET COMPATIBILITY_LEVEL = ${level}`}
-          ALTER DATABASE [${name}] SET READ_COMMITTED_SNAPSHOT ON
-          ALTER DATABASE [${name}] SET AUTO_SHRINK OFF
+          CREATE DATABASE [${database}]
+          ${compatibilityLevel && `ALTER DATABASE [${database}] SET COMPATIBILITY_LEVEL = ${compatibilityLevel}`}
+          ${recoveryModel && `ALTER DATABASE [${database}] SET RECOVERY = ${recoveryModel}`}
+          ALTER DATABASE [${database}] SET READ_COMMITTED_SNAPSHOT ON
+          ALTER DATABASE [${database}] SET AUTO_SHRINK OFF
         END`;
     },
     createUser: function(name, user, password, {azure = false}) {
