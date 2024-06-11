@@ -97,7 +97,7 @@ module.exports = function(createParams) {
                     recoveryModel: {
                         type: 'string',
                         enum: ['Full', 'Simple', 'Bulk-Logged']
-                    }
+                    },
                     connection: {
                         type: 'object',
                         properties: {
