@@ -94,6 +94,10 @@ module.exports = function(createParams) {
                         type: 'integer',
                         enum: [0, 100, 110, 120, 130, 140, 150]
                     },
+                    recoveryModel: {
+                        type: 'string',
+                        enum: ['Full', 'Simple', 'Bulk-Logged']
+                    },
                     connection: {
                         type: 'object',
                         properties: {
@@ -1475,7 +1479,7 @@ module.exports = function(createParams) {
             if (this.config.create && ((this.config.create.user && this.config.create.password) || (!this.config.create.user && !this.config.create.password))) {
                 const conCreate = new this.mssql.ConnectionPool(sanitize({...connection, ...this.config.create}));
                 return conCreate.connect()
-                    .then(() => (new this.mssql.Request(conCreate)).batch(this.systemQueries.createDatabase(this.config.connection.database, this.config.compatibilityLevel, this.config.connection.user, this.config.connection.password)))
+                    .then(() => (new this.mssql.Request(conCreate)).batch(this.systemQueries.createDatabase(this.config)))
                     .then(() => this.config.create.diagram && new this.mssql.Request(conCreate).batch(this.systemQueries.enableDatabaseDiagrams(this.config.connection.database)))
                     .then(() => {
                         if (this.config.create.user === this.config.connection.user) {

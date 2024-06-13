@@ -5,7 +5,7 @@ require('ut-run').run({
     main: [
         () => ({
             test: () => [
-                (...params) => class db extends require('../')(...params) {},
+                (...params) => class db extends require('..')(...params) {},
                 function sql() {
                     return {
                         namespace: 'test',

@@ -40,6 +40,7 @@ This involves the following configuration:
 ```yaml
 db:
   compatibilityLevel: 120 # optional, the default is 120
+  recoveryModel: 'Simple' # optional, possible values: 'Full', 'Simple', 'Bulk-Logged'
   connection:
     server: <db server>
     database: <db name>
