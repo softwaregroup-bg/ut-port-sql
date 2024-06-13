@@ -1,3 +1,12 @@
+## [9.2.4](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.3...v9.2.4) (2024-06-13)
+
+
+### Bug Fixes
+
+* recoveryModel configuration ([#148](https://github.com/softwaregroup-bg/ut-port-sql/issues/148)) ([ef6f2fb](https://github.com/softwaregroup-bg/ut-port-sql/commit/ef6f2fb8b34908285a6cf610fe61155ae0915e3c))
+
+
+
 ## [9.2.3](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.2...v9.2.3) (2024-04-05)
 
 
