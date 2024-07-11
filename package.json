@@ -1,6 +1,6 @@
 {
   "name": "ut-port-sql",
-  "version": "9.2.4",
+  "version": "9.2.5",
   "main": "./index.js",
   "dependencies": {
     "chokidar": "3.5.3",
