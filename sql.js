@@ -262,7 +262,7 @@ module.exports = {
         BEGIN
           CREATE DATABASE [${database}]
           ${compatibilityLevel && `ALTER DATABASE [${database}] SET COMPATIBILITY_LEVEL = ${compatibilityLevel}`}
-          ${recoveryModel && `ALTER DATABASE [${database}] SET RECOVERY = ${recoveryModel}`}
+          ${recoveryModel && `ALTER DATABASE [${database}] SET RECOVERY ${recoveryModel}`}
           ALTER DATABASE [${database}] SET READ_COMMITTED_SNAPSHOT ON
           ALTER DATABASE [${database}] SET AUTO_SHRINK OFF
         END`;
