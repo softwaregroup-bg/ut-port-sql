@@ -22,7 +22,7 @@
     "inquirer": "7.3.3",
     "inquirer-autocomplete-prompt": "1.2.0",
     "json-schema-to-markdown": "1.1.1",
-    "pegjs": "0.10.0",
+    "peggy": "1.2.0",
     "tap": "^16.3.2",
     "ut-run": "^10.70.27",
     "why-is-node-running": "^2.2.2"
@@ -33,8 +33,8 @@
   "scripts": {
     "lint": "ut-lint .",
     "release": "ut-release",
-    "genParser": "pegjs --allowed-start-rules create,createBody parsers/mssqlSP.pegjs",
-    "genParserOracle": "pegjs parsers/oracleSP.pegjs",
+    "genParser": "peggy --allowed-start-rules create,createBody parsers/mssqlSP.pegjs",
+    "genParserOracle": "peggy parsers/oracleSP.pegjs",
     "changelog": "ut-changelog",
     "check": "ut-check",
     "cover": "ut-cover-parallel",
