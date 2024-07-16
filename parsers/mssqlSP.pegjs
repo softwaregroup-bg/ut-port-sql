@@ -256,7 +256,7 @@ action = "NO ACTION"i / "SET DEFAULT"i / "SET NULL"i / "CASCADE"i / "RESTRICT"i
 clause = "DELETE"i / "UPDATE"i / "INSERT"i
 
 fk_constraint
-  = "FOREIGN KEY"i ws lparen ws n:name ws rparen ws "REFERENCES"i ws t:reference ws lparen ws c:name ws rparen a:fk_clause_actions {
+  = "FOREIGN KEY"i ws lparen ws n:list ws rparen ws "REFERENCES"i ws t:reference ws lparen ws c:list ws rparen a:fk_clause_actions {
       return {
           type: "FOREIGN KEY",
             referenceTable: t,
@@ -514,3 +514,4 @@ start =
   "INTERSECT"i
 
 skip = !start (!(WhiteSpace / LineTerminatorSequence / case / "'" / "(") .)+
+list = ws x:name ws y:(ws comma ws z:name { return z })* { return [x, ...y]}
