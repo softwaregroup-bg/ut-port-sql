@@ -1,3 +1,12 @@
+## [9.2.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.6...v9.2.7) (2024-08-14)
+
+
+### Bug Fixes
+
+* decrypt column for sql query with process 'return' ([#150](https://github.com/softwaregroup-bg/ut-port-sql/issues/150)) ([783d3df](https://github.com/softwaregroup-bg/ut-port-sql/commit/783d3dfb49ba0156584aa5458d2b6b18842bf506))
+
+
+
 ## [9.2.6](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.5...v9.2.6) (2024-07-16)
 
 
