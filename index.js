@@ -466,8 +466,14 @@ module.exports = function(createParams) {
                     $meta.mtid = 'response';
                     if (message.process === 'return') {
                         if (result && result.recordset && result.recordset.length) {
-                            Object.keys(result.recordset[0]).forEach(function(value) {
-                                setPathProperty(message, value, result.recordset[0][value]);
+                            Object.entries(result.recordset[0]).forEach(function([fieldName, fieldValue]) {
+                                if (fieldName.startsWith('encrypted') && fieldName.length > 9) {
+                                    fieldValue = port.cbc.decrypt(
+                                        Buffer.from(fieldValue, 'base64'),
+                                        lower(fieldName, 9)
+                                    );
+                                }
+                                setPathProperty(message, fieldName, fieldValue);
                             });
                         }
                         resolve(message);
@@ -492,7 +498,7 @@ module.exports = function(createParams) {
                     debug && (err.query = message.query);
                     const error = port.errors.getError(err.message && err.message.split('\n').shift()) || port.errors.portSQL;
                     reject(error(err));
-                });
+                }).catch(reject);
             });
         }
 
