@@ -138,8 +138,8 @@ function peg$parse(input, options) {
 
   var peg$FAILED = {},
 
-      peg$startRuleFunctions = { create: peg$parsecreate, createBody: peg$parsecreateBody },
-      peg$startRuleFunction  = peg$parsecreate,
+      peg$startRuleFunctions = { default: peg$parsedefault },
+      peg$startRuleFunction  = peg$parsedefault,
 
       peg$c0 = function(v) {return v},
       peg$c1 = function() {var result = Number.parseFloat(text()); return Number.isNaN(result)?text():result;},
