@@ -1,3 +1,12 @@
+## [9.2.8](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.7...v9.2.8) (2024-10-07)
+
+
+### Bug Fixes
+
+* default expressions for sql table columns ([9dd68e9](https://github.com/softwaregroup-bg/ut-port-sql/commit/9dd68e9fa9ee7f6ec48f78396f7f21e2e11ce27c))
+
+
+
 ## [9.2.7](https://github.com/softwaregroup-bg/ut-port-sql/compare/v9.2.6...v9.2.7) (2024-08-14)
 
 
