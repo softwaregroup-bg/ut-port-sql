@@ -1438,22 +1438,23 @@ module.exports = function({parent}) {
         this.connection = new mssql.ConnectionPool(this.config.db);
         if (this.config.create) {
             let conCreate = new mssql.ConnectionPool({
+                ...this.config.create,
                 server: this.config.db.server,
                 user: this.config.create.user,
                 password: this.config.create.password
             });
 
-            // Patch for https://github.com/patriksimek/node-mssql/issues/467
-            conCreate._throwingClose = conCreate._close;
-            conCreate._close = function(callback) {
-                const close = conCreate._throwingClose.bind(this, callback);
-                if (this.pool) {
-                    return this.pool.drain().then(close);
-                } else {
-                    return close();
-                }
-            };
-            // end patch
+            // // Patch for https://github.com/patriksimek/node-mssql/issues/467
+            // conCreate._throwingClose = conCreate._close;
+            // conCreate._close = function(callback) {
+            //     const close = conCreate._throwingClose.bind(this, callback);
+            //     if (this.pool) {
+            //         return this.pool.drain().then(close);
+            //     } else {
+            //         return close();
+            //     }
+            // };
+            // // end patch
 
             return conCreate.connect()
                 .then(() => (new mssql.Request(conCreate)).batch(mssqlQueries.createDatabase(this.config.db.database)))
