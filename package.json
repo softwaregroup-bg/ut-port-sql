@@ -14,7 +14,7 @@
     "ut-function.includes": "^1.2.1",
     "ut-function.ngram": "1.1.0",
     "uuid": "8.3.2",
-    "xml2js": "0.4.22",
+    "xml2js": "0.5.0",
     "yaml": "1.10.0"
   },
   "devDependencies": {
