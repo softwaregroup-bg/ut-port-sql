@@ -24,11 +24,11 @@
     "json-schema-to-markdown": "1.1.1",
     "pegjs": "0.10.0",
     "tap": "^16.3.2",
-    "ut-run": "^10.70.27",
+    "ut-run": "^10.78.17",
     "why-is-node-running": "^2.2.2"
   },
   "peerDependencies": {
-    "ut-run": "^10.70.24"
+    "ut-run": "^10.78.17"
   },
   "scripts": {
     "lint": "ut-lint .",
