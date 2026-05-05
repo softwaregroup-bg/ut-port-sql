@@ -7,11 +7,25 @@ const formats = {
 };
 const crypto = require('crypto');
 
+function resolveBaseDir(workDir) {
+    const primary = path.join(workDir, 'ut-port-sql', 'export');
+    const fallback = path.join('/tmp', 'ut-port-sql', 'export');
+    try {
+        fs.mkdirSync(primary, { recursive: true });
+        fs.accessSync(primary, fs.constants.W_OK);
+        return primary;
+    } catch (err) {
+        // console.warn('Primary export directory not writable, switching to fallback:', fallback);
+        fs.mkdirSync(fallback, { recursive: true });
+        return fallback;
+    }
+}
+
 module.exports = async(port, request, { saveAs }, name) => {
     const config = typeof saveAs === 'string' ? { filename: saveAs } : saveAs;
     if (path.isAbsolute(config.filename)) throw this.errors['portSQL.absolutePath']();
 
-    const baseDir = path.join(port.bus.config.workDir, 'ut-port-sql', 'export');
+    const baseDir = resolveBaseDir('port.bus.config.workDir');
     const outputFilePath = path.resolve(baseDir, config.filename);
     if (!outputFilePath.startsWith(baseDir)) throw port.errors['portSQL.invalidFileLocation']();
 
