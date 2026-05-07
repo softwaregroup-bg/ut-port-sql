@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 if (!process.env.UT_SQL_ORACLE) process.exit(0);
 const path = require('path');
 const id = Date.now();
