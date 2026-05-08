@@ -25,7 +25,8 @@ require('ut-run').run({
                         namespace: 'test',
                         schema: [{
                             path: path.join(__dirname, 'schema'),
-                            linkSP: true
+                            linkSP: true,
+                            createTT: true
                         }],
                         seed: [{
                             path: path.join(__dirname, 'seed')
@@ -50,7 +51,6 @@ require('ut-run').run({
             allowQuery: true,
             logLevel: 'warn',
             linkSP: true,
-            createTT: true,
             cbc: '75742d706f72742d73716c2121212d2d2d2d75742d706f72742d73716c212121',
             hmac: '75742d706f72742d73716c2121212d2d2d2d75742d706f72742d73716c212121',
             connection: {
